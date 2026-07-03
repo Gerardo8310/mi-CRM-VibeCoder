@@ -1,0 +1,88 @@
+/* SolarCRM — Color Tokens */
+
+:root {
+  /* ── Brand: Solar Amber ── */
+  --brand-50:  #FEF8E7;
+  --brand-100: #FDF0C4;
+  --brand-200: #F9DC88;
+  --brand-300: #F2C347;
+  --brand-400: #E2A318;
+  --brand-500: #C98A0A;   /* ★ PRIMARY ACCENT */
+  --brand-600: #A56E08;   /* hover / active */
+  --brand-700: #7E5407;
+  --brand-800: #5A3B05;
+  --brand-900: #3B2504;
+  --brand-950: #251703;
+
+  /* ── Neutral: Warm Gray (amber-tinted) ── */
+  --neutral-0:   #FFFFFF;
+  --neutral-50:  #F8F7F4;   /* page background */
+  --neutral-100: #F3F1EC;   /* sunken / input bg */
+  --neutral-200: #E9E6E0;   /* default border */
+  --neutral-300: #D6D2CB;   /* strong border */
+  --neutral-400: #A9A49C;   /* placeholder / disabled text */
+  --neutral-500: #7B766D;   /* tertiary text */
+  --neutral-600: #5C574F;   /* secondary text */
+  --neutral-700: #403C35;   /* medium dark text */
+  --neutral-800: #2D2924;
+  --neutral-900: #181512;
+  --neutral-950: #11100E;   /* ★ primary text */
+
+  /* ── Semantic: Success ── */
+  --success-100: #ECFAED;
+  --success-500: #25913A;
+  --success-700: #1A6629;
+
+  /* ── Semantic: Error ── */
+  --error-100:   #FDEEED;
+  --error-500:   #D13B1E;
+  --error-700:   #9E2B14;
+
+  /* ── Semantic: Warning ── */
+  --warning-100: #FEF6E4;
+  --warning-500: #C68A10;
+  --warning-700: #8F6010;
+
+  /* ── Semantic: Info ── */
+  --info-100:    #EEF3FD;
+  --info-500:    #3A72CB;
+  --info-700:    #2A53A0;
+
+  /* ── Semantic aliases ── */
+  --color-accent:          var(--brand-500);
+  --color-accent-hover:    var(--brand-600);
+  --color-accent-subtle:   var(--brand-50);
+
+  --color-bg-page:         var(--neutral-50);
+  --color-bg-surface:      var(--neutral-0);
+  --color-bg-sunken:       var(--neutral-100);
+  --color-bg-sidebar:      #181512;
+
+  --color-text-primary:    var(--neutral-950);
+  --color-text-secondary:  var(--neutral-600);
+  --color-text-tertiary:   var(--neutral-500);
+  --color-text-placeholder: var(--neutral-400);
+  --color-text-on-accent:  #FFFFFF;
+  --color-text-on-dark:    var(--neutral-50);
+
+  --color-border-default:  var(--neutral-200);
+  --color-border-strong:   var(--neutral-300);
+  --color-border-focus:    var(--brand-500);
+}
+
+/* ── Dark mode ── */
+[data-theme="dark"],
+[data-theme="dark"] body {
+  --color-bg-page:         #11100E;
+  --color-bg-surface:      #181512;
+  --color-bg-sunken:       #0A0908;
+  --color-bg-sidebar:      #0A0908;
+
+  --color-text-primary:    #F8F7F4;
+  --color-text-secondary:  #A9A49C;
+  --color-text-tertiary:   #7B766D;
+  --color-text-placeholder: #5C574F;
+
+  --color-border-default:  #2D2924;
+  --color-border-strong:   #403C35;
+}

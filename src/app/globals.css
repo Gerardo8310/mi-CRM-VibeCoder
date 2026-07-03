@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/*
+  Tokens del Design System de SolarCRM (ver Design/design.md).
+  Cualquier cambio de marca debe hacerse aquí, no pantalla por pantalla.
+*/
+@theme {
+  /* Fonts (variables pobladas por next/font en src/app/layout.tsx) */
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand — Solar Amber */
+  --color-brand-50: #fef8e7;
+  --color-brand-100: #fdf0c4;
+  --color-brand-200: #f9dc88;
+  --color-brand-300: #f2c347;
+  --color-brand-400: #e2a318;
+  --color-brand-500: #c98a0a; /* primary accent */
+  --color-brand-600: #a56e08; /* hover / active */
+  --color-brand-700: #7e5407;
+  --color-brand-800: #5a3b05;
+  --color-brand-900: #3b2504;
+  --color-brand-950: #251703;
+
+  /* Neutral — warm gray (not pure gray) */
+  --color-neutral-0: #ffffff;
+  --color-neutral-50: #f8f7f4; /* page background */
+  --color-neutral-100: #f3f1ec; /* sunken / input bg */
+  --color-neutral-200: #e9e6e0; /* default border */
+  --color-neutral-300: #d6d2cb; /* strong border */
+  --color-neutral-400: #a9a49c; /* placeholder / disabled */
+  --color-neutral-500: #7b766d; /* tertiary text */
+  --color-neutral-600: #5c574f; /* secondary text */
+  --color-neutral-700: #403c35;
+  --color-neutral-800: #2d2924;
+  --color-neutral-900: #181512;
+  --color-neutral-950: #11100e; /* primary text */
+
+  /* Semantic */
+  --color-success-100: #ecfaed;
+  --color-success-500: #25913a;
+  --color-success-700: #1a6629;
+  --color-error-100: #fdeeed;
+  --color-error-500: #d13b1e;
+  --color-error-700: #9e2b14;
+  --color-warning-100: #fef6e4;
+  --color-warning-500: #c68a10;
+  --color-warning-700: #8f6010;
+  --color-info-100: #eef3fd;
+  --color-info-500: #3a72cb;
+  --color-info-700: #2a53a0;
+
+  /* Dark surfaces (sidebar, panels oscuros) */
+  --color-dark-base: #11100e;
+  --color-dark-surface: #181512;
+  --color-dark-surface-raised: #211e1a;
+  --color-dark-sunken: #0a0908;
+  --color-dark-border: #2d2924;
+  --color-dark-border-strong: #403c35;
+  --color-dark-text: #f8f7f4;
+  --color-dark-text-secondary: #a9a49c;
+
+  /* Border radius — el default del sistema es 0. Excepciones explícitas abajo. */
+  --radius-none: 0px;
+  --radius-badge: 2px;
+  --radius-input: 3px;
+  --radius-modal: 3px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(30, 20, 5, 0.04);
+  --shadow-sm: 0 1px 3px rgba(30, 20, 5, 0.05), 0 1px 2px rgba(30, 20, 5, 0.03);
+  --shadow-md: 0 4px 8px rgba(30, 20, 5, 0.05), 0 2px 4px rgba(30, 20, 5, 0.03);
+  --shadow-lg: 0 8px 24px rgba(30, 20, 5, 0.07), 0 4px 8px rgba(30, 20, 5, 0.04);
+}
+
+/* Base */
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-neutral-50);
+  color: var(--color-neutral-950);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  border-color: var(--color-neutral-200);
+}
+
+/* Todo lo interactivo es de esquina recta por defecto (regla del design system) */
+button,
+input,
+select,
+textarea {
+  border-radius: var(--radius-none);
+  font-family: inherit;
+}
+
+/* Animaciones de entrada de los paneles rápidos de "Hoy" (GER-50). */
+@keyframes fadein {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideup {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

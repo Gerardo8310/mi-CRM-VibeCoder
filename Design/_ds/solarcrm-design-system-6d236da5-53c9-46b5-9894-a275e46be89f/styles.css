@@ -1,0 +1,7 @@
+/* SolarCRM Design System — root entry point */
+/* Import order: fonts → colors → type → spacing → shadows */
+
+@import './tokens/typography.css';
+@import './tokens/colors.css';
+@import './tokens/spacing.css';
+@import './tokens/shadows.css';

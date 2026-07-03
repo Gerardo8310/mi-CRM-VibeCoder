@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+    @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideup { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes popin   { from { transform: scale(.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+    .sidebar { display: none; position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #181512; flex-direction: column; z-index: 50; border-right: 1px solid #2D2924; }
+    .main-wrap { display: flex; flex-direction: column; min-height: 100vh; }
+    .page-hdr { height: 52px; padding: 0 16px; display: flex; align-items: center; gap: 8px; background: #fff; border-bottom: 1px solid #E9E6E0; position: sticky; top: 0; z-index: 40; flex-shrink: 0; }
+
+    .nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 18px; font-size: 13px; color: #7B766D; cursor: pointer; transition: color 120ms, background 120ms; border-left: 2px solid transparent; text-decoration: none; }
+    .nav-item:hover { color: #D6C48A; background: rgba(255,255,255,.04); }
+    .nav-item.active { color: #C98A0A; background: rgba(201,138,10,.1); border-left-color: #C98A0A; font-weight: 500; }
+
+    .content-area { padding: 0 0 80px; }
+
+    /* Table layout */
+    .tbl-hdr { display: none; padding: 0 16px; height: 36px; background: #F8F7F4; border-bottom: 1px solid #E9E6E0; border-top: 1px solid #E9E6E0; }
+    .user-row { display: flex; align-items: center; padding: 0 16px; height: 60px; border-bottom: 1px solid #E9E6E0; background: #fff; cursor: pointer; transition: background 120ms; }
+    .user-row:last-child { border-bottom: none; }
+    .user-row:hover { background: #F8F7F4; }
+    .col-name    { flex: 2; display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .col-email   { display: none; flex: 2; font-size: 13px; color: #7B766D; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .col-role    { flex: 1; display: flex; align-items: center; }
+    .col-status  { flex: 1; display: flex; align-items: center; gap: 5px; }
+    .col-actions { flex: 0 0 90px; display: flex; align-items: center; justify-content: flex-end; }
+    .mob-sub     { font-size: 12px; color: #7B766D; margin-top: 1px; }
+
+    /* Form */
+    .fi { width: 100%; height: 44px; padding: 0 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: #11100E; background: #fff; border: 1px solid #E9E6E0; border-radius: 0; outline: none; transition: border-color 120ms, box-shadow 120ms; }
+    .fi:focus { border-color: #C98A0A; box-shadow: 0 0 0 2px #F8F7F4, 0 0 0 4px #C98A0A; }
+    .lbl { font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; font-weight: 500; color: #5C574F; letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: 5px; }
+
+    /* Buttons */
+    .btn-p { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: #C98A0A; color: #fff; border: 1px solid #C98A0A; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 44px; padding: 0 16px; letter-spacing: -.01em; transition: background 120ms; }
+    .btn-p:hover { background: #A56E08; }
+    .btn-g { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: transparent; color: #11100E; border: 1px solid #D6D2CB; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 16px; letter-spacing: -.01em; transition: background 120ms; }
+    .btn-g:hover { background: rgba(0,0,0,.04); }
+    .btn-sm { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; background: transparent; color: #5C574F; border: 1px solid #D6D2CB; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; height: 30px; padding: 0 10px; letter-spacing: -.01em; transition: all 120ms; gap: 4px; }
+    .btn-sm:hover { background: rgba(0,0,0,.04); }
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; padding: 5px; color: #7B766D; transition: color 120ms; }
+    .btn-icon:hover { color: #11100E; }
+
+    /* Panel */
+    .panel-overlay { position: fixed; inset: 0; background: rgba(17,16,14,.45); z-index: 100; animation: fadein 200ms ease; }
+    .panel { position: fixed; inset: 0; z-index: 110; background: #fff; display: flex; flex-direction: column; animation: slideup 240ms ease; }
+    .p-hdr { height: 56px; display: flex; align-items: center; gap: 8px; padding: 0 20px; border-bottom: 1px solid #E9E6E0; flex-shrink: 0; background: #fff; }
+    .p-body { flex: 1; overflow-y: auto; padding: 24px 20px 0; }
+    .p-foot { padding: 14px 20px 28px; border-top: 1px solid #E9E6E0; display: flex; gap: 10px; flex-shrink: 0; }
+
+    /* Role card */
+    .role-card { border: 1px solid #E9E6E0; padding: 14px; cursor: pointer; transition: border-color 120ms; }
+    .role-card:hover { border-color: #C98A0A; }
+    .role-card-on { border: 2px solid #C98A0A; background: #FEF8E7; padding: 14px; cursor: pointer; }
+
+    /* Desktop overrides */
+    @media (min-width: 1024px) {
+      .sidebar { display: flex; }
+      .main-wrap { margin-left: 220px; height: 100vh; overflow: hidden; }
+      .page-hdr { position: relative; padding: 0 32px; height: 56px; }
+      .content-area { flex: 1; overflow-y: auto; }
+      .tbl-hdr { display: flex; align-items: center; padding: 0 32px; }
+      .user-row { padding: 0 32px; }
+      .col-email { display: flex; align-items: center; }
+      .mob-sub { display: none; }
+      .panel { left: auto; top: 0; right: 0; bottom: 0; width: 400px; animation: fadein 200ms ease; box-shadow: -8px 0 32px rgba(17,16,14,.14); }
+      .mob-only { display: none !important; }
+    }
+  </style>
+</helmet>
+
+<div style="position:relative;min-height:100vh">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div style="padding:20px 18px 16px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+      </div>
+    </div>
+    <nav style="padding:12px 0;flex:1">
+      <a class="nav-item" href="#"><i data-lucide="layout-dashboard" style="width:16px;height:16px;flex-shrink:0"></i>Inicio</a>
+      <a class="nav-item" href="#"><i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy</a>
+      <a class="nav-item" href="#"><i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes</a>
+      <a class="nav-item" href="#"><i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Ventas</a>
+    </nav>
+    <div style="border-top:1px solid #2D2924">
+      <a class="nav-item active" href="#" style="height:42px"><i data-lucide="shield" style="width:15px;height:15px;flex-shrink:0"></i>Usuarios</a>
+    </div>
+    <div style="padding:14px 18px;border-top:1px solid #2D2924;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#1A6629">MV</span>
+      </div>
+      <div style="min-width:0"><div style="font-size:12px;font-weight:500;color:#D6C48A">Martha Vargas</div><div style="font-size:11px;color:#5C574F">Dueña</div></div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN WRAP ── -->
+  <div class="main-wrap">
+
+    <!-- PAGE HEADER -->
+    <header class="page-hdr">
+      <h1 style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Gestión de usuarios</h1>
+      <button class="btn-p" style="height:36px;padding:0 14px;font-size:12px;flex-shrink:0" onClick="{{ setNuevo }}">
+        <i data-lucide="user-plus" style="width:13px;height:13px"></i>Invitar usuario
+      </button>
+    </header>
+
+    <!-- CONTENT AREA -->
+    <div class="content-area">
+
+      <!-- ══ TABLE SECTION (list + confirm) ══ -->
+      <sc-if value="{{ showList }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <!-- Section label -->
+          <div style="padding:18px 16px 12px;display:flex;align-items:center;gap:8px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;letter-spacing:.06em;text-transform:uppercase">3 usuarios</span>
+          </div>
+
+          <!-- Table wrapper -->
+          <div style="background:#fff;border-top:1px solid #E9E6E0;border-bottom:1px solid #E9E6E0;box-shadow:var(--shadow-xs)">
+
+            <!-- Desktop table header -->
+            <div class="tbl-hdr">
+              <div style="flex:2;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase">Usuario</div>
+              <div style="flex:2;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase" class="col-email">Correo electrónico</div>
+              <div style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase">Rol</div>
+              <div style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase">Estado</div>
+              <div style="flex:0 0 90px"></div>
+            </div>
+
+            <!-- Martha Vargas (Dueña, no edit) -->
+            <div class="user-row" style="cursor:default">
+              <div class="col-name">
+                <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">MV</span></div>
+                <div style="min-width:0">
+                  <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Martha Vargas <span style="font-size:11px;color:#A9A49C;font-weight:400">(tú)</span></div>
+                  <div class="mob-sub">martha@empresa.mx</div>
+                </div>
+              </div>
+              <div class="col-email">martha@empresa.mx</div>
+              <div class="col-role"><span style="background:#ECFAED;color:#1A6629;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid rgba(37,145,58,.25)">Dueña</span></div>
+              <div class="col-status"><div style="width:7px;height:7px;background:#25913A;border-radius:9999px;flex-shrink:0"></div><span style="font-size:12px;color:#1A6629;font-weight:500">Activo</span></div>
+              <div class="col-actions"><span style="font-size:11px;color:#D6D2CB;font-family:'IBM Plex Mono',monospace">—</span></div>
+            </div>
+
+            <!-- Carlos Vargas (Vendedor, activo) -->
+            <div class="user-row" onClick="{{ setEditar }}">
+              <div class="col-name">
+                <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">CV</span></div>
+                <div style="min-width:0">
+                  <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Carlos Vargas</div>
+                  <div class="mob-sub">carlos@empresa.mx</div>
+                </div>
+              </div>
+              <div class="col-email">carlos@empresa.mx</div>
+              <div class="col-role"><span style="background:#EEF3FD;color:#2A53A0;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid rgba(58,114,203,.25)">Vendedor</span></div>
+              <div class="col-status"><div style="width:7px;height:7px;background:#25913A;border-radius:9999px;flex-shrink:0"></div><span style="font-size:12px;color:#1A6629;font-weight:500">Activo</span></div>
+              <div class="col-actions">
+                <button class="btn-sm" onClick="{{ setEditar }}"><i data-lucide="pencil" style="width:11px;height:11px"></i>Editar</button>
+              </div>
+            </div>
+
+            <!-- Ana Martínez (Vendedor, inactivo) -->
+            <div class="user-row" style="opacity:.5;cursor:default">
+              <div class="col-name">
+                <div style="width:36px;height:36px;border-radius:9999px;background:#F3F1EC;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#403C35">AM</span></div>
+                <div style="min-width:0">
+                  <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ana Martínez</div>
+                  <div class="mob-sub">ana@empresa.mx</div>
+                </div>
+              </div>
+              <div class="col-email">ana@empresa.mx</div>
+              <div class="col-role"><span style="background:#F3F1EC;color:#5C574F;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid #D6D2CB">Vendedor</span></div>
+              <div class="col-status"><div style="width:7px;height:7px;background:#A9A49C;border-radius:9999px;flex-shrink:0"></div><span style="font-size:12px;color:#7B766D">Inactivo</span></div>
+              <div class="col-actions">
+                <button class="btn-sm" style="opacity:.7"><i data-lucide="pencil" style="width:11px;height:11px"></i>Editar</button>
+              </div>
+            </div>
+
+          </div><!-- /table -->
+        </div>
+      </sc-if>
+
+      <!-- ══ EMPTY STATE (solo Martha) ══ -->
+      <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="padding:18px 16px 12px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;letter-spacing:.06em;text-transform:uppercase">1 usuario</span>
+          </div>
+          <div style="background:#fff;border-top:1px solid #E9E6E0;border-bottom:1px solid #E9E6E0">
+            <div class="tbl-hdr">
+              <div style="flex:2;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase">Usuario</div>
+              <div style="flex:2;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase" class="col-email">Correo electrónico</div>
+              <div style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase">Rol</div>
+              <div style="flex:1;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#A9A49C;letter-spacing:.07em;text-transform:uppercase">Estado</div>
+              <div style="flex:0 0 90px"></div>
+            </div>
+            <div class="user-row" style="cursor:default">
+              <div class="col-name">
+                <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;flex-shrink:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">MV</span></div>
+                <div style="min-width:0"><div style="font-size:14px;font-weight:500;color:#11100E">Martha Vargas <span style="font-size:11px;color:#A9A49C;font-weight:400">(tú)</span></div><div class="mob-sub">martha@empresa.mx</div></div>
+              </div>
+              <div class="col-email">martha@empresa.mx</div>
+              <div class="col-role"><span style="background:#ECFAED;color:#1A6629;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid rgba(37,145,58,.25)">Dueña</span></div>
+              <div class="col-status"><div style="width:7px;height:7px;background:#25913A;border-radius:9999px;flex-shrink:0"></div><span style="font-size:12px;color:#1A6629;font-weight:500">Activo</span></div>
+              <div class="col-actions"><span style="font-size:11px;color:#D6D2CB;font-family:'IBM Plex Mono',monospace">—</span></div>
+            </div>
+          </div>
+          <!-- Empty prompt -->
+          <div style="padding:36px 16px;text-align:center;display:flex;flex-direction:column;align-items:center">
+            <div style="width:52px;height:52px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+              <i data-lucide="users" style="width:24px;height:24px;color:#A9A49C"></i>
+            </div>
+            <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0 0 8px">Invita a tu equipo para empezar</h3>
+            <p style="font-size:13px;color:#7B766D;margin:0 0 20px;line-height:1.6;max-width:280px">Añade a tus vendedores para que gestionen clientes, ventas y seguimientos.</p>
+            <button class="btn-p" style="height:40px;font-size:13px" onClick="{{ setNuevo }}">
+              <i data-lucide="user-plus" style="width:14px;height:14px"></i>Invitar primer usuario
+            </button>
+          </div>
+        </div>
+      </sc-if>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-wrap -->
+
+
+  <!-- ═══ PANEL OVERLAY ═══ -->
+  <div class="panel-overlay" style="{{ overlayStyle }}" onClick="{{ setList }}"></div>
+
+
+  <!-- ═══ PANEL: NUEVO USUARIO ═══ -->
+  <div class="panel" style="{{ panelNuevoStyle }}">
+      <header class="p-hdr">
+        <button class="btn-icon" onClick="{{ setList }}">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Invitar usuario</h2>
+      </header>
+      <div class="p-body">
+
+        <!-- Invite notice -->
+        <div style="background:#FEF8E7;border:1px solid rgba(201,138,10,.25);padding:12px 14px;margin-bottom:22px;display:flex;align-items:flex-start;gap:9px">
+          <i data-lucide="mail" style="width:14px;height:14px;color:#C98A0A;flex-shrink:0;margin-top:1px"></i>
+          <p style="font-size:13px;color:#7E5407;margin:0;line-height:1.55">Se enviará un correo de invitación. El usuario creará su contraseña desde el enlace recibido.</p>
+        </div>
+
+        <!-- Nombre -->
+        <div style="margin-bottom:16px">
+          <label class="lbl">Nombre completo <span style="color:#C98A0A">*</span></label>
+          <input class="fi" type="text" placeholder="Ej. Sofía Ramírez">
+        </div>
+
+        <!-- Correo -->
+        <div style="margin-bottom:20px">
+          <label class="lbl">Correo electrónico <span style="color:#C98A0A">*</span></label>
+          <div style="position:relative">
+            <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none"><i data-lucide="mail" style="width:14px;height:14px;color:#A9A49C"></i></div>
+            <input class="fi" type="email" placeholder="sofia@empresa.mx" style="padding-left:34px">
+          </div>
+        </div>
+
+        <!-- Rol -->
+        <div style="margin-bottom:24px">
+          <label class="lbl" style="margin-bottom:10px">Rol <span style="color:#C98A0A">*</span></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+
+            <!-- Vendedor (active) -->
+            <sc-if value="{{ isVendedorOn }}" hint-placeholder-val="{{ true }}">
+              <div class="role-card-on" onClick="{{ selectVendedor }}">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+                  <div style="width:15px;height:15px;border-radius:9999px;border:2px solid #C98A0A;background:#C98A0A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <div style="width:5px;height:5px;border-radius:9999px;background:#fff"></div>
+                  </div>
+                  <span style="font-size:13px;font-weight:600;color:#7E5407">Vendedor</span>
+                </div>
+                <p style="font-size:12px;color:#7B766D;margin:0;line-height:1.5">Gestiona clientes, ventas y seguimientos.</p>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isVendedorOff }}" hint-placeholder-val="{{ false }}">
+              <div class="role-card" onClick="{{ selectVendedor }}">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+                  <div style="width:15px;height:15px;border-radius:9999px;border:2px solid #D6D2CB;flex-shrink:0"></div>
+                  <span style="font-size:13px;font-weight:600;color:#11100E">Vendedor</span>
+                </div>
+                <p style="font-size:12px;color:#7B766D;margin:0;line-height:1.5">Gestiona clientes, ventas y seguimientos.</p>
+              </div>
+            </sc-if>
+
+            <!-- Dueña (inactive) -->
+            <sc-if value="{{ isDuenoOn }}" hint-placeholder-val="{{ false }}">
+              <div class="role-card-on" onClick="{{ selectDueno }}">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+                  <div style="width:15px;height:15px;border-radius:9999px;border:2px solid #C98A0A;background:#C98A0A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <div style="width:5px;height:5px;border-radius:9999px;background:#fff"></div>
+                  </div>
+                  <span style="font-size:13px;font-weight:600;color:#7E5407">Dueña / Dueño</span>
+                </div>
+                <p style="font-size:12px;color:#7B766D;margin:0;line-height:1.5">Acceso completo: usuarios, reportes y ajustes.</p>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isDuenoOff }}" hint-placeholder-val="{{ true }}">
+              <div class="role-card" onClick="{{ selectDueno }}">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+                  <div style="width:15px;height:15px;border-radius:9999px;border:2px solid #D6D2CB;flex-shrink:0"></div>
+                  <span style="font-size:13px;font-weight:600;color:#11100E">Dueña / Dueño</span>
+                </div>
+                <p style="font-size:12px;color:#7B766D;margin:0;line-height:1.5">Acceso completo: usuarios, reportes y ajustes.</p>
+              </div>
+            </sc-if>
+
+          </div>
+        </div>
+      </div>
+      <div class="p-foot">
+        <button class="btn-g" style="flex:1" onClick="{{ setList }}">Cancelar</button>
+        <button class="btn-p" style="flex:2" onClick="{{ setList }}">
+          <i data-lucide="send" style="width:14px;height:14px"></i>Enviar invitación
+        </button>
+      </div>
+    </div>
+
+
+  <!-- ═══ PANEL: EDITAR USUARIO ═══ -->
+  <div class="panel" style="{{ panelEditarStyle }}">
+      <header class="p-hdr">
+        <button class="btn-icon" onClick="{{ setList }}">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0;flex:1">Editar usuario</h2>
+      </header>
+      <div class="p-body">
+
+        <!-- User mini header -->
+        <div style="display:flex;align-items:center;gap:12px;padding:0 0 18px;border-bottom:1px solid #F3F1EC;margin-bottom:20px">
+          <div style="width:44px;height:44px;border-radius:9999px;background:#FEF8E7;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#7E5407">CV</span>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:500;color:#11100E">Carlos Vargas</div>
+            <div style="font-size:12px;color:#7B766D">carlos@empresa.mx · Activo</div>
+          </div>
+        </div>
+
+        <!-- Nombre -->
+        <div style="margin-bottom:16px">
+          <label class="lbl">Nombre completo</label>
+          <input class="fi" type="text" value="Carlos Vargas" readOnly="">
+        </div>
+
+        <!-- Correo -->
+        <div style="margin-bottom:20px">
+          <label class="lbl">Correo electrónico</label>
+          <div style="position:relative">
+            <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none"><i data-lucide="mail" style="width:14px;height:14px;color:#A9A49C"></i></div>
+            <input class="fi" type="email" value="carlos@empresa.mx" readOnly="" style="padding-left:34px;color:#7B766D;background:#F8F7F4;cursor:not-allowed">
+          </div>
+          <p style="font-size:11px;color:#A9A49C;margin:5px 0 0">El correo no se puede modificar</p>
+        </div>
+
+        <!-- Rol -->
+        <div style="margin-bottom:24px">
+          <label class="lbl" style="margin-bottom:10px">Rol</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <!-- Vendedor (active — Carlos is Vendedor) -->
+            <div class="role-card-on">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+                <div style="width:15px;height:15px;border-radius:9999px;border:2px solid #C98A0A;background:#C98A0A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <div style="width:5px;height:5px;border-radius:9999px;background:#fff"></div>
+                </div>
+                <span style="font-size:13px;font-weight:600;color:#7E5407">Vendedor</span>
+              </div>
+              <p style="font-size:12px;color:#7B766D;margin:0;line-height:1.5">Gestiona clientes, ventas y seguimientos.</p>
+            </div>
+            <!-- Dueña (inactive) -->
+            <div class="role-card">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+                <div style="width:15px;height:15px;border-radius:9999px;border:2px solid #D6D2CB;flex-shrink:0"></div>
+                <span style="font-size:13px;font-weight:600;color:#11100E">Dueña / Dueño</span>
+              </div>
+              <p style="font-size:12px;color:#7B766D;margin:0;line-height:1.5">Acceso completo: usuarios, reportes y ajustes.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Zona peligrosa -->
+        <div style="border-top:1px solid #F3F1EC;padding-top:20px;margin-bottom:4px">
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#A9A49C;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px">Zona de riesgo</p>
+          <p style="font-size:13px;color:#7B766D;margin:0 0 12px;line-height:1.5">Carlos dejará de tener acceso al CRM inmediatamente.</p>
+          <button style="display:flex;align-items:center;gap:7px;height:38px;padding:0 14px;background:transparent;color:#D13B1E;border:1px solid rgba(209,59,30,.3);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;cursor:pointer;letter-spacing:-.01em;border-radius:0;transition:all 120ms" onClick="{{ setConfirm }}">
+            <i data-lucide="user-x" style="width:13px;height:13px"></i>Desactivar usuario
+          </button>
+        </div>
+
+      </div>
+      <div class="p-foot">
+        <button class="btn-g" style="flex:1" onClick="{{ setList }}">Cancelar</button>
+        <button class="btn-p" style="flex:2" onClick="{{ setList }}">
+          <i data-lucide="check" style="width:14px;height:14px"></i>Guardar cambios
+        </button>
+      </div>
+    </div>
+
+
+  <!-- ═══ CONFIRM MODAL ═══ -->
+  <div style="{{ confirmStyle }}">
+      <div style="background:#fff;border:1px solid #E9E6E0;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(17,16,14,.2);animation:popin 220ms ease">
+        <div style="padding:24px 24px 20px">
+          <!-- Icon + title -->
+          <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px">
+            <div style="width:40px;height:40px;border-radius:9999px;background:#FDEEED;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:2px">
+              <i data-lucide="user-x" style="width:18px;height:18px;color:#D13B1E"></i>
+            </div>
+            <div>
+              <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0 0 8px">¿Desactivar a Carlos?</h3>
+              <p style="font-size:14px;color:#11100E;line-height:1.55;margin:0 0 8px"><strong>Carlos Vargas</strong> ya no podrá entrar al CRM desde este momento.</p>
+              <p style="font-size:13px;color:#A9A49C;line-height:1.5;margin:0">Puedes reactivarlo después desde esta misma pantalla.</p>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid #E9E6E0;padding:14px 24px;display:flex;gap:10px">
+          <button class="btn-g" style="flex:1" onClick="{{ setList }}">Cancelar</button>
+          <button style="flex:1;height:44px;background:#D13B1E;color:#fff;border:1px solid #D13B1E;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;letter-spacing:-.01em;border-radius:0;transition:background 120ms" onClick="{{ setList }}">
+            <i data-lucide="user-x" style="width:13px;height:13px"></i>Sí, desactivar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══ STATE SWITCHER ═══ -->
+  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:300;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+    <sc-if value="{{ isListSw }}"    hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setList }}"    style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">LISTA</button></sc-if>
+    <sc-if value="{{ isListSwOff }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setList }}"    style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">LISTA</button></sc-if>
+
+    <sc-if value="{{ isNuevoSw }}"   hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setNuevo }}"  style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">INVITAR</button></sc-if>
+    <sc-if value="{{ isNuevoSwOff }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ setNuevo }}"  style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">INVITAR</button></sc-if>
+
+    <sc-if value="{{ isEditarSw }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEditar }}" style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">EDITAR</button></sc-if>
+    <sc-if value="{{ isEditarSwOff }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ setEditar }}" style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">EDITAR</button></sc-if>
+
+    <sc-if value="{{ isEmptySw }}"   hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmpty }}"  style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">VACÍO</button></sc-if>
+    <sc-if value="{{ isEmptySwOff }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ setEmpty }}"  style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">VACÍO</button></sc-if>
+
+    <sc-if value="{{ isConfirmSw }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setConfirm }}" style="padding:7px 12px;border:none;background:#D13B1E;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CONFIRMAR</button></sc-if>
+    <sc-if value="{{ isConfirmSwOff }}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{ setConfirm }}" style="padding:7px 12px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CONFIRMAR</button></sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}}">
+class Component extends DCLogic {
+  state = { viewState: 'list', selectedRole: 'vendedor' };
+
+  renderVals() {
+    const { viewState, selectedRole } = this.state;
+    const vs = viewState;
+
+    const isPanelOpen = vs === 'nuevo' || vs === 'editar';
+    const showList    = vs === 'list' || vs === 'confirm';
+    const showEmpty   = vs === 'empty';
+    const showNuevo   = vs === 'nuevo';
+    const showEditar  = vs === 'editar';
+    const showConfirm = vs === 'confirm';
+    const showPanelOverlay = isPanelOpen;
+
+    const isVendedorOn  = selectedRole === 'vendedor';
+    const isDuenoOn     = selectedRole === 'dueno';
+
+    const overlayStyle     = showPanelOverlay ? {} : { display: 'none' };
+    const panelNuevoStyle  = showNuevo   ? {} : { display: 'none' };
+    const panelEditarStyle = showEditar  ? {} : { display: 'none' };
+    const confirmStyle     = showConfirm ? {
+      position: 'fixed', inset: 0, background: 'rgba(17,16,14,.55)',
+      zIndex: 200, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', padding: '24px'
+    } : { display: 'none' };
+
+    return {
+      showList, showEmpty, showNuevo, showEditar, showConfirm, showPanelOverlay,
+      overlayStyle, panelNuevoStyle, panelEditarStyle, confirmStyle,
+
+      isVendedorOn, isVendedorOff: !isVendedorOn,
+      isDuenoOn,    isDuenoOff:    !isDuenoOn,
+
+      isListSw:    vs === 'list',    isListSwOff:    vs !== 'list',
+      isNuevoSw:   vs === 'nuevo',   isNuevoSwOff:   vs !== 'nuevo',
+      isEditarSw:  vs === 'editar',  isEditarSwOff:  vs !== 'editar',
+      isEmptySw:   vs === 'empty',   isEmptySwOff:   vs !== 'empty',
+      isConfirmSw: vs === 'confirm', isConfirmSwOff: vs !== 'confirm',
+
+      setList:    () => this.setState({ viewState: 'list'    }),
+      setNuevo:   () => this.setState({ viewState: 'nuevo'   }),
+      setEditar:  () => this.setState({ viewState: 'editar'  }),
+      setEmpty:   () => this.setState({ viewState: 'empty'   }),
+      setConfirm: () => this.setState({ viewState: 'confirm' }),
+
+      selectVendedor: () => this.setState({ selectedRole: 'vendedor' }),
+      selectDueno:    () => this.setState({ selectedRole: 'dueno'    }),
+
+      noop: () => {},
+    };
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  componentDidUpdate() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    @keyframes spin    { to { transform: rotate(360deg); } }
+    @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+
+    /* ── Skeleton ── */
+    .skel {
+      background: linear-gradient(90deg, #F3F1EC 25%, #E9E6E0 50%, #F3F1EC 75%);
+      background-size: 400px 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      border-radius: 2px;
+    }
+
+    /* ── Button base + variants ── */
+    .btn {
+      font-family: 'IBM Plex Mono', monospace; font-weight: 500; letter-spacing: -0.01em;
+      border-radius: 0; cursor: pointer; display: inline-flex; align-items: center;
+      justify-content: center; gap: 6px; transition: background 120ms ease, border-color 120ms ease;
+      white-space: nowrap; user-select: none;
+    }
+    .btn-sm { font-size: 11px; padding: 0 12px; height: 32px; }
+    .btn-md { font-size: 13px; padding: 0 16px; height: 40px; }
+    .btn-lg { font-size: 14px; padding: 0 20px; height: 48px; }
+    .btn-primary    { background:#C98A0A; color:#fff; border:1px solid #C98A0A; }
+    .btn-primary:hover:not(:disabled)    { background:#A56E08; border-color:#A56E08; }
+    .btn-primary:active:not(:disabled)   { background:#7E5407; border-color:#7E5407; }
+    .btn-secondary  { background:transparent; color:#11100E; border:1px solid #D6D2CB; }
+    .btn-secondary:hover:not(:disabled)  { background:rgba(0,0,0,0.04); }
+    .btn-ghost      { background:transparent; color:#11100E; border:1px solid transparent; }
+    .btn-ghost:hover:not(:disabled)      { background:rgba(0,0,0,0.04); }
+    .btn-destructive { background:#D13B1E; color:#fff; border:1px solid #D13B1E; }
+    .btn-destructive:hover:not(:disabled){ background:#9E2B14; border-color:#9E2B14; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Input ── */
+    .inp { outline: none; transition: border-color 120ms ease, box-shadow 120ms ease; font-family: 'IBM Plex Sans', sans-serif; }
+    .inp:focus { border-color: #C98A0A !important; box-shadow: 0 0 0 2px #F8F7F4, 0 0 0 4px #C98A0A; }
+
+    /* ── List rows ── */
+    .lrow { cursor: pointer; transition: background 120ms ease; }
+    .lrow:hover { background: #F3F1EC !important; }
+
+    /* ── Kanban card ── */
+    .kcard { cursor: pointer; transition: box-shadow 120ms ease, transform 120ms ease; }
+    .kcard:hover { box-shadow: 0 4px 12px rgba(30,20,5,.12) !important; transform: translateY(-1px); }
+
+    /* ── Check button ── */
+    .chkbtn { transition: all 120ms ease; }
+    .chkbtn:hover { background:#ECFAED !important; border-color:#25913A !important; color:#25913A !important; }
+
+    /* ── Nav pills ── */
+    .npill { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#7B766D; text-decoration:none;
+      letter-spacing:0.04em; padding:0 14px; height:40px; display:inline-flex; align-items:center;
+      white-space:nowrap; transition:color 120ms,background 120ms; border-bottom:2px solid transparent; }
+    .npill:hover { color:#C98A0A; }
+
+    /* ── Helpers ── */
+    .lbl { font-family:'IBM Plex Sans',sans-serif; font-size:11px; color:#A9A49C; letter-spacing:.04em; text-align:center; }
+    .sec-n { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#A9A49C; letter-spacing:.08em; }
+    .sec-t { font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:600; color:#11100E; letter-spacing:-.02em; margin:4px 0 0; }
+    .subsec { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#7B766D; letter-spacing:.06em; text-transform:uppercase; margin:0 0 14px; }
+    .il { font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:500; color:#5C574F; letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:5px; }
+
+    /* ── FAB hover ── */
+    .fab { transition:background 120ms,transform 120ms,box-shadow 120ms; }
+    .fab:hover { background:#A56E08 !important; transform:scale(1.06); box-shadow:0 6px 18px rgba(201,138,10,.45) !important; }
+  </style>
+</helmet>
+
+<div style="min-height:100vh;background:#F8F7F4">
+
+  <!-- ─── HEADER ─── -->
+  <div style="position:sticky;top:0;z-index:100;background:#181512;border-bottom:1px solid #2D2924">
+    <div style="max-width:1100px;margin:0 auto;padding:0 40px;height:52px;display:flex;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:20px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:7px;height:7px;background:#C98A0A"></div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+        </div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#403C35;letter-spacing:.06em">LIBRERÍA DE COMPONENTES</span>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5C574F">v1.0 · 2026</span>
+    </div>
+  </div>
+
+  <!-- ─── SUB-NAV ─── -->
+  <div style="position:sticky;top:52px;z-index:99;background:#F8F7F4;border-bottom:1px solid #E9E6E0;overflow-x:auto">
+    <div style="max-width:1100px;margin:0 auto;padding:0 40px;display:flex;align-items:center">
+      <a href="#botones"  class="npill">Botones</a>
+      <a href="#inputs"   class="npill">Inputs</a>
+      <a href="#crm"      class="npill">CRM</a>
+      <a href="#badges"   class="npill">Badges</a>
+      <a href="#util"     class="npill">Utilidades</a>
+      <a href="#empty"    class="npill">Vacíos</a>
+      <a href="#skeleton" class="npill">Skeleton</a>
+      <a href="#toast"    class="npill">Toast</a>
+      <a href="#sheet"    class="npill">Bottom Sheet</a>
+      <a href="#avatares" class="npill">Avatares</a>
+    </div>
+  </div>
+
+  <!-- ─── CONTENT ─── -->
+  <div style="max-width:1100px;margin:0 auto;padding:56px 40px 120px">
+
+    <!-- ════ 01 BOTONES ════ -->
+    <section id="botones" style="margin-bottom:64px">
+      <span class="sec-n">01</span>
+      <h2 class="sec-t">Botones</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+
+      <!-- Matriz variantes × tamaños -->
+      <p class="subsec">Variantes · Tamaños</p>
+      <div style="border:1px solid #E9E6E0;display:grid;grid-template-columns:90px repeat(3,1fr);margin-bottom:28px;overflow:hidden">
+        <div style="padding:10px 12px;background:#F3F1EC;border-right:1px solid #E9E6E0"></div>
+        <div style="padding:10px 12px;background:#F3F1EC;border-right:1px solid #E9E6E0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7B766D;letter-spacing:.04em">Pequeño · 32px</div>
+        <div style="padding:10px 12px;background:#F3F1EC;border-right:1px solid #E9E6E0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7B766D;letter-spacing:.04em">Mediano · 40px</div>
+        <div style="padding:10px 12px;background:#F3F1EC;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7B766D;letter-spacing:.04em">Grande · 48px</div>
+
+        <div style="padding:12px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;font-size:12px;color:#5C574F;display:flex;align-items:center">Primario</div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-sm btn-primary">Guardar</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-md btn-primary">Guardar</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-lg btn-primary">Guardar</button></div>
+
+        <div style="padding:12px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;font-size:12px;color:#5C574F;display:flex;align-items:center">Secundario</div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-sm btn-secondary">Cancelar</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-md btn-secondary">Cancelar</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-lg btn-secondary">Cancelar</button></div>
+
+        <div style="padding:12px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;font-size:12px;color:#5C574F;display:flex;align-items:center">Ghost</div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-sm btn-ghost">Ver más</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-md btn-ghost">Ver más</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-lg btn-ghost">Ver más</button></div>
+
+        <div style="padding:12px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;font-size:12px;color:#5C574F;display:flex;align-items:center">Destructivo</div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-sm btn-destructive">Eliminar</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;border-right:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-md btn-destructive">Eliminar</button></div>
+        <div style="padding:12px 16px;border-top:1px solid #E9E6E0;background:#fff;display:flex;align-items:center"><button class="btn btn-lg btn-destructive">Eliminar</button></div>
+      </div>
+
+      <!-- Estados -->
+      <p class="subsec">Estados · Primario mediano</p>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <button class="btn btn-md btn-primary">Guardar</button>
+          <span class="lbl">Default</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <button class="btn btn-md" style="background:#A56E08;color:#fff;border:1px solid #A56E08;cursor:default">Guardar</button>
+          <span class="lbl">Hover</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <button class="btn btn-md" style="background:#7E5407;color:#fff;border:1px solid #7E5407;cursor:default">Guardar</button>
+          <span class="lbl">Presionado</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <button class="btn btn-md btn-primary" disabled="">Guardar</button>
+          <span class="lbl">Deshabilitado</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <button class="btn btn-md btn-primary" style="opacity:1;cursor:default">
+            <div style="width:13px;height:13px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:9999px;animation:spin 600ms linear infinite;flex-shrink:0"></div>
+            Guardando...
+          </button>
+          <span class="lbl">Cargando</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 02 INPUTS ════ -->
+    <section id="inputs" style="margin-bottom:64px">
+      <span class="sec-n">02</span>
+      <h2 class="sec-t">Inputs de formulario</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+
+      <!-- Tipos -->
+      <p class="subsec">Tipos</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;margin-bottom:32px">
+        <div>
+          <label class="il">Nombre</label>
+          <input class="inp" type="text" placeholder="Marcos López" style="width:100%;height:36px;padding:0 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0">
+        </div>
+        <div>
+          <label class="il">Correo electrónico</label>
+          <div style="position:relative">
+            <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex">
+              <i data-lucide="mail" style="width:14px;height:14px;color:#A9A49C"></i>
+            </div>
+            <input class="inp" type="email" placeholder="carlos@empresa.mx" style="width:100%;height:36px;padding:0 12px 0 33px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0">
+          </div>
+        </div>
+        <div>
+          <label class="il">Teléfono</label>
+          <div style="position:relative">
+            <div style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;display:flex">
+              <i data-lucide="phone" style="width:14px;height:14px;color:#A9A49C"></i>
+            </div>
+            <input class="inp" type="tel" placeholder="+52 55 1234 5678" style="width:100%;height:36px;padding:0 12px 0 33px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0">
+          </div>
+        </div>
+        <div>
+          <label class="il">Etapa</label>
+          <div style="position:relative">
+            <select class="inp" style="width:100%;height:36px;padding:0 32px 0 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0;appearance:none;cursor:pointer">
+              <option>Interesado</option><option selected="">Cotizado</option><option>Cerrado</option>
+            </select>
+            <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none">
+              <i data-lucide="chevron-down" style="width:14px;height:14px;color:#7B766D"></i>
+            </div>
+          </div>
+        </div>
+        <div style="grid-column:span 2">
+          <label class="il">Notas</label>
+          <textarea class="inp" placeholder="Interesado en el plan empresarial. Solicita demo la próxima semana..." style="width:100%;height:80px;padding:10px 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0;resize:vertical;line-height:1.5"></textarea>
+        </div>
+      </div>
+
+      <!-- Estados -->
+      <p class="subsec">Estados</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:20px">
+        <div>
+          <div style="font-size:11px;color:#7B766D;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:'IBM Plex Mono',monospace">Default</div>
+          <label class="il">Empresa</label>
+          <input class="inp" type="text" placeholder="Nombre de empresa" style="width:100%;height:36px;padding:0 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#C98A0A;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:'IBM Plex Mono',monospace">Enfocado</div>
+          <label class="il">Empresa</label>
+          <input type="text" value="Tech Solutions MX" readOnly="" style="width:100%;height:36px;padding:0 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #C98A0A;border-radius:0;outline:none;box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#D13B1E;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:'IBM Plex Mono',monospace">Error</div>
+          <label class="il">Empresa</label>
+          <input type="text" value="" placeholder="Requerido" readOnly="" style="width:100%;height:36px;padding:0 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #D13B1E;border-radius:0;outline:none">
+          <p style="margin:4px 0 0;font-size:12px;color:#D13B1E;line-height:1.4">Campo requerido — ingresa el nombre</p>
+        </div>
+        <div>
+          <div style="font-size:11px;color:#7B766D;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;font-family:'IBM Plex Mono',monospace">Deshabilitado</div>
+          <label class="il">Empresa</label>
+          <input type="text" value="Tech Solutions MX" disabled="" style="width:100%;height:36px;padding:0 12px;font-size:14px;color:#A9A49C;background:#F3F1EC;border:1px solid #E9E6E0;border-radius:0;cursor:not-allowed;opacity:.7">
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 03 COMPONENTES CRM ════ -->
+    <section id="crm" style="margin-bottom:64px">
+      <span class="sec-n">03</span>
+      <h2 class="sec-t">Componentes CRM</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-bottom:32px">
+        <!-- Lista clientes -->
+        <div>
+          <p class="subsec">Tarjeta de cliente · Lista</p>
+          <div style="background:#fff;border:1px solid #E9E6E0;box-shadow:var(--shadow-xs)">
+            <div class="lrow" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #E9E6E0">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">ML</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Marcos López</div>
+                <div style="font-size:12px;color:#7B766D">+52 55 1234 5678</div>
+              </div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <div class="lrow" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #E9E6E0">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#EEF3FD;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#2A53A0">AP</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ana Pérez</div>
+                <div style="font-size:12px;color:#7B766D">+52 33 9876 5432</div>
+              </div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <div class="lrow" style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#F3F1EC">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">JR</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Juan Ramírez</div>
+                <div style="font-size:12px;color:#7B766D">+52 81 2345 6789</div>
+              </div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <div style="padding:5px 14px;background:#F8F7F4;border-top:1px solid #E9E6E0">
+              <span style="font-size:11px;color:#A9A49C;font-style:italic">3ra fila: estado hover</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kanban cards -->
+        <div>
+          <p class="subsec">Tarjeta de oportunidad · Kanban</p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div class="kcard" style="width:186px;background:#fff;border:1px solid #E9E6E0;padding:14px;box-shadow:var(--shadow-sm)">
+              <div style="font-size:13px;font-weight:500;color:#11100E;margin-bottom:2px">Marcos López</div>
+              <div style="font-size:12px;color:#7B766D;margin-bottom:12px">CRM empresarial</div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#11100E">$45.000</span>
+                <span style="background:#FEF6E4;color:#8F6010;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid rgba(198,138,16,.25)">Cotizado</span>
+              </div>
+            </div>
+            <div class="kcard" style="width:186px;background:#fff;border:1px solid #E9E6E0;padding:14px;box-shadow:var(--shadow-sm)">
+              <div style="font-size:13px;font-weight:500;color:#11100E;margin-bottom:2px">Ana Pérez</div>
+              <div style="font-size:12px;color:#7B766D;margin-bottom:12px">Consultoría digital</div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#11100E">$28.500</span>
+                <span style="background:#EEF3FD;color:#2A53A0;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid rgba(58,114,203,.25)">Interesado</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Follow-ups -->
+      <p class="subsec">Ítem de seguimiento · Pantalla Hoy</p>
+      <div style="background:#fff;border:1px solid #E9E6E0;max-width:600px;box-shadow:var(--shadow-xs)">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #E9E6E0">
+          <div style="width:32px;height:32px;border-radius:9999px;background:#FEF8E7;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#7E5407">ML</span>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:#11100E">Marcos López</div>
+            <div style="font-size:12px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Llamar para cierre de contrato</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-right:10px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#D13B1E;font-weight:500">Hace 2 días</div>
+            <div style="font-size:11px;color:#D13B1E;letter-spacing:.04em;text-transform:uppercase;margin-top:1px">Vencido</div>
+          </div>
+          <button class="chkbtn" style="height:32px;padding:0 12px;background:transparent;border:1px solid #D6D2CB;border-radius:0;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:#5C574F;cursor:pointer;display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <i data-lucide="check" style="width:12px;height:12px"></i>Hecho
+          </button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+          <div style="width:32px;height:32px;border-radius:9999px;background:#EEF3FD;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#2A53A0">AP</span>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:500;color:#11100E">Ana Pérez</div>
+            <div style="font-size:12px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Enviar propuesta revisada</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-right:10px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7B766D;font-weight:500">Hoy</div>
+          </div>
+          <button class="chkbtn" style="height:32px;padding:0 12px;background:transparent;border:1px solid #D6D2CB;border-radius:0;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:#5C574F;cursor:pointer;display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <i data-lucide="check" style="width:12px;height:12px"></i>Hecho
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 04 BADGES ════ -->
+    <section id="badges" style="margin-bottom:64px">
+      <span class="sec-n">04</span>
+      <h2 class="sec-t">Badges de etapa</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#EEF3FD;color:#2A53A0;font-size:12px;font-weight:500;padding:3px 10px;border-radius:2px;border:1px solid rgba(58,114,203,.25)">Interesado</span>
+          <span class="lbl">Interesado</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#FEF6E4;color:#8F6010;font-size:12px;font-weight:500;padding:3px 10px;border-radius:2px;border:1px solid rgba(198,138,16,.25)">Cotizado</span>
+          <span class="lbl">Cotizado</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#FEF8E7;color:#7E5407;font-size:12px;font-weight:500;padding:3px 10px;border-radius:2px;border:1px solid rgba(201,138,10,.25)">Negociando</span>
+          <span class="lbl">Negociando</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#ECFAED;color:#1A6629;font-size:12px;font-weight:500;padding:3px 10px;border-radius:2px;border:1px solid rgba(37,145,58,.25)">Cerrado</span>
+          <span class="lbl">Cerrado</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#FDEEED;color:#9E2B14;font-size:12px;font-weight:500;padding:3px 10px;border-radius:2px;border:1px solid rgba(209,59,30,.25)">Perdido</span>
+          <span class="lbl">Perdido</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#F3F1EC;color:#5C574F;font-size:12px;font-weight:500;padding:3px 10px;border-radius:2px;border:1px solid #D6D2CB">Pausado</span>
+          <span class="lbl">Pausado</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#ECFAED;color:#1A6629;font-size:12px;font-weight:500;padding:3px 10px;border-radius:2px;border:1px solid rgba(37,145,58,.25);display:flex;align-items:center;gap:6px">
+            <span style="width:6px;height:6px;background:#25913A;border-radius:9999px;flex-shrink:0"></span>Cerrado
+          </span>
+          <span class="lbl">Con punto</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px">
+          <span style="background:#EEF3FD;color:#2A53A0;font-size:11px;font-weight:500;padding:1px 8px;border-radius:2px;border:1px solid rgba(58,114,203,.25)">Interesado</span>
+          <span class="lbl">Small</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 05 UTILIDADES ════ -->
+    <section id="util" style="margin-bottom:64px">
+      <span class="sec-n">05</span>
+      <h2 class="sec-t">Utilidades</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:48px;align-items:start">
+        <div>
+          <p class="subsec">Barra de búsqueda</p>
+          <div style="position:relative;margin-bottom:12px">
+            <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none">
+              <i data-lucide="search" style="width:16px;height:16px;color:#A9A49C"></i>
+            </div>
+            <input class="inp" type="search" placeholder="Buscar clientes, oportunidades, actividades..." style="width:100%;height:42px;padding:0 44px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0">
+            <button style="position:absolute;right:0;top:0;height:100%;width:42px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C9C4BB">
+              <i data-lucide="x" style="width:14px;height:14px"></i>
+            </button>
+          </div>
+          <div style="position:relative">
+            <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none">
+              <i data-lucide="search" style="width:16px;height:16px;color:#C98A0A"></i>
+            </div>
+            <input type="text" value="Marcos López" readOnly="" style="width:100%;height:42px;padding:0 44px;font-size:14px;color:#11100E;background:#fff;border:1px solid #C98A0A;border-radius:0;outline:none;box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A">
+            <button style="position:absolute;right:0;top:0;height:100%;width:42px;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7B766D">
+              <i data-lucide="x" style="width:14px;height:14px"></i>
+            </button>
+          </div>
+          <p style="font-size:11px;color:#A9A49C;margin:6px 0 0;font-style:italic">2do: con valor · estado enfocado</p>
+        </div>
+        <div>
+          <p class="subsec">FAB</p>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+            <div class="fab" style="width:56px;height:56px;border-radius:9999px;background:#C98A0A;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(201,138,10,.35);cursor:pointer">
+              <i data-lucide="plus" style="width:24px;height:24px;color:#fff"></i>
+            </div>
+            <span class="lbl">56 × 56 px</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 06 ESTADOS VACÍOS ════ -->
+    <section id="empty" style="margin-bottom:64px">
+      <span class="sec-n">06</span>
+      <h2 class="sec-t">Estados vacíos</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
+        <div style="background:#fff;border:1px solid #E9E6E0;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:var(--shadow-xs)">
+          <div style="width:48px;height:48px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+            <i data-lucide="users" style="width:22px;height:22px;color:#A9A49C"></i>
+          </div>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#11100E;margin:0 0 6px;letter-spacing:-.01em">Sin clientes todavía</h3>
+          <p style="font-size:13px;color:#7B766D;margin:0 0 20px;line-height:1.5">Agrega tu primer contacto para empezar a gestionar tus ventas.</p>
+          <button class="btn btn-sm btn-primary">
+            <i data-lucide="plus" style="width:12px;height:12px"></i>Agregar cliente
+          </button>
+        </div>
+        <div style="background:#fff;border:1px solid #E9E6E0;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:var(--shadow-xs)">
+          <div style="width:48px;height:48px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+            <i data-lucide="briefcase" style="width:22px;height:22px;color:#A9A49C"></i>
+          </div>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#11100E;margin:0 0 6px;letter-spacing:-.01em">Sin oportunidades</h3>
+          <p style="font-size:13px;color:#7B766D;margin:0 0 20px;line-height:1.5">Comienza creando tu primera oportunidad de venta.</p>
+          <button class="btn btn-sm btn-secondary">
+            <i data-lucide="plus" style="width:12px;height:12px"></i>Nueva oportunidad
+          </button>
+        </div>
+        <div style="background:#fff;border:1px solid #E9E6E0;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;box-shadow:var(--shadow-xs)">
+          <div style="width:48px;height:48px;background:#ECFAED;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+            <i data-lucide="check-circle-2" style="width:22px;height:22px;color:#25913A"></i>
+          </div>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#11100E;margin:0 0 6px;letter-spacing:-.01em">Todo al dia</h3>
+          <p style="font-size:13px;color:#7B766D;margin:0;line-height:1.5">No tienes actividades pendientes. Excelente trabajo.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 07 SKELETON ════ -->
+    <section id="skeleton" style="margin-bottom:64px">
+      <span class="sec-n">07</span>
+      <h2 class="sec-t">Skeleton loader</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+      <div style="background:#fff;border:1px solid #E9E6E0;max-width:480px;box-shadow:var(--shadow-xs)">
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #E9E6E0">
+          <div class="skel" style="width:36px;height:36px;border-radius:9999px;flex-shrink:0"></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+            <div class="skel" style="height:12px;width:55%"></div>
+            <div class="skel" style="height:10px;width:35%"></div>
+          </div>
+          <div class="skel" style="width:14px;height:14px;border-radius:2px"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #E9E6E0">
+          <div class="skel" style="width:36px;height:36px;border-radius:9999px;flex-shrink:0"></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+            <div class="skel" style="height:12px;width:70%"></div>
+            <div class="skel" style="height:10px;width:45%"></div>
+          </div>
+          <div class="skel" style="width:14px;height:14px;border-radius:2px"></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px">
+          <div class="skel" style="width:36px;height:36px;border-radius:9999px;flex-shrink:0"></div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+            <div class="skel" style="height:12px;width:40%"></div>
+            <div class="skel" style="height:10px;width:60%"></div>
+          </div>
+          <div class="skel" style="width:14px;height:14px;border-radius:2px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 08 TOAST ════ -->
+    <section id="toast" style="margin-bottom:64px">
+      <span class="sec-n">08</span>
+      <h2 class="sec-t">Toast</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+      <div style="display:flex;flex-direction:column;gap:8px;max-width:440px">
+        <div style="display:flex;align-items:center;gap:12px;background:#ECFAED;border:1px solid rgba(37,145,58,.25);padding:12px 14px;box-shadow:var(--shadow-md)">
+          <div style="width:20px;height:20px;background:#25913A;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i data-lucide="check" style="width:12px;height:12px;color:#fff"></i>
+          </div>
+          <span style="font-size:13px;color:#1A6629;flex:1;line-height:1.4">Contacto guardado correctamente.</span>
+          <button style="background:none;border:none;cursor:pointer;padding:2px;display:flex;color:#7B766D"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:#FDEEED;border:1px solid rgba(209,59,30,.25);padding:12px 14px;box-shadow:var(--shadow-md)">
+          <div style="width:20px;height:20px;background:#D13B1E;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i data-lucide="x" style="width:12px;height:12px;color:#fff"></i>
+          </div>
+          <span style="font-size:13px;color:#9E2B14;flex:1;line-height:1.4">Error al guardar. Verifica tu conexión.</span>
+          <button style="background:none;border:none;cursor:pointer;padding:2px;display:flex;color:#7B766D"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:#EEF3FD;border:1px solid rgba(58,114,203,.25);padding:12px 14px;box-shadow:var(--shadow-md)">
+          <div style="width:20px;height:20px;background:#3A72CB;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i data-lucide="info" style="width:12px;height:12px;color:#fff"></i>
+          </div>
+          <span style="font-size:13px;color:#2A53A0;flex:1;line-height:1.4">Sincronizando datos del servidor...</span>
+          <button style="background:none;border:none;cursor:pointer;padding:2px;display:flex;color:#7B766D"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;background:#FEF6E4;border:1px solid rgba(198,138,16,.25);padding:12px 14px;box-shadow:var(--shadow-md)">
+          <div style="width:20px;height:20px;background:#C68A10;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i data-lucide="alert-triangle" style="width:12px;height:12px;color:#fff"></i>
+          </div>
+          <span style="font-size:13px;color:#8F6010;flex:1;line-height:1.4">Sin conexión — los cambios se guardarán al reconectar.</span>
+          <button style="background:none;border:none;cursor:pointer;padding:2px;display:flex;color:#7B766D"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 09 BOTTOM SHEET ════ -->
+    <section id="sheet" style="margin-bottom:64px">
+      <span class="sec-n">09</span>
+      <h2 class="sec-t">Bottom Sheet</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+      <div style="max-width:400px">
+        <div style="background:#fff;border:1px solid #E9E6E0;box-shadow:0 -4px 24px rgba(30,20,5,.1)">
+          <div style="display:flex;justify-content:center;padding:12px 0 8px">
+            <div style="width:32px;height:4px;background:#D6D2CB;border-radius:9999px"></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 20px 14px">
+            <h3 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#11100E;margin:0;letter-spacing:-.01em">Agregar actividad</h3>
+            <button style="background:none;border:none;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#7B766D">
+              <i data-lucide="x" style="width:16px;height:16px"></i>
+            </button>
+          </div>
+          <div style="height:1px;background:#E9E6E0;margin-bottom:16px"></div>
+          <div style="padding:0 20px">
+            <div style="margin-bottom:14px">
+              <label class="il">Tipo de actividad</label>
+              <div style="position:relative">
+                <select style="width:100%;height:36px;padding:0 32px 0 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0;appearance:none;cursor:pointer;font-family:'IBM Plex Sans',sans-serif">
+                  <option selected="">Llamada de seguimiento</option><option>Demo</option><option>Correo</option>
+                </select>
+                <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none">
+                  <i data-lucide="chevron-down" style="width:14px;height:14px;color:#7B766D"></i>
+                </div>
+              </div>
+            </div>
+            <div style="margin-bottom:18px">
+              <label class="il">Nota</label>
+              <textarea style="width:100%;height:64px;padding:10px 12px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0;resize:none;line-height:1.5;outline:none;font-family:'IBM Plex Sans',sans-serif" placeholder="Confirmar presentación del jueves..."></textarea>
+            </div>
+          </div>
+          <div style="height:1px;background:#E9E6E0"></div>
+          <div style="display:flex;gap:10px;padding:14px 20px">
+            <button class="btn btn-md btn-secondary" style="flex:1">Cancelar</button>
+            <button class="btn btn-md btn-primary" style="flex:1">
+              <i data-lucide="check" style="width:13px;height:13px"></i>Guardar
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════ 10 AVATARES ════ -->
+    <section id="avatares" style="margin-bottom:64px">
+      <span class="sec-n">10</span>
+      <h2 class="sec-t">Avatares</h2>
+      <div style="border-top:2px solid #C98A0A;margin:16px 0 28px"></div>
+      <p class="subsec">Colores · Mediano 36px</p>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;margin-bottom:32px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">ML</span></div>
+          <span class="lbl">Ámbar</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#2A53A0">AP</span></div>
+          <span class="lbl">Azul</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">JR</span></div>
+          <span class="lbl">Verde</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;border-radius:9999px;background:#FEF6E4;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#8F6010">CG</span></div>
+          <span class="lbl">Naranja</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;border-radius:9999px;background:#F3F1EC;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#403C35">VL</span></div>
+          <span class="lbl">Neutro</span>
+        </div>
+      </div>
+      <p class="subsec">Tamaños</p>
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-end">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:24px;height:24px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#7E5407">ML</span></div>
+          <span class="lbl">xs · 24</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#2A53A0">ML</span></div>
+          <span class="lbl">sm · 32</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">ML</span></div>
+          <span class="lbl">md · 36</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:48px;height:48px;border-radius:9999px;background:#FEF6E4;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:#8F6010">ML</span></div>
+          <span class="lbl">lg · 48</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:64px;height:64px;border-radius:9999px;background:#F3F1EC;display:flex;align-items:center;justify-content:center"><span style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:#403C35">ML</span></div>
+          <span class="lbl">xl · 64</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-left:12px;border-left:1px solid #E9E6E0;padding-left:24px">
+          <div style="display:flex">
+            <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;border:2px solid #F8F7F4;display:flex;align-items:center;justify-content:center;z-index:4"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">ML</span></div>
+            <div style="width:36px;height:36px;border-radius:9999px;background:#EEF3FD;border:2px solid #F8F7F4;display:flex;align-items:center;justify-content:center;margin-left:-10px;z-index:3"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#2A53A0">AP</span></div>
+            <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;border:2px solid #F8F7F4;display:flex;align-items:center;justify-content:center;margin-left:-10px;z-index:2"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">JR</span></div>
+            <div style="width:36px;height:36px;border-radius:9999px;background:#F3F1EC;border:2px solid #F8F7F4;display:flex;align-items:center;justify-content:center;margin-left:-10px;z-index:1"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:#5C574F">+5</span></div>
+          </div>
+          <span class="lbl">Grupo</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1200, &quot;height&quot;: 900}}">
+class Component extends DCLogic {
+  renderVals() { return {}; }
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>

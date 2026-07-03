@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { font-family: 'IBM Plex Sans', sans-serif; }
+
+    .frame-lbl { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: #7B766D; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+    .frame-card { background: #fff; border: 1px solid #E9E6E0; box-shadow: 0 2px 8px rgba(0,0,0,.07); overflow: hidden; }
+
+    /* Sidebar nav items */
+    .si { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 20px; font-size: 13px; color: #7B766D; cursor: pointer; transition: color 120ms, background 120ms; border-left: 3px solid transparent; text-decoration: none; }
+    .si:hover { color: #D6C48A; background: rgba(255,255,255,.04); }
+    .si.on { color: #C98A0A; background: rgba(201,138,10,.13); border-left-color: #C98A0A; font-weight: 500; }
+
+    /* Tab button */
+    .tb { flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: none; border: none; cursor: pointer; padding: 0 0 3px; position: relative; }
+
+    /* List rows */
+    .lr { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid #E9E6E0; background: #fff; cursor: pointer; }
+    .lr:last-child { border-bottom: none; }
+    .lr:hover { background: #F8F7F4; }
+
+    /* Flow diagram */
+    .fb { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; font-size: 12px; font-weight: 600; white-space: nowrap; font-family: 'IBM Plex Sans', sans-serif; }
+    .frow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .farr { color: #A9A49C; font-size: 16px; line-height: 1; }
+    .flbl { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; color: #A9A49C; letter-spacing: .08em; text-transform: uppercase; }
+  </style>
+</helmet>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- FRAME 01 · Móvil — FAB esquina (elegido)         -->
+<!-- ════════════════════════════════════════════════ -->
+<div style="position:absolute;left:60px;top:60px;width:360px">
+  <div data-drags-parent="1" class="frame-lbl">
+    <span>01 · Móvil — FAB esquina</span>
+    <span style="background:#ECFAED;color:#1A6629;font-size:9px;font-weight:700;padding:2px 7px;border-radius:2px;border:1px solid rgba(37,145,58,.25);letter-spacing:.06em">✓ ELEGIDO</span>
+  </div>
+  <div class="frame-card" style="position:relative;height:640px">
+
+    <div style="height:24px;background:#F8F7F4;display:flex;align-items:center;justify-content:space-between;padding:0 14px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#11100E">9:41</span>
+      <div style="display:flex;align-items:center;gap:3px">
+        <i data-lucide="signal" style="width:11px;height:11px;color:#11100E"></i>
+        <i data-lucide="wifi" style="width:11px;height:11px;color:#11100E"></i>
+        <i data-lucide="battery" style="width:13px;height:13px;color:#11100E"></i>
+      </div>
+    </div>
+
+    <div style="height:50px;background:#fff;border-bottom:1px solid #E9E6E0;display:flex;align-items:center;padding:0 16px;gap:10px">
+      <h1 style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0;flex:1">Clientes</h1>
+      <div style="width:28px;height:28px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#1A6629">MV</span>
+      </div>
+    </div>
+
+    <div style="padding:10px 14px 6px;background:#F8F7F4;border-bottom:1px solid #E9E6E0">
+      <div style="background:#fff;border:1px solid #E9E6E0;height:34px;display:flex;align-items:center;padding:0 10px;gap:7px">
+        <i data-lucide="search" style="width:13px;height:13px;color:#A9A49C;flex-shrink:0"></i>
+        <span style="font-size:12px;color:#C9C4BB">Buscar por nombre...</span>
+      </div>
+    </div>
+
+    <div style="background:#fff">
+      <div class="lr"><div style="width:32px;height:32px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#7E5407">AG</span></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:#11100E">Ana García</div><div style="font-size:11px;color:#7B766D">+52 55 1234 5678</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C;flex-shrink:0"></i></div>
+      <div class="lr"><div style="width:32px;height:32px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#2A53A0">CM</span></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:#11100E">Carlos Mendoza</div><div style="font-size:11px;color:#7B766D">+52 33 9876 5432</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C;flex-shrink:0"></i></div>
+      <div class="lr"><div style="width:32px;height:32px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#1A6629">DL</span></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:#11100E">Diana López</div><div style="font-size:11px;color:#7B766D">+52 81 2345 6789</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C;flex-shrink:0"></i></div>
+      <div class="lr"><div style="width:32px;height:32px;border-radius:9999px;background:#FEF6E4;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#8F6010">ER</span></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:#11100E">Eduardo Ruiz</div><div style="font-size:11px;color:#7B766D">+52 55 3456 7890</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C;flex-shrink:0"></i></div>
+      <div class="lr"><div style="width:32px;height:32px;border-radius:9999px;background:#F3F1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#403C35">FC</span></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:#11100E">Fernanda Castro</div><div style="font-size:11px;color:#7B766D">+52 33 4567 8901</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C;flex-shrink:0"></i></div>
+      <div class="lr"><div style="width:32px;height:32px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#7E5407">GH</span></div><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:#11100E">Gonzalo Herrera</div><div style="font-size:11px;color:#7B766D">+52 81 5678 9012</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C;flex-shrink:0"></i></div>
+    </div>
+
+    <div style="position:absolute;bottom:56px;left:0;right:0;height:56px;background:linear-gradient(transparent,rgba(255,255,255,.95));pointer-events:none;z-index:5"></div>
+
+    <!-- FAB corner -->
+    <div style="position:absolute;right:14px;bottom:72px;width:56px;height:56px;border-radius:9999px;background:#C98A0A;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(201,138,10,.5);z-index:20;cursor:pointer">
+      <i data-lucide="plus" style="width:24px;height:24px;color:#fff"></i>
+    </div>
+
+    <!-- TAB BAR — Option B: 4 tabs -->
+    <div style="position:absolute;bottom:0;left:0;right:0;height:56px;background:#fff;border-top:1px solid #E9E6E0;display:flex;align-items:center;z-index:10">
+      <button class="tb"><i data-lucide="layout-dashboard" style="width:20px;height:20px;color:#A9A49C"></i><span style="font-size:10px;color:#A9A49C;font-family:'IBM Plex Sans',sans-serif">Inicio</span></button>
+      <button class="tb">
+        <div style="position:relative;display:inline-flex">
+          <i data-lucide="clock" style="width:20px;height:20px;color:#A9A49C"></i>
+          <span style="position:absolute;top:-5px;right:-9px;background:#D13B1E;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;min-width:15px;height:15px;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;padding:0 2px">5</span>
+        </div>
+        <span style="font-size:10px;color:#A9A49C;font-family:'IBM Plex Sans',sans-serif">Hoy</span>
+      </button>
+      <button class="tb">
+        <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:3px;background:#C98A0A;border-radius:0 0 3px 3px"></div>
+        <i data-lucide="users" style="width:20px;height:20px;color:#C98A0A"></i>
+        <span style="font-size:10px;color:#C98A0A;font-weight:500;font-family:'IBM Plex Sans',sans-serif">Clientes</span>
+      </button>
+      <button class="tb"><i data-lucide="briefcase" style="width:20px;height:20px;color:#A9A49C"></i><span style="font-size:10px;color:#A9A49C;font-family:'IBM Plex Sans',sans-serif">Ventas</span></button>
+    </div>
+
+  </div>
+  <div style="margin-top:8px;font-size:11px;color:#7B766D;line-height:1.5;font-family:'IBM Plex Sans',sans-serif">FAB fijo esquina inferior-derecha — patrón elegido</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- FRAME 2 · Escritorio — Sidebar expandida        -->
+<!-- ════════════════════════════════════════════════ -->
+<div style="position:absolute;left:900px;top:60px;width:980px">
+  <div data-drags-parent="1" class="frame-lbl">
+    <span>02 · Escritorio — Sidebar expandida (240px)</span>
+    <span style="color:#A9A49C;font-weight:400">980 × 580</span>
+  </div>
+  <div class="frame-card" style="display:flex;height:580px">
+
+    <!-- SIDEBAR 240px -->
+    <div style="width:240px;flex-shrink:0;background:#181512;display:flex;flex-direction:column;border-right:1px solid #2D2924;height:100%">
+
+      <!-- Logo -->
+      <div style="height:60px;padding:0 20px;display:flex;align-items:center;gap:9px;border-bottom:1px solid #2D2924;flex-shrink:0">
+        <div style="width:8px;height:8px;background:#C98A0A;flex-shrink:0"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:#C98A0A;letter-spacing:.01em">SolarCRM</span>
+      </div>
+
+      <!-- Nav -->
+      <nav style="padding:10px 0;flex:1;overflow:hidden">
+        <a class="si" href="#"><i data-lucide="layout-dashboard" style="width:16px;height:16px;flex-shrink:0"></i>Inicio</a>
+        <a class="si" href="#" style="position:relative">
+          <i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy
+          <span style="margin-left:auto;background:#D13B1E;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;min-width:18px;height:18px;border-radius:9999px;display:flex;align-items:center;justify-content:center;padding:0 4px">5</span>
+        </a>
+        <a class="si on" href="#"><i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes</a>
+        <a class="si" href="#"><i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Ventas</a>
+        <a class="si" href="#" style="margin-top:4px;opacity:.6"><i data-lucide="bar-chart-2" style="width:16px;height:16px;flex-shrink:0"></i>Reportes</a>
+      </nav>
+
+      <!-- Bottom section -->
+      <div style="border-top:1px solid #2D2924;flex-shrink:0">
+        <!-- User -->
+        <div style="padding:12px 20px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #2D2924">
+          <div style="width:32px;height:32px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#1A6629">MV</span>
+          </div>
+          <div style="min-width:0">
+            <div style="font-size:12px;font-weight:500;color:#D6C48A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Martha Vargas</div>
+            <div style="font-size:11px;color:#5C574F">Dueña</div>
+          </div>
+        </div>
+        <!-- Perfil + logout -->
+        <a class="si" href="#" style="height:36px;font-size:12px;border-left:none"><i data-lucide="settings" style="width:14px;height:14px;flex-shrink:0;color:#5C574F"></i><span style="color:#5C574F">Perfil</span></a>
+        <a class="si" href="#" style="height:36px;font-size:12px;border-left:none"><i data-lucide="log-out" style="width:14px;height:14px;flex-shrink:0;color:#5C574F"></i><span style="color:#5C574F">Cerrar sesión</span></a>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#F8F7F4">
+
+      <!-- Content header -->
+      <div style="height:56px;background:#fff;border-bottom:1px solid #E9E6E0;display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0">
+        <h1 style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0;flex:1">Clientes</h1>
+        <button style="height:36px;padding:0 14px;background:#C98A0A;color:#fff;border:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;letter-spacing:-.01em">
+          <i data-lucide="plus" style="width:13px;height:13px"></i>Nuevo cliente
+        </button>
+      </div>
+
+      <!-- Content body -->
+      <div style="flex:1;overflow:hidden;padding:16px 24px 0">
+        <!-- Search -->
+        <div style="background:#fff;border:1px solid #E9E6E0;height:40px;display:flex;align-items:center;padding:0 12px;gap:8px;margin-bottom:12px">
+          <i data-lucide="search" style="width:15px;height:15px;color:#A9A49C;flex-shrink:0"></i>
+          <span style="font-size:14px;color:#C9C4BB">Buscar por nombre o teléfono...</span>
+        </div>
+        <!-- List -->
+        <div style="background:#fff;border:1px solid #E9E6E0;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #E9E6E0;cursor:pointer;background:#fff"><div style="width:34px;height:34px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#7E5407">AG</span></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#11100E">Ana García</div><div style="font-size:12px;color:#7B766D">+52 55 1234 5678</div></div><div style="flex:0 0 200px;font-size:13px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">ana.garcia@empresa.mx</div><i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C;flex-shrink:0"></i></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #E9E6E0;cursor:pointer;background:#fff"><div style="width:34px;height:34px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#2A53A0">CM</span></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#11100E">Carlos Mendoza</div><div style="font-size:12px;color:#7B766D">+52 33 9876 5432</div></div><div style="flex:0 0 200px;font-size:13px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">c.mendoza@negocio.mx</div><i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C;flex-shrink:0"></i></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #E9E6E0;cursor:pointer;background:#F3F1EC"><div style="width:34px;height:34px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#1A6629">DL</span></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#11100E">Diana López</div><div style="font-size:12px;color:#7B766D">+52 81 2345 6789</div></div><div style="flex:0 0 200px;font-size:13px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">diana.l@tech.mx</div><i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C;flex-shrink:0"></i></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #E9E6E0;cursor:pointer;background:#fff"><div style="width:34px;height:34px;border-radius:9999px;background:#FEF6E4;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#8F6010">ER</span></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#11100E">Eduardo Ruiz</div><div style="font-size:12px;color:#7B766D">+52 55 3456 7890</div></div><div style="flex:0 0 200px;font-size:13px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">edu.ruiz@gmail.com</div><i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C;flex-shrink:0"></i></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;cursor:pointer;background:#fff"><div style="width:34px;height:34px;border-radius:9999px;background:#F3F1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#403C35">FC</span></div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:500;color:#11100E">Fernanda Castro</div><div style="font-size:12px;color:#7B766D">+52 33 4567 8901</div></div><div style="flex:0 0 200px;font-size:13px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">f.castro@empresa.mx</div><i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C;flex-shrink:0"></i></div>
+        </div>
+        <div style="height:28px;background:linear-gradient(transparent,rgba(248,247,244,.9));margin:-1px 0 0;pointer-events:none"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- FRAME 3 · Escritorio — Sidebar colapsada        -->
+<!-- ════════════════════════════════════════════════ -->
+<div style="position:absolute;left:60px;top:860px;width:640px">
+  <div data-drags-parent="1" class="frame-lbl">
+    <span>03 · Escritorio — Sidebar colapsada (64px)</span>
+    <span style="color:#A9A49C;font-weight:400">640 × 480</span>
+  </div>
+  <div class="frame-card" style="display:flex;height:480px">
+
+    <!-- SIDEBAR 64px -->
+    <div style="width:64px;flex-shrink:0;background:#181512;display:flex;flex-direction:column;border-right:1px solid #2D2924;height:100%;align-items:center">
+      <!-- Logo -->
+      <div style="width:100%;height:60px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #2D2924;flex-shrink:0">
+        <div style="width:8px;height:8px;background:#C98A0A"></div>
+      </div>
+      <!-- Nav icons -->
+      <div style="flex:1;width:100%;display:flex;flex-direction:column;padding:10px 0;gap:2px">
+        <div style="width:100%;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-left:3px solid transparent;color:#7B766D"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i></div>
+        <div style="position:relative;width:100%;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-left:3px solid transparent;color:#7B766D">
+          <i data-lucide="clock" style="width:18px;height:18px"></i>
+          <span style="position:absolute;top:6px;right:8px;background:#D13B1E;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:700;width:14px;height:14px;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:1.5px solid #181512">5</span>
+        </div>
+        <div style="width:100%;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-left:3px solid #C98A0A;color:#C98A0A;background:rgba(201,138,10,.12)"><i data-lucide="users" style="width:18px;height:18px"></i></div>
+        <div style="width:100%;height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-left:3px solid transparent;color:#7B766D"><i data-lucide="briefcase" style="width:18px;height:18px"></i></div>
+      </div>
+      <!-- Bottom icons -->
+      <div style="border-top:1px solid #2D2924;width:100%;padding:10px 0;display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+        <div style="width:28px;height:28px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;cursor:pointer">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:7px;font-weight:700;color:#1A6629">MV</span>
+        </div>
+        <div style="color:#5C574F;cursor:pointer"><i data-lucide="settings" style="width:15px;height:15px"></i></div>
+        <div style="color:#5C574F;cursor:pointer"><i data-lucide="log-out" style="width:15px;height:15px"></i></div>
+      </div>
+    </div>
+
+    <!-- TOOLTIP hint -->
+    <div style="position:absolute;left:72px;top:152px;background:#11100E;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;padding:5px 10px;white-space:nowrap;z-index:10;pointer-events:none">
+      Clientes
+      <div style="position:absolute;left:-5px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:5px solid #11100E"></div>
+    </div>
+
+    <!-- CONTENT (abbreviated) -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#F8F7F4">
+      <div style="height:52px;background:#fff;border-bottom:1px solid #E9E6E0;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0">
+        <h1 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0;flex:1">Clientes</h1>
+        <button style="height:34px;padding:0 12px;background:#C98A0A;color:#fff;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px">
+          <i data-lucide="plus" style="width:12px;height:12px"></i>Nuevo cliente
+        </button>
+      </div>
+      <div style="flex:1;padding:14px 20px 0">
+        <div style="background:#fff;border:1px solid #E9E6E0;margin-bottom:10px;height:38px;display:flex;align-items:center;padding:0 12px;gap:8px">
+          <i data-lucide="search" style="width:14px;height:14px;color:#A9A49C;flex-shrink:0"></i>
+          <span style="font-size:13px;color:#C9C4BB">Buscar...</span>
+        </div>
+        <div style="background:#fff;border:1px solid #E9E6E0;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #E9E6E0"><div style="width:30px;height:30px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">AG</span></div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#11100E">Ana García</div><div style="font-size:11px;color:#7B766D">+52 55 1234 5678</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C"></i></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #E9E6E0"><div style="width:30px;height:30px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#2A53A0">CM</span></div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#11100E">Carlos Mendoza</div><div style="font-size:11px;color:#7B766D">+52 33 9876 5432</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C"></i></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:#F3F1EC"><div style="width:30px;height:30px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#1A6629">DL</span></div><div style="flex:1"><div style="font-size:13px;font-weight:500;color:#11100E">Diana López</div><div style="font-size:11px;color:#7B766D">+52 81 2345 6789</div></div><i data-lucide="chevron-right" style="width:14px;height:14px;color:#A9A49C"></i></div>
+        </div>
+        <div style="margin-top:14px;padding:10px 14px;background:#FEF8E7;border:1px solid rgba(201,138,10,.2);font-size:11px;color:#7E5407;display:flex;align-items:center;gap:6px">
+          <i data-lucide="info" style="width:12px;height:12px;flex-shrink:0"></i>
+          Hover sobre cada ícono para ver su tooltip con etiqueta
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- FRAME 4 · Flujo de navegación                   -->
+<!-- ════════════════════════════════════════════════ -->
+<div style="position:absolute;left:760px;top:860px;width:760px">
+  <div data-drags-parent="1" class="frame-lbl">
+    <span>04 · Flujo de navegación</span>
+  </div>
+  <div class="frame-card" style="padding:28px 28px 24px">
+
+    <!-- Section 1: Auth -->
+    <div style="margin-bottom:22px">
+      <div class="flbl" style="margin-bottom:10px">01 · Autenticación</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="fb" style="background:#181512;color:#C98A0A;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;border:1px solid #2D2924">Login</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="farr">──→</span>
+            <div class="fb" style="background:#EEF3FD;color:#2A53A0;border:1px solid rgba(42,83,160,.2)">
+              <i data-lucide="clock" style="width:13px;height:13px"></i>Hoy
+            </div>
+            <span style="font-size:11px;color:#A9A49C;font-family:'IBM Plex Sans',sans-serif">Carlos (vendedor)</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="farr">──→</span>
+            <div class="fb" style="background:#ECFAED;color:#1A6629;border:1px solid rgba(37,145,58,.2)">
+              <i data-lucide="layout-dashboard" style="width:13px;height:13px"></i>Inicio
+            </div>
+            <span style="font-size:11px;color:#A9A49C;font-family:'IBM Plex Sans',sans-serif">Martha (dueña)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:#F3F1EC;margin-bottom:22px"></div>
+
+    <!-- Section 2: Nav principal -->
+    <div style="margin-bottom:22px">
+      <div class="flbl" style="margin-bottom:10px">02 · Nav principal — 4 destinos siempre visibles</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div class="fb" style="border:1px solid #E9E6E0;color:#11100E"><i data-lucide="layout-dashboard" style="width:13px;height:13px;color:#7B766D"></i>Inicio</div>
+        <span class="farr" style="font-size:14px">⟷</span>
+        <div class="fb" style="border:1px solid #E9E6E0;color:#11100E"><i data-lucide="clock" style="width:13px;height:13px;color:#7B766D"></i>Hoy <span style="background:#D13B1E;color:#fff;font-size:9px;font-family:'IBM Plex Mono',monospace;font-weight:700;padding:0 4px;border-radius:2px">5</span></div>
+        <span class="farr" style="font-size:14px">⟷</span>
+        <div class="fb" style="border:2px solid #C98A0A;color:#C98A0A;background:#FEF8E7"><i data-lucide="users" style="width:13px;height:13px"></i>Clientes</div>
+        <span class="farr" style="font-size:14px">⟷</span>
+        <div class="fb" style="border:1px solid #E9E6E0;color:#11100E"><i data-lucide="briefcase" style="width:13px;height:13px;color:#7B766D"></i>Ventas</div>
+      </div>
+      <div style="font-size:11px;color:#A9A49C;margin-top:8px;font-family:'IBM Plex Sans',sans-serif">Tab bar (móvil) · Sidebar (escritorio) — siempre accesible sin retroceder</div>
+    </div>
+
+    <div style="height:1px;background:#F3F1EC;margin-bottom:22px"></div>
+
+    <!-- Section 3: Deep nav -->
+    <div style="margin-bottom:22px">
+      <div class="flbl" style="margin-bottom:10px">03 · Navegación profunda — Ficha de cliente</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;align-items:center;gap:6px"><div class="fb" style="border:1px solid #E9E6E0;color:#11100E;font-size:11px"><i data-lucide="users" style="width:12px;height:12px;color:#7B766D"></i>Clientes</div><span class="farr" style="font-size:13px">─→</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div class="fb" style="border:1px solid #E9E6E0;color:#11100E;font-size:11px"><i data-lucide="clock" style="width:12px;height:12px;color:#7B766D"></i>Hoy</div><span class="farr" style="font-size:13px">─→</span></div>
+          <div style="display:flex;align-items:center;gap:6px"><div class="fb" style="border:1px solid #E9E6E0;color:#11100E;font-size:11px"><i data-lucide="briefcase" style="width:12px;height:12px;color:#7B766D"></i>Ventas</div><span class="farr" style="font-size:13px">─→</span></div>
+        </div>
+        <div class="fb" style="background:#11100E;color:#F8F7F4;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;border:1px solid #11100E">
+          <i data-lucide="user" style="width:13px;height:13px;color:#C98A0A"></i>Ficha Cliente
+        </div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:#F3F1EC;margin-bottom:22px"></div>
+
+    <!-- Section 4: FAB flow -->
+    <div>
+      <div class="flbl" style="margin-bottom:10px">04 · Acción FAB — Camino más rápido</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="width:44px;height:44px;border-radius:9999px;background:#C98A0A;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(201,138,10,.4);flex-shrink:0">
+          <i data-lucide="plus" style="width:20px;height:20px;color:#fff"></i>
+        </div>
+        <span class="farr">──→</span>
+        <div class="fb" style="background:#FEF8E7;color:#7E5407;border:1px solid rgba(201,138,10,.3)">
+          <i data-lucide="user-plus" style="width:13px;height:13px"></i>Nuevo cliente
+        </div>
+        <span class="farr">──→</span>
+        <div class="fb" style="background:#11100E;color:#F8F7F4;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;border:1px solid #11100E">
+          <i data-lucide="user" style="width:13px;height:13px;color:#C98A0A"></i>Ficha Cliente
+        </div>
+        <span style="font-size:11px;color:#A9A49C;font-family:'IBM Plex Sans',sans-serif">(automático)</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+
+    .skel {
+      background: linear-gradient(90deg, #F3F1EC 25%, #E9E6E0 50%, #F3F1EC 75%);
+      background-size: 400px 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      border-radius: 2px;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      display: none;
+      position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+      background: #181512; flex-direction: column; z-index: 50;
+      border-right: 1px solid #2D2924;
+    }
+    @media (min-width: 1024px) {
+      .sidebar { display: flex; }
+      .main-wrap { margin-left: 220px; }
+      .email-col { display: flex !important; }
+      .btn-nuevo { display: inline-flex !important; }
+      .fab-mob   { display: none !important; }
+      .mob-only  { display: none !important; }
+      .list-row  { padding: 0 24px !important; }
+    }
+
+    /* ── List row ── */
+    .list-row {
+      display: flex; align-items: center; gap: 12px;
+      height: 56px; padding: 0 16px;
+      border-bottom: 1px solid #E9E6E0;
+      cursor: pointer; transition: background 120ms ease;
+      background: #fff;
+    }
+    .list-row:hover { background: #F3F1EC; }
+    .list-row:last-child { border-bottom: none; }
+
+    /* ── Nav items ── */
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      height: 40px; padding: 0 18px;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 13px;
+      color: #7B766D; cursor: pointer;
+      transition: color 120ms, background 120ms;
+      border-left: 2px solid transparent;
+      text-decoration: none;
+    }
+    .nav-item:hover { color: #D6C48A; background: rgba(255,255,255,0.04); }
+    .nav-item.active {
+      color: #C98A0A; background: rgba(201,138,10,0.10);
+      border-left-color: #C98A0A; font-weight: 500;
+    }
+
+    /* ── Search bar focus ── */
+    .search-inp { outline: none; transition: border-color 120ms, box-shadow 120ms; }
+    .search-inp:focus {
+      border-color: #C98A0A !important;
+      box-shadow: 0 0 0 2px #F8F7F4, 0 0 0 4px #C98A0A;
+    }
+
+    /* ── Buttons ── */
+    .btn-base {
+      font-family: 'IBM Plex Mono', monospace; font-weight: 500; letter-spacing: -0.01em;
+      border-radius: 0; cursor: pointer; display: inline-flex; align-items: center;
+      justify-content: center; gap: 6px; transition: background 120ms, border-color 120ms;
+      white-space: nowrap;
+    }
+    .btn-primary { background: #C98A0A; color: #fff; border: 1px solid #C98A0A; font-size: 13px; padding: 0 16px; height: 36px; }
+    .btn-primary:hover { background: #A56E08; border-color: #A56E08; }
+    .btn-ghost-sm { background: transparent; color: #11100E; border: 1px solid transparent; font-size: 13px; padding: 0 12px; height: 36px; }
+    .btn-ghost-sm:hover { background: rgba(0,0,0,0.04); }
+
+    /* ── Helpers ── */
+    .email-col { display: none; flex: 0 0 210px; font-size: 13px; color: #7B766D; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btn-nuevo { display: none; }
+    .fab-mob {
+      position: fixed; bottom: 80px; right: 20px; z-index: 90;
+      width: 56px; height: 56px; border-radius: 9999px; background: #C98A0A;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(201,138,10,.4); cursor: pointer;
+      transition: background 120ms, transform 120ms;
+    }
+    .fab-mob:hover { background: #A56E08; transform: scale(1.05); }
+  </style>
+</helmet>
+
+<!-- ═══ ROOT LAYOUT ═══ -->
+<div style="min-height:100vh;background:#F8F7F4">
+
+  <!-- ── SIDEBAR (desktop) ── -->
+  <aside class="sidebar">
+    <!-- Logo -->
+    <div style="padding:20px 18px 18px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A;flex-shrink:0"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A;letter-spacing:.01em">SolarCRM</span>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav style="padding:12px 0;flex:1">
+      <a class="nav-item" href="#">
+        <i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy
+      </a>
+      <a class="nav-item active" href="#">
+        <i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Oportunidades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="calendar" style="width:16px;height:16px;flex-shrink:0"></i>Actividades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="bar-chart-2" style="width:16px;height:16px;flex-shrink:0"></i>Reportes
+      </a>
+    </nav>
+
+    <!-- User bottom -->
+    <div style="padding:14px 18px;border-top:1px solid #2D2924;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">CV</span>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:500;color:#D6C48A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Carlos Vargas</div>
+        <div style="font-size:11px;color:#5C574F">Vendedor</div>
+      </div>
+      <button style="background:none;border:none;cursor:pointer;margin-left:auto;color:#5C574F;display:flex">
+        <i data-lucide="settings" style="width:14px;height:14px"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN CONTENT ══ -->
+  <div class="main-wrap" style="display:flex;flex-direction:column;min-height:100vh">
+
+    <!-- PAGE HEADER -->
+    <header style="background:#fff;border-bottom:1px solid #E9E6E0;padding:0 16px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40">
+      <div style="display:flex;align-items:center;gap:12px">
+        <!-- Mobile hamburger placeholder -->
+        <button class="mob-only" style="background:none;border:none;cursor:pointer;display:flex;color:#5C574F;padding:4px">
+          <i data-lucide="menu" style="width:20px;height:20px"></i>
+        </button>
+        <div>
+          <h1 style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0">Clientes</h1>
+        </div>
+      </div>
+      <!-- Desktop: Nuevo cliente button -->
+      <button class="btn-base btn-primary btn-nuevo">
+        <i data-lucide="plus" style="width:14px;height:14px"></i>Nuevo cliente
+      </button>
+    </header>
+
+    <!-- SEARCH + RESULTS AREA -->
+    <div style="padding:16px 16px 0;background:#F8F7F4">
+
+      <!-- Search bar: default (list / empty / skeleton state) -->
+      <sc-if value="{{ isEmptySearch }}" hint-placeholder-val="{{ true }}">
+        <div style="position:relative;margin-bottom:4px">
+          <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none">
+            <i data-lucide="search" style="width:16px;height:16px;color:#A9A49C"></i>
+          </div>
+          <input class="search-inp" type="search" placeholder="Buscar por nombre o teléfono..." style="width:100%;height:42px;padding:0 44px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0">
+          <button style="position:absolute;right:0;top:0;height:100%;width:42px;background:none;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#C9C4BB">
+            <i data-lucide="x" style="width:14px;height:14px"></i>
+          </button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ isEmptySearchInactive }}" hint-placeholder-val="{{ false }}">
+        <div></div>
+      </sc-if>
+
+      <!-- Search bar: "Ana" (search state) -->
+      <sc-if value="{{ isSearchState }}" hint-placeholder-val="{{ false }}">
+        <div style="position:relative;margin-bottom:4px">
+          <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none">
+            <i data-lucide="search" style="width:16px;height:16px;color:#C98A0A"></i>
+          </div>
+          <input type="text" value="Ana" readOnly="" style="width:100%;height:42px;padding:0 44px;font-size:14px;color:#11100E;background:#fff;border:1px solid #C98A0A;border-radius:0;outline:none;box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A">
+          <button style="position:absolute;right:0;top:0;height:100%;width:42px;background:none;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#7B766D">
+            <i data-lucide="x" style="width:14px;height:14px"></i>
+          </button>
+        </div>
+        <p style="font-size:12px;color:#7B766D;margin:6px 0 0;padding:0 2px">2 resultados para "<strong style="color:#11100E">Ana</strong>"</p>
+      </sc-if>
+
+      <!-- Search bar: "Pedro Sánchez" (no result state) -->
+      <sc-if value="{{ isNoResultState }}" hint-placeholder-val="{{ false }}">
+        <div style="position:relative;margin-bottom:4px">
+          <div style="position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none">
+            <i data-lucide="search" style="width:16px;height:16px;color:#A9A49C"></i>
+          </div>
+          <input type="text" value="Pedro Sánchez" readOnly="" style="width:100%;height:42px;padding:0 44px;font-size:14px;color:#11100E;background:#fff;border:1px solid #E9E6E0;border-radius:0;outline:none">
+          <button style="position:absolute;right:0;top:0;height:100%;width:42px;background:none;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#7B766D">
+            <i data-lucide="x" style="width:14px;height:14px"></i>
+          </button>
+        </div>
+      </sc-if>
+
+    </div>
+
+    <!-- ══════════════════════════════ -->
+    <!-- CONTENT STATES                 -->
+    <!-- ══════════════════════════════ -->
+    <div style="padding:12px 16px 96px;flex:1">
+
+      <!-- STATE 1: LISTA POBLADA -->
+      <sc-if value="{{ isListState }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;letter-spacing:.04em;margin:0 0 10px 2px">8 CONTACTOS</p>
+          <div style="background:#fff;border:1px solid #E9E6E0;box-shadow:var(--shadow-xs)">
+            <!-- Ana García -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">AG</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ana García</div>
+                <div style="font-size:12px;color:#7B766D">+52 55 1234 5678</div>
+              </div>
+              <div class="email-col">ana.garcia@empresa.mx</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Carlos Mendoza -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#EEF3FD;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#2A53A0">CM</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Carlos Mendoza</div>
+                <div style="font-size:12px;color:#7B766D">+52 33 9876 5432</div>
+              </div>
+              <div class="email-col">c.mendoza@negocio.mx</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Diana López -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">DL</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Diana López</div>
+                <div style="font-size:12px;color:#7B766D">+52 81 2345 6789</div>
+              </div>
+              <div class="email-col">diana.l@tech.mx</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Eduardo Ruiz -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#FEF6E4;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#8F6010">ER</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Eduardo Ruiz</div>
+                <div style="font-size:12px;color:#7B766D">+52 55 3456 7890</div>
+              </div>
+              <div class="email-col">edu.ruiz@gmail.com</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Fernanda Castro -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#F3F1EC;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#403C35">FC</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Fernanda Castro</div>
+                <div style="font-size:12px;color:#7B766D">+52 33 4567 8901</div>
+              </div>
+              <div class="email-col">f.castro@empresa.mx</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Gonzalo Herrera -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">GH</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Gonzalo Herrera</div>
+                <div style="font-size:12px;color:#7B766D">+52 81 5678 9012</div>
+              </div>
+              <div class="email-col">g.herrera@mx.com</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Hilda Moreno -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#EEF3FD;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#2A53A0">HM</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Hilda Moreno</div>
+                <div style="font-size:12px;color:#7B766D">+52 55 6789 0123</div>
+              </div>
+              <div class="email-col">h.moreno@tech.mx</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Ana María Vega -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">AV</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ana María Vega</div>
+                <div style="font-size:12px;color:#7B766D">+52 33 7890 1234</div>
+              </div>
+              <div class="email-col">anamaria.v@mx.com</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STATE 2: BÚSQUEDA ACTIVA "Ana" → 2 resultados -->
+      <sc-if value="{{ isSearchState }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:8px">
+          <div style="background:#fff;border:1px solid #E9E6E0;box-shadow:var(--shadow-xs)">
+            <!-- Ana García -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">AG</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E"><span style="background:#FEF8E7;color:#7E5407;font-weight:700">Ana</span> García</div>
+                <div style="font-size:12px;color:#7B766D">+52 55 1234 5678</div>
+              </div>
+              <div class="email-col">ana.garcia@empresa.mx</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+            <!-- Ana María Vega -->
+            <div class="list-row">
+              <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;flex-shrink:0;display:flex;align-items:center;justify-content:center">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">AV</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:500;color:#11100E"><span style="background:#FEF8E7;color:#7E5407;font-weight:700">Ana</span> María Vega</div>
+                <div style="font-size:12px;color:#7B766D">+52 33 7890 1234</div>
+              </div>
+              <div class="email-col">anamaria.v@mx.com</div>
+              <i data-lucide="chevron-right" style="width:16px;height:16px;color:#A9A49C;flex-shrink:0"></i>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- STATE 3: VACÍO -->
+      <sc-if value="{{ isEmptyState }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;text-align:center;padding:40px 24px">
+          <div style="width:56px;height:56px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+            <i data-lucide="users" style="width:26px;height:26px;color:#A9A49C"></i>
+          </div>
+          <h2 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0 0 8px">Aún no tienes clientes</h2>
+          <p style="font-size:14px;color:#7B766D;margin:0 0 24px;line-height:1.6;max-width:280px">Toca + para registrar el primero. Cada contacto a un solo toque.</p>
+          <button style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;background:#C98A0A;color:#fff;border:1px solid #C98A0A;border-radius:0;padding:0 20px;height:40px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;letter-spacing:-.01em">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>Agregar primer cliente
+          </button>
+        </div>
+      </sc-if>
+
+      <!-- STATE 4: SIN RESULTADOS -->
+      <sc-if value="{{ isNoResultState }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;text-align:center;padding:40px 24px">
+          <div style="width:56px;height:56px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+            <i data-lucide="search-x" style="width:26px;height:26px;color:#A9A49C"></i>
+          </div>
+          <h2 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0 0 8px">No encontramos a nadie</h2>
+          <p style="font-size:14px;color:#7B766D;margin:0 0 24px;line-height:1.6;max-width:300px">No hay resultados para "<strong style="color:#11100E">Pedro Sánchez</strong>". Verifica el nombre o el teléfono.</p>
+          <button style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;background:transparent;color:#7B766D;border:1px solid #D6D2CB;border-radius:0;padding:0 16px;height:34px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;letter-spacing:-.01em">
+            <i data-lucide="x" style="width:12px;height:12px"></i>Limpiar búsqueda
+          </button>
+        </div>
+      </sc-if>
+
+      <!-- STATE 5: SKELETON / CARGANDO -->
+      <sc-if value="{{ isSkeletonState }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div class="skel" style="height:11px;width:80px;margin-bottom:10px"></div>
+          <div style="background:#fff;border:1px solid #E9E6E0">
+            <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;border-bottom:1px solid #E9E6E0">
+              <div class="skel" style="width:36px;height:36px;border-radius:9999px;flex-shrink:0"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+                <div class="skel" style="height:12px;width:45%"></div>
+                <div class="skel" style="height:10px;width:30%"></div>
+              </div>
+              <div class="skel" style="width:14px;height:14px"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;border-bottom:1px solid #E9E6E0">
+              <div class="skel" style="width:36px;height:36px;border-radius:9999px;flex-shrink:0"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+                <div class="skel" style="height:12px;width:60%"></div>
+                <div class="skel" style="height:10px;width:38%"></div>
+              </div>
+              <div class="skel" style="width:14px;height:14px"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 16px;border-bottom:1px solid #E9E6E0">
+              <div class="skel" style="width:36px;height:36px;border-radius:9999px;flex-shrink:0"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+                <div class="skel" style="height:12px;width:35%"></div>
+                <div class="skel" style="height:10px;width:50%"></div>
+              </div>
+              <div class="skel" style="width:14px;height:14px"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 16px">
+              <div class="skel" style="width:36px;height:36px;border-radius:9999px;flex-shrink:0"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+                <div class="skel" style="height:12px;width:52%"></div>
+                <div class="skel" style="height:10px;width:32%"></div>
+              </div>
+              <div class="skel" style="width:14px;height:14px"></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div><!-- /main-wrap -->
+
+  <!-- ── FAB (mobile only) ── -->
+  <div class="fab-mob" title="Nuevo cliente">
+    <i data-lucide="plus" style="width:24px;height:24px;color:#fff"></i>
+  </div>
+
+</div><!-- /root -->
+
+<!-- ══ SELECTOR DE ESTADO (prototipo) ══ -->
+<div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+  <sc-if value="{{ isListActive }}"    hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setList }}"     style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Lista</button></sc-if>
+  <sc-if value="{{ isListInactive }}"   hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setList }}"     style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Lista</button></sc-if>
+
+  <sc-if value="{{ isSearchActive }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setSearch }}"   style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Buscar</button></sc-if>
+  <sc-if value="{{ isSearchInactive }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setSearch }}"   style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Buscar</button></sc-if>
+
+  <sc-if value="{{ isEmptyActive }}"   hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmpty }}"    style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Vacío</button></sc-if>
+  <sc-if value="{{ isEmptyInactive }}"  hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEmpty }}"    style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Vacío</button></sc-if>
+
+  <sc-if value="{{ isNoResultActive }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setNoResult }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Sin datos</button></sc-if>
+  <sc-if value="{{ isNoResultInactive }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setNoResult }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Sin datos</button></sc-if>
+
+  <sc-if value="{{ isSkeletonActive }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setSkeleton }}" style="padding:7px 14px;border:none;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Cargando</button></sc-if>
+  <sc-if value="{{ isSkeletonInactive }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setSkeleton }}" style="padding:7px 14px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Cargando</button></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 820}}">
+class Component extends DCLogic {
+  state = { viewState: 'list' };
+
+  renderVals() {
+    const { viewState } = this.state;
+    const is = (s) => viewState === s;
+
+    const isListState     = is('list');
+    const isSearchState   = is('search');
+    const isEmptyState    = is('empty');
+    const isNoResultState = is('noresult');
+    const isSkeletonState = is('loading');
+
+    return {
+      viewState,
+      isListState,     isListStateInactive:     !isListState,
+      isSearchState,   isSearchStateInactive:   !isSearchState,
+      isEmptyState,    isEmptyStateInactive:    !isEmptyState,
+      isNoResultState, isNoResultStateInactive: !isNoResultState,
+      isSkeletonState, isSkeletonStateInactive: !isSkeletonState,
+
+      // Search bar helpers
+      isEmptySearch:       isListState || isEmptyState || isSkeletonState,
+      isEmptySearchInactive: isSearchState || isNoResultState,
+
+      // Switcher
+      isListActive:      isListState,     isListInactive:      !isListState,
+      isSearchActive:    isSearchState,   isSearchInactive:    !isSearchState,
+      isEmptyActive:     isEmptyState,    isEmptyInactive:     !isEmptyState,
+      isNoResultActive:  isNoResultState, isNoResultInactive:  !isNoResultState,
+      isSkeletonActive:  isSkeletonState, isSkeletonInactive:  !isSkeletonState,
+
+      setList:      () => this.setState({ viewState: 'list'     }),
+      setSearch:    () => this.setState({ viewState: 'search'   }),
+      setEmpty:     () => this.setState({ viewState: 'empty'    }),
+      setNoResult:  () => this.setState({ viewState: 'noresult' }),
+      setSkeleton:  () => this.setState({ viewState: 'loading'  }),
+    };
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>

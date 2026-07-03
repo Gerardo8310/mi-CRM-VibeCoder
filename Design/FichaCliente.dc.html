@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow-x: hidden; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    @keyframes slideup { from { transform: translateY(28px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
+
+    .sidebar { display:none; position:fixed; left:0; top:0; bottom:0; width:220px; background:#181512; flex-direction:column; z-index:50; border-right:1px solid #2D2924; }
+    .main-wrap { display:flex; flex-direction:column; min-height:100vh; }
+    .page-hdr { height:52px; padding:0 16px; display:flex; align-items:center; gap:8px; background:#fff; border-bottom:1px solid #E9E6E0; position:sticky; top:0; z-index:40; flex-shrink:0; }
+    .layout-area { display:flex; flex-direction:column; flex:1; }
+    .col-left  { background:#fff; }
+    .col-right { padding:20px 16px 96px; }
+
+    .nav-item { display:flex; align-items:center; gap:10px; height:40px; padding:0 18px; font-size:13px; color:#7B766D; cursor:pointer; transition:color 120ms,background 120ms; border-left:2px solid transparent; text-decoration:none; }
+    .nav-item:hover { color:#D6C48A; background:rgba(255,255,255,.04); }
+    .nav-item.active { color:#C98A0A; background:rgba(201,138,10,.1); border-left-color:#C98A0A; font-weight:500; }
+
+    .act-btn { flex:1; height:42px; background:#F8F7F4; border:1px solid #E9E6E0; display:flex; align-items:center; justify-content:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500; color:#5C574F; cursor:pointer; border-radius:0; transition:background 120ms,border-color 120ms; letter-spacing:-.01em; }
+    .act-btn:hover { background:#F0EDE6; border-color:#D6D2CB; }
+    .act-btn-amber { background:#FEF8E7; border-color:rgba(201,138,10,.3); color:#7E5407; }
+    .act-btn-amber:hover { background:#FDE9B0; border-color:rgba(201,138,10,.5); }
+
+    .done-btn { height:30px; padding:0 10px; background:transparent; border:1px solid #D6D2CB; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:500; color:#5C574F; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 120ms; white-space:nowrap; flex-shrink:0; }
+    .done-btn:hover { background:#ECFAED; border-color:#25913A; color:#1A6629; }
+
+    .fi { width:100%; height:44px; padding:0 12px; font-family:'IBM Plex Sans',sans-serif; font-size:14px; color:#11100E; background:#fff; border:1px solid #E9E6E0; border-radius:0; outline:none; transition:border-color 120ms,box-shadow 120ms; }
+    .fi:focus { border-color:#C98A0A; box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A; }
+    .fta { width:100%; padding:10px 12px; font-family:'IBM Plex Sans',sans-serif; font-size:14px; line-height:1.5; color:#11100E; background:#fff; border:1px solid #E9E6E0; border-radius:0; outline:none; transition:border-color 120ms,box-shadow 120ms; resize:vertical; }
+    .fta:focus { border-color:#C98A0A; box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A; }
+
+    .btn-p { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; background:#C98A0A; color:#fff; border:1px solid #C98A0A; border-radius:0; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; height:44px; padding:0 16px; letter-spacing:-.01em; transition:background 120ms; }
+    .btn-p:hover { background:#A56E08; border-color:#A56E08; }
+    .btn-g { font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:500; background:transparent; color:#11100E; border:1px solid #D6D2CB; border-radius:0; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; height:44px; padding:0 16px; letter-spacing:-.01em; transition:background 120ms; }
+    .btn-g:hover { background:rgba(0,0,0,.04); }
+    .btn-icon { background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:6px; color:#7B766D; transition:color 120ms,background 120ms; }
+    .btn-icon:hover { color:#11100E; background:rgba(0,0,0,.05); }
+
+    .bs-overlay { position:fixed; inset:0; background:rgba(17,16,14,.5); z-index:100; animation:fadein 200ms ease; }
+    .bs-panel   { position:fixed; bottom:0; left:0; right:0; background:#fff; z-index:101; animation:slideup 250ms ease; border-top:1px solid #E9E6E0; max-height:90vh; overflow-y:auto; }
+
+    .seg-b { flex:1; height:36px; background:transparent; border:1px solid #D6D2CB; border-right:none; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:500; color:#7B766D; cursor:pointer; transition:all 120ms; border-radius:0; }
+    .seg-b:last-child { border-right:1px solid #D6D2CB; }
+    .seg-b:hover { background:rgba(0,0,0,.04); }
+    .seg-b-on { background:#C98A0A !important; border-color:#C98A0A !important; color:#fff !important; }
+
+    .sel { width:100%; height:44px; padding:0 32px 0 12px; font-family:'IBM Plex Sans',sans-serif; font-size:14px; color:#11100E; background:#fff; border:1px solid #E9E6E0; border-radius:0; appearance:none; cursor:pointer; outline:none; }
+    .sel:focus { border-color:#C98A0A; box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A; }
+
+    .hist-row { cursor:pointer; transition:background 120ms; border-radius:0; }
+    .hist-row:hover { background:#F8F7F4; }
+
+    .lbl-u { font-family:'IBM Plex Sans',sans-serif; font-size:11px; font-weight:500; color:#5C574F; letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:5px; }
+
+    @media (min-width: 1024px) {
+      .sidebar { display:flex; }
+      .main-wrap { margin-left:220px; height:100vh; overflow:hidden; }
+      .page-hdr { position:relative; padding:0 24px; height:56px; }
+      .layout-area { flex:1; flex-direction:row; overflow:hidden; }
+      .col-left { width:340px; flex-shrink:0; overflow-y:auto; border-right:1px solid #E9E6E0; }
+      .col-right { flex:1; overflow-y:auto; padding:24px 32px 40px; }
+      .bs-panel { bottom:auto; left:50%; right:auto; top:50%; transform:translate(-50%,-50%); width:480px; animation:fadein 200ms ease; box-shadow:0 8px 32px rgba(17,16,14,.2); border:1px solid #E9E6E0; max-height:80vh; }
+      .mob-only { display:none !important; }
+    }
+  </style>
+</helmet>
+
+<div style="position:relative;min-height:100vh">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div style="padding:20px 18px 16px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+      </div>
+    </div>
+    <nav style="padding:12px 0;flex:1">
+      <a class="nav-item" href="#">
+        <i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy
+      </a>
+      <a class="nav-item active" href="#">
+        <i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Oportunidades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="calendar" style="width:16px;height:16px;flex-shrink:0"></i>Actividades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="bar-chart-2" style="width:16px;height:16px;flex-shrink:0"></i>Reportes
+      </a>
+    </nav>
+    <div style="padding:14px 18px;border-top:1px solid #2D2924;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">CV</span>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:500;color:#D6C48A">Carlos Vargas</div>
+        <div style="font-size:11px;color:#5C574F">Vendedor</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN WRAP ── -->
+  <div class="main-wrap">
+
+    <!-- PAGE HEADER -->
+    <header class="page-hdr">
+      <button class="btn-icon mob-only" style="flex-shrink:0">
+        <i data-lucide="arrow-left" style="width:20px;height:20px"></i>
+      </button>
+      <button class="btn-icon" style="flex-shrink:0;display:none;display:flex">
+        <i data-lucide="arrow-left" style="width:18px;height:18px"></i>
+      </button>
+      <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;overflow:hidden">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#A9A49C;white-space:nowrap;cursor:pointer">Clientes</span>
+        <i data-lucide="chevron-right" style="width:12px;height:12px;color:#D6D2CB;flex-shrink:0"></i>
+        <!-- breadcrumb: display mode -->
+        <sc-if value="{{ isDisplayMode }}" hint-placeholder-val="{{ true }}">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ana García</span>
+        </sc-if>
+        <!-- breadcrumb: edit mode -->
+        <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:#11100E;white-space:nowrap">Editar cliente</span>
+        </sc-if>
+      </div>
+      <!-- Edit button (display mode) -->
+      <sc-if value="{{ isDisplayMode }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ setEdit }}" class="btn-icon" style="gap:5px;padding:6px 10px;flex-shrink:0">
+          <i data-lucide="pencil" style="width:14px;height:14px"></i>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#7B766D">Editar</span>
+        </button>
+      </sc-if>
+    </header>
+
+    <!-- LAYOUT AREA -->
+    <div class="layout-area">
+
+      <!-- ════ LEFT COLUMN ════ -->
+      <div class="col-left">
+
+        <!-- ── DISPLAY MODE: Client info ── -->
+        <sc-if value="{{ isDisplayMode }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:24px 20px 0">
+            <!-- Avatar + name row -->
+            <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:16px">
+              <div style="width:64px;height:64px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid #fff;box-shadow:0 0 0 1px #F0E8D0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:#7E5407">AG</span>
+              </div>
+              <div style="flex:1;padding-top:2px">
+                <h1 style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0 0 10px">Ana García</h1>
+                <!-- Phone + call -->
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+                  <i data-lucide="phone" style="width:13px;height:13px;color:#A9A49C;flex-shrink:0"></i>
+                  <span style="font-size:14px;color:#11100E">+52 55 1234 5678</span>
+                  <span style="display:inline-block;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;letter-spacing:.06em;padding:2px 7px;cursor:pointer;border-radius:2px">LLAMAR</span>
+                </div>
+                <!-- Email -->
+                <div style="display:flex;align-items:center;gap:8px">
+                  <i data-lucide="mail" style="width:13px;height:13px;color:#A9A49C;flex-shrink:0"></i>
+                  <a href="#" style="font-size:13px;color:#C98A0A;text-decoration:none">ana.garcia@empresa.mx</a>
+                </div>
+              </div>
+            </div>
+            <!-- Nota colapsada -->
+            <div style="background:#F8F7F4;border-left:3px solid #E9E6E0;padding:10px 12px;margin-bottom:20px">
+              <p style="font-size:13px;color:#5C574F;line-height:1.6;margin:0 0 4px">Dueña de Tech Solutions MX. Prefiere contacto por WhatsApp. Decisora principal en compras tecnológicas.</p>
+              <button style="font-size:12px;color:#C98A0A;background:none;border:none;padding:0;cursor:pointer;font-family:'IBM Plex Sans',sans-serif">Ver menos ↑</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── EDIT MODE: form ── -->
+        <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:20px 20px 0">
+            <!-- Mini avatar header -->
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #F3F1EC">
+              <div style="width:48px;height:48px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:#7E5407">AG</span>
+              </div>
+              <div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#11100E">Ana García</div>
+                <div style="font-size:12px;color:#A9A49C">Editando ficha</div>
+              </div>
+            </div>
+            <!-- Fields -->
+            <div style="display:flex;flex-direction:column;gap:15px">
+              <div>
+                <label class="lbl-u">Nombre <span style="color:#C98A0A">*</span></label>
+                <input class="fi" type="text" value="Ana García" readOnly="">
+              </div>
+              <div>
+                <label class="lbl-u">Teléfono <span style="color:#C98A0A">*</span></label>
+                <div style="position:relative">
+                  <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none"><i data-lucide="phone" style="width:14px;height:14px;color:#A9A49C"></i></div>
+                  <input class="fi" type="tel" value="+52 55 1234 5678" readOnly="" style="padding-left:34px">
+                </div>
+              </div>
+              <div>
+                <label class="lbl-u">Correo <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0">opcional</span></label>
+                <div style="position:relative">
+                  <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none"><i data-lucide="mail" style="width:14px;height:14px;color:#A9A49C"></i></div>
+                  <input class="fi" type="email" value="ana.garcia@empresa.mx" readOnly="" style="padding-left:34px">
+                </div>
+              </div>
+              <div>
+                <label class="lbl-u">Nota <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0">opcional</span></label>
+                <textarea class="fta" style="min-height:72px">Dueña de Tech Solutions MX. Prefiere contacto por WhatsApp. Decisora principal en compras tecnológicas.</textarea>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── QUICK ACTIONS ── -->
+        <sc-if value="{{ isDisplayMode }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:16px 20px;border-bottom:1px solid #F3F1EC">
+            <div style="display:flex;gap:8px">
+              <button class="act-btn act-btn-amber" onClick="{{ setAnotar }}">
+                <i data-lucide="message-circle" style="width:14px;height:14px"></i>Anotar
+              </button>
+              <button class="act-btn" onClick="{{ setRegistrar }}">
+                <i data-lucide="circle-dollar-sign" style="width:14px;height:14px"></i>Registrar
+              </button>
+              <button class="act-btn" onClick="{{ setAgendar }}">
+                <i data-lucide="calendar-plus" style="width:14px;height:14px"></i>Agendar
+              </button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── PENDING FOLLOW-UPS (active only) ── -->
+        <sc-if value="{{ isActiveContent }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:16px 20px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+              <i data-lucide="clock" style="width:12px;height:12px;color:#A9A49C"></i>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#A9A49C;letter-spacing:.08em;text-transform:uppercase">Pendientes</span>
+            </div>
+            <!-- Overdue -->
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#FDEEED;border:1px solid rgba(209,59,30,.2);margin-bottom:8px">
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+                  <i data-lucide="alert-circle" style="width:11px;height:11px;color:#D13B1E;flex-shrink:0"></i>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#D13B1E;font-weight:600;letter-spacing:.04em">HACE 2 DÍAS · VENCIDO</span>
+                </div>
+                <div style="font-size:13px;color:#9E2B14;line-height:1.4">Enviar cotización revisada</div>
+              </div>
+              <button class="done-btn">
+                <i data-lucide="check" style="width:11px;height:11px"></i>Hecho
+              </button>
+            </div>
+            <!-- Today -->
+            <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#FEFCF5;border:1px solid rgba(201,138,10,.2)">
+              <div style="flex:1;min-width:0">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#C98A0A;font-weight:600;letter-spacing:.04em;margin-bottom:3px">HOY</div>
+                <div style="font-size:13px;color:#11100E;line-height:1.4">Llamar para confirmar presentación del jueves</div>
+              </div>
+              <button class="done-btn">
+                <i data-lucide="check" style="width:11px;height:11px"></i>Hecho
+              </button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ── EDIT FOOTER ── -->
+        <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:16px 20px 24px;border-top:1px solid #E9E6E0;margin-top:16px;display:flex;gap:10px">
+            <button class="btn-g" style="flex:1" onClick="{{ setActive }}">Cancelar</button>
+            <button class="btn-p" style="flex:2" onClick="{{ setActive }}">
+              <i data-lucide="check" style="width:14px;height:14px"></i>Guardar cambios
+            </button>
+          </div>
+        </sc-if>
+
+      </div><!-- /col-left -->
+
+
+      <!-- ════ RIGHT COLUMN ════ -->
+      <div class="col-right">
+
+        <!-- HISTORY FEED (active, anotar, agendar, editing) -->
+        <sc-if value="{{ showHistory }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <h2 style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Historial</h2>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;letter-spacing:.04em">5 REGISTROS</span>
+            </div>
+
+            <!-- ─ ITEM 1: Oportunidad ─ -->
+            <div class="hist-row" style="display:flex;gap:12px;padding:12px;margin:0 -12px 4px;border-radius:0">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px">
+                <div style="width:32px;height:32px;border-radius:9999px;background:#FEF6E4;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i data-lucide="trending-up" style="width:14px;height:14px;color:#C98A0A"></i>
+                </div>
+                <div style="width:1px;flex:1;background:#E9E6E0;min-height:20px;margin-top:4px"></div>
+              </div>
+              <div style="flex:1;padding-top:4px;padding-bottom:12px">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                  <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#11100E">Plan Pro Anual</span>
+                    <span style="background:#FEF6E4;color:#8F6010;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid rgba(198,138,16,.25)">Cotizado</span>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;white-space:nowrap">Hoy · 10:30</span>
+                </div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:#11100E;margin-bottom:2px">$48,000 MXN</div>
+                <div style="font-size:12px;color:#7B766D">Oportunidad creada</div>
+              </div>
+            </div>
+
+            <!-- ─ ITEM 2: Llamada ─ -->
+            <div class="hist-row" style="display:flex;gap:12px;padding:12px;margin:0 -12px 4px">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px">
+                <div style="width:32px;height:32px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i data-lucide="phone" style="width:14px;height:14px;color:#2A53A0"></i>
+                </div>
+                <div style="width:1px;flex:1;background:#E9E6E0;min-height:20px;margin-top:4px"></div>
+              </div>
+              <div style="flex:1;padding-top:4px;padding-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#11100E">Llamada</span>
+                    <span style="background:#EEF3FD;color:#2A53A0;font-size:11px;font-weight:500;padding:1px 7px;border-radius:2px;border:1px solid rgba(58,114,203,.2)">Llamada</span>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;white-space:nowrap">Ayer · 16:15</span>
+                </div>
+                <p style="font-size:14px;color:#11100E;line-height:1.55;margin:0">Solicitó propuesta formal. Tiene presupuesto aprobado para Q3. Reunión el jueves.</p>
+              </div>
+            </div>
+
+            <!-- ─ ITEM 3: Seguimiento completado ─ -->
+            <div class="hist-row" style="display:flex;gap:12px;padding:12px;margin:0 -12px 4px">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px">
+                <div style="width:32px;height:32px;border-radius:9999px;background:#F3F1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i data-lucide="check" style="width:14px;height:14px;color:#7B766D"></i>
+                </div>
+                <div style="width:1px;flex:1;background:#E9E6E0;min-height:20px;margin-top:4px"></div>
+              </div>
+              <div style="flex:1;padding-top:5px;padding-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <span style="font-size:13px;color:#7B766D">Preparar propuesta técnica</span>
+                    <span style="background:#F3F1EC;color:#5C574F;font-size:11px;font-weight:500;padding:1px 7px;border-radius:2px;border:1px solid #D6D2CB">Completado</span>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;white-space:nowrap">Ayer · 14:00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ─ ITEM 4: Mensaje ─ -->
+            <div class="hist-row" style="display:flex;gap:12px;padding:12px;margin:0 -12px 4px">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px">
+                <div style="width:32px;height:32px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i data-lucide="message-circle" style="width:14px;height:14px;color:#2A53A0"></i>
+                </div>
+                <div style="width:1px;flex:1;background:#E9E6E0;min-height:20px;margin-top:4px"></div>
+              </div>
+              <div style="flex:1;padding-top:4px;padding-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#11100E">Mensaje</span>
+                    <span style="background:#EEF3FD;color:#2A53A0;font-size:11px;font-weight:500;padding:1px 7px;border-radius:2px;border:1px solid rgba(58,114,203,.2)">Mensaje</span>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;white-space:nowrap">Hace 3 días</span>
+                </div>
+                <p style="font-size:14px;color:#11100E;line-height:1.55;margin:0">Respondió por WhatsApp: disponible el martes para la demo.</p>
+              </div>
+            </div>
+
+            <!-- ─ ITEM 5: Visita (último — sin línea) ─ -->
+            <div class="hist-row" style="display:flex;gap:12px;padding:12px;margin:0 -12px">
+              <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:32px">
+                <div style="width:32px;height:32px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                  <i data-lucide="map-pin" style="width:14px;height:14px;color:#1A6629"></i>
+                </div>
+              </div>
+              <div style="flex:1;padding-top:4px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#11100E">Visita</span>
+                    <span style="background:#ECFAED;color:#1A6629;font-size:11px;font-weight:500;padding:1px 7px;border-radius:2px;border:1px solid rgba(37,145,58,.2)">Visita</span>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;white-space:nowrap">Hace 1 semana</span>
+                </div>
+                <p style="font-size:14px;color:#11100E;line-height:1.55;margin:0">Primera reunión en sus oficinas. Muy interesada en el plan Pro. Buen ambiente.</p>
+              </div>
+            </div>
+
+          </div>
+        </sc-if>
+
+        <!-- EMPTY HISTORY (nuevo cliente) -->
+        <sc-if value="{{ showEmptyHistory }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;text-align:center;padding:40px 20px">
+            <div style="width:52px;height:52px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+              <i data-lucide="clock" style="width:24px;height:24px;color:#A9A49C"></i>
+            </div>
+            <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0 0 8px">Aún no hay historial</h3>
+            <p style="font-size:14px;color:#7B766D;margin:0 0 24px;line-height:1.6;max-width:260px">Anota tu primera interacción para empezar el seguimiento.</p>
+            <button class="btn-p" onClick="{{ setAnotar }}" style="font-size:13px">
+              <i data-lucide="message-circle" style="width:14px;height:14px"></i>Anotar interacción
+            </button>
+          </div>
+        </sc-if>
+
+      </div><!-- /col-right -->
+    </div><!-- /layout-area -->
+  </div><!-- /main-wrap -->
+
+
+  <!-- ════ OVERLAY ════ -->
+  <sc-if value="{{ showBottomSheet }}" hint-placeholder-val="{{ false }}">
+    <div class="bs-overlay" onClick="{{ closeSheet }}"></div>
+  </sc-if>
+
+  <!-- ════ ANOTAR BOTTOM SHEET ════ -->
+  <sc-if value="{{ showAnotar }}" hint-placeholder-val="{{ false }}">
+    <div class="bs-panel">
+      <!-- header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid #E9E6E0">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:28px;height:28px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#7E5407">AG</span>
+          </div>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Anotar interacción</h3>
+        </div>
+        <button class="btn-icon" onClick="{{ closeSheet }}">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+      <!-- body -->
+      <div style="padding:16px">
+        <div style="margin-bottom:14px">
+          <label class="lbl-u">¿Qué pasó?</label>
+          <textarea class="fta" style="min-height:84px" placeholder="Habló del presupuesto. Pidió cotización formal para el jueves..."></textarea>
+        </div>
+        <!-- Tipo segmented -->
+        <div style="margin-bottom:14px">
+          <label class="lbl-u">Tipo</label>
+          <div style="display:flex">
+            <sc-if value="{{ isLlamada }}"    hint-placeholder-val="{{ true  }}"><button type="button" class="seg-b seg-b-on" onClick="{{ setLlamada }}" style="flex:1">Llamada</button></sc-if>
+            <sc-if value="{{ isLlamadaOff }}" hint-placeholder-val="{{ false }}"><button type="button" class="seg-b" onClick="{{ setLlamada }}" style="flex:1">Llamada</button></sc-if>
+            <sc-if value="{{ isMensaje }}"    hint-placeholder-val="{{ false }}"><button type="button" class="seg-b seg-b-on" onClick="{{ setMensaje }}" style="flex:1">Mensaje</button></sc-if>
+            <sc-if value="{{ isMensajeOff }}" hint-placeholder-val="{{ true  }}"><button type="button" class="seg-b" onClick="{{ setMensaje }}" style="flex:1">Mensaje</button></sc-if>
+            <sc-if value="{{ isVisita }}"     hint-placeholder-val="{{ false }}"><button type="button" class="seg-b seg-b-on" onClick="{{ setVisita }}" style="flex:1;border-right:1px solid #D6D2CB">Visita</button></sc-if>
+            <sc-if value="{{ isVisitaOff }}"  hint-placeholder-val="{{ true  }}"><button type="button" class="seg-b" onClick="{{ setVisita }}" style="flex:1;border-right:1px solid #D6D2CB">Visita</button></sc-if>
+          </div>
+        </div>
+        <!-- Fecha -->
+        <div style="margin-bottom:16px">
+          <label class="lbl-u">Fecha</label>
+          <input class="fi" type="date" style="font-family:'IBM Plex Sans',sans-serif;color:#7B766D">
+        </div>
+      </div>
+      <!-- footer -->
+      <div style="padding:0 16px 20px;display:flex;gap:10px">
+        <button class="btn-g" style="flex:1" onClick="{{ closeSheet }}">Cancelar</button>
+        <button class="btn-p" style="flex:2" onClick="{{ closeSheet }}">
+          <i data-lucide="check" style="width:14px;height:14px"></i>Guardar nota
+        </button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ════ REGISTRAR OPORTUNIDAD BOTTOM SHEET ════ -->
+  <sc-if value="{{ showRegistrar }}" hint-placeholder-val="{{ false }}">
+    <div class="bs-panel">
+      <!-- header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid #E9E6E0">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:28px;height:28px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#7E5407">AG</span>
+          </div>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Registrar oportunidad</h3>
+        </div>
+        <button class="btn-icon" onClick="{{ closeSheet }}">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+      <!-- body -->
+      <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+        <!-- Etapa -->
+        <div>
+          <label style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">Etapa <span style="color:#C98A0A">*</span></label>
+          <div style="display:flex">
+            <sc-if value="{{ isRegInteresado }}"    hint-placeholder-val="{{ true  }}"><button type="button" class="seg-b" onClick="{{ setRegInteresado }}" style="flex:1;background:#EEF3FD;border-color:rgba(42,83,160,.35);color:#2A53A0;font-weight:700">Interesado</button></sc-if>
+            <sc-if value="{{ isRegInteresadoOff }}" hint-placeholder-val="{{ false }}"><button type="button" class="seg-b" onClick="{{ setRegInteresado }}" style="flex:1">Interesado</button></sc-if>
+            <sc-if value="{{ isRegCotizado }}"    hint-placeholder-val="{{ false }}"><button type="button" class="seg-b" onClick="{{ setRegCotizado }}" style="flex:1;background:#FEF8E7;border-color:rgba(201,138,10,.45);color:#7E5407;font-weight:700">Cotizado</button></sc-if>
+            <sc-if value="{{ isRegCotizadoOff }}" hint-placeholder-val="{{ true  }}"><button type="button" class="seg-b" onClick="{{ setRegCotizado }}" style="flex:1">Cotizado</button></sc-if>
+            <sc-if value="{{ isRegCerrado }}"    hint-placeholder-val="{{ false }}"><button type="button" class="seg-b" onClick="{{ setRegCerrado }}" style="flex:1;border-right:1px solid #D6D2CB;background:#ECFAED;border-color:rgba(37,145,58,.35);color:#1A6629;font-weight:700">Cerrado</button></sc-if>
+            <sc-if value="{{ isRegCerradoOff }}" hint-placeholder-val="{{ true  }}"><button type="button" class="seg-b" onClick="{{ setRegCerrado }}" style="flex:1;border-right:1px solid #D6D2CB">Cerrado</button></sc-if>
+          </div>
+          <p style="font-size:11px;color:#A9A49C;margin:5px 0 0">{{ regStageDesc }}</p>
+        </div>
+        <!-- Producto/servicio -->
+        <div>
+          <label style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">Producto o servicio <span style="color:#C98A0A">*</span></label>
+          <input class="fi" type="text" placeholder="Plan Pro Anual, consultoría, soporte…">
+        </div>
+        <!-- Monto -->
+        <div>
+          <label style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">Monto <span style="color:#C98A0A">*</span></label>
+          <div style="position:relative">
+            <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:#A9A49C;pointer-events:none">$</div>
+            <input class="fi" type="text" placeholder="48,000" style="padding-left:24px;font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:15px">
+          </div>
+        </div>
+        <!-- Nota -->
+        <div>
+          <label style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:5px">Nota <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">opcional</span></label>
+          <textarea class="fta" rows="2" placeholder="Presentó interés en el plan anual. Necesita aprobación de dirección."></textarea>
+        </div>
+      </div>
+      <!-- footer -->
+      <div style="padding:0 16px 20px;display:flex;gap:10px">
+        <button class="btn-g" style="flex:1" onClick="{{ closeSheet }}">Cancelar</button>
+        <button style="{{ regSaveBtnStyle }}" onClick="{{ closeSheet }}">
+          <i data-lucide="trending-up" style="width:14px;height:14px"></i>{{ regSaveBtnLabel }}
+        </button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ════ AGENDAR BOTTOM SHEET ════ -->
+  <sc-if value="{{ showAgendar }}" hint-placeholder-val="{{ false }}">
+    <div class="bs-panel">
+      <!-- header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid #E9E6E0">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:28px;height:28px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#7E5407">AG</span>
+          </div>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Agendar seguimiento</h3>
+        </div>
+        <button class="btn-icon" onClick="{{ closeSheet }}">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+      <!-- body -->
+      <div style="padding:16px">
+        <div style="margin-bottom:14px">
+          <label class="lbl-u">¿Qué hacer? <span style="color:#C98A0A">*</span></label>
+          <input class="fi" type="text" placeholder="Llamar para confirmar demo del jueves...">
+        </div>
+        <div style="margin-bottom:14px">
+          <label class="lbl-u">Fecha <span style="color:#C98A0A">*</span></label>
+          <input class="fi" type="date" style="font-family:'IBM Plex Sans',sans-serif;color:#7B766D">
+        </div>
+        <div style="margin-bottom:16px">
+          <label class="lbl-u">Oportunidad <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0">opcional</span></label>
+          <div style="position:relative">
+            <select class="sel">
+              <option value="">Sin oportunidad</option>
+              <option value="1" selected="">Plan Pro Anual — $48,000</option>
+            </select>
+            <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);pointer-events:none">
+              <i data-lucide="chevron-down" style="width:14px;height:14px;color:#7B766D"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- footer -->
+      <div style="padding:0 16px 20px;display:flex;gap:10px">
+        <button class="btn-g" style="flex:1" onClick="{{ closeSheet }}">Cancelar</button>
+        <button class="btn-p" style="flex:2" onClick="{{ closeSheet }}">
+          <i data-lucide="calendar-check" style="width:14px;height:14px"></i>Guardar seguimiento
+        </button>
+      </div>
+    </div>
+  </sc-if>
+
+
+  <!-- ════ STATE SWITCHER ════ -->
+  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+    <sc-if value="{{ isActiveSw }}"    hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setActive }}"  style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CON HISTORIAL</button></sc-if>
+    <sc-if value="{{ isActiveSwOff }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setActive }}"  style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CON HISTORIAL</button></sc-if>
+
+    <sc-if value="{{ isEmptySw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmpty }}"   style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">NUEVO</button></sc-if>
+    <sc-if value="{{ isEmptySwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEmpty }}"   style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">NUEVO</button></sc-if>
+
+    <sc-if value="{{ isEditSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEdit }}"    style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">EDITAR</button></sc-if>
+    <sc-if value="{{ isEditSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEdit }}"    style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">EDITAR</button></sc-if>
+
+    <sc-if value="{{ isAnotarSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setAnotar }}"  style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ANOTAR</button></sc-if>
+    <sc-if value="{{ isAnotarSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setAnotar }}"  style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ANOTAR</button></sc-if>
+
+    <sc-if value="{{ isAgendarSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setAgendar }}" style="padding:7px 13px;border:none;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">AGENDAR</button></sc-if>
+    <sc-if value="{{ isAgendarSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setAgendar }}" style="padding:7px 13px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">AGENDAR</button></sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}}">
+class Component extends DCLogic {
+  state = { viewState: 'active', notaType: 'llamada', regStage: 'interesado' };
+
+  renderVals() {
+    const { viewState, notaType } = this.state;
+    const vs = viewState;
+
+    const isActiveContent  = vs === 'active' || vs === 'anotar' || vs === 'agendar';
+    const isEditing        = vs === 'editing';
+    const isEmptyContent   = vs === 'empty';
+    const isDisplayMode    = !isEditing;
+    const showAnotar       = vs === 'anotar';
+    const showAgendar      = vs === 'agendar';
+    const showRegistrar    = vs === 'registrar';
+    const showBottomSheet  = showAnotar || showAgendar || showRegistrar;
+
+    const rs = this.state.regStage;
+    const isRegInteresado    = rs === 'interesado';
+    const isRegCotizado      = rs === 'cotizado';
+    const isRegCerrado       = rs === 'cerrado';
+    const regStageDesc = rs === 'interesado'
+      ? 'Mostró interés — aún no hay propuesta formal'
+      : rs === 'cotizado' ? 'Propuesta enviada — esperando respuesta'
+      : '¡Trato ganado! Se registra como venta cerrada';
+    const regSaveBtnLabel = rs === 'cerrado' ? 'Registrar venta cerrada' : 'Guardar oportunidad';
+    const regSaveBtnStyle = {
+      flex: 2, height: '40px',
+      background: rs === 'cerrado' ? '#25913A' : '#C98A0A',
+      color: '#fff',
+      border: rs === 'cerrado' ? '1px solid #25913A' : '1px solid #C98A0A',
+      fontFamily: "'IBM Plex Mono', monospace", fontSize: '13px', fontWeight: 500,
+      cursor: 'pointer', borderRadius: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+      transition: 'background 120ms',
+    };
+    const showHistory      = isActiveContent || isEditing;
+    const showEmptyHistory = isEmptyContent;
+
+    const isLlamada = notaType === 'llamada';
+    const isMensaje = notaType === 'mensaje';
+    const isVisita  = notaType === 'visita';
+
+    return {
+      isActiveContent, isEditing, isEmptyContent,
+      isDisplayMode,
+      showAnotar, showAgendar, showRegistrar, showBottomSheet,
+      isRegInteresado,    isRegInteresadoOff: !isRegInteresado,
+      isRegCotizado,      isRegCotizadoOff:   !isRegCotizado,
+      isRegCerrado,       isRegCerradoOff:    !isRegCerrado,
+      regStageDesc, regSaveBtnLabel, regSaveBtnStyle,
+      showHistory, showEmptyHistory,
+
+      isLlamada,    isLlamadaOff: !isLlamada,
+      isMensaje,    isMensajeOff: !isMensaje,
+      isVisita,     isVisitaOff:  !isVisita,
+
+      isActiveSw:   vs === 'active',   isActiveSwOff:  vs !== 'active',
+      isEmptySw:    vs === 'empty',    isEmptySwOff:   vs !== 'empty',
+      isEditSw:     vs === 'editing',  isEditSwOff:    vs !== 'editing',
+      isAnotarSw:   vs === 'anotar',   isAnotarSwOff:  vs !== 'anotar',
+      isAgendarSw:  vs === 'agendar',  isAgendarSwOff: vs !== 'agendar',
+
+      setActive:  () => this.setState({ viewState: 'active'  }),
+      setEmpty:   () => this.setState({ viewState: 'empty'   }),
+      setEdit:    () => this.setState({ viewState: 'editing' }),
+      setAnotar:     () => this.setState({ viewState: 'anotar'    }),
+      setAgendar:    () => this.setState({ viewState: 'agendar'   }),
+      setRegistrar:  () => this.setState({ viewState: 'registrar' }),
+      closeSheet:    () => this.setState({ viewState: 'active'    }),
+      setRegInteresado: () => this.setState({ regStage: 'interesado' }),
+      setRegCotizado:   () => this.setState({ regStage: 'cotizado'   }),
+      setRegCerrado:    () => this.setState({ regStage: 'cerrado'    }),
+
+      setLlamada: () => this.setState({ notaType: 'llamada' }),
+      setMensaje: () => this.setState({ notaType: 'mensaje' }),
+      setVisita:  () => this.setState({ notaType: 'visita'  }),
+
+
+    };
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow-x: hidden; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideup { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* ── Sidebar ── */
+    .sidebar { display: none; position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #181512; flex-direction: column; z-index: 50; border-right: 1px solid #2D2924; }
+
+    /* ── Main wrap ── */
+    .main-wrap { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Page header ── */
+    .page-hdr { height: 52px; padding: 0 16px; display: flex; align-items: center; gap: 10px; background: #fff; border-bottom: 1px solid #E9E6E0; position: sticky; top: 0; z-index: 40; flex-shrink: 0; }
+
+    /* ── Kanban layout ── */
+    .kanban-body   { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .columns-wrap  { display: flex; overflow-x: auto; padding: 12px 16px 80px; gap: 12px; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; flex: 1; }
+    .kanban-col    { min-width: 272px; flex-shrink: 0; display: flex; flex-direction: column; border: 1px solid; border-radius: 0; overflow: hidden; scroll-snap-align: start; }
+    .col-header    { padding: 12px 14px 10px; flex-shrink: 0; }
+    .col-cards-area { padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── Cards ── */
+    .kanban-card { background: #fff; border: 1px solid #E9E6E0; padding: 12px; cursor: pointer; transition: box-shadow 120ms, transform 120ms; user-select: none; }
+    .kanban-card:hover { box-shadow: 0 3px 12px rgba(30,20,5,.12); transform: translateY(-1px); }
+    .kanban-card.dragging { opacity: 0.4; transform: rotate(1.5deg) scale(0.97); }
+    .col-drop-zone.drag-over { outline: 2px dashed #C98A0A; outline-offset: -4px; }
+    .card-menu { background: none; border: none; cursor: pointer; padding: 3px 4px; color: #C9C4BB; display: flex; align-items: center; transition: color 120ms; flex-shrink: 0; }
+    .card-menu:hover { color: #7B766D; }
+
+    /* ── Nav ── */
+    .nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 18px; font-size: 13px; color: #7B766D; cursor: pointer; transition: color 120ms, background 120ms; border-left: 2px solid transparent; text-decoration: none; }
+    .nav-item:hover { color: #D6C48A; background: rgba(255,255,255,.04); }
+    .nav-item.active { color: #C98A0A; background: rgba(201,138,10,.1); border-left-color: #C98A0A; font-weight: 500; }
+
+    /* ── Buttons ── */
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; color: #7B766D; transition: color 120ms; }
+    .btn-icon:hover { color: #11100E; }
+    .btn-p { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: #C98A0A; color: #fff; border: 1px solid #C98A0A; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; letter-spacing: -.01em; transition: background 120ms; }
+    .btn-p:hover { background: #A56E08; }
+    .btn-g { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: transparent; color: #11100E; border: 1px solid #D6D2CB; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px; transition: background 120ms; }
+    .btn-g:hover { background: rgba(0,0,0,.04); }
+
+    /* ── Move option hover ── */
+    .move-opt { transition: background 120ms; }
+    .move-opt:hover { background: #F8F7F4 !important; }
+
+    /* ── Bottom sheet ── */
+    .bs-overlay { position: fixed; inset: 0; background: rgba(17,16,14,.5); z-index: 100; animation: fadein 200ms ease; }
+    .bs-panel   { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; z-index: 101; animation: slideup 220ms ease; border-top: 1px solid #E9E6E0; }
+
+    /* ── FAB ── */
+    .fab { position: fixed; bottom: 76px; right: 20px; z-index: 90; width: 56px; height: 56px; border-radius: 9999px; background: #C98A0A; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(201,138,10,.4); cursor: pointer; transition: background 120ms, transform 120ms; }
+    .fab:hover { background: #A56E08; transform: scale(1.05); }
+
+    /* ── Responsive helpers ── */
+    .mob-only  { }
+    .desk-only { display: none; }
+
+    /* ── Desktop ── */
+    @media (min-width: 1024px) {
+      .sidebar { display: flex; }
+      .main-wrap { margin-left: 220px; height: 100vh; overflow: hidden; }
+      .page-hdr  { position: relative; padding: 0 24px; height: 56px; }
+      .kanban-body { flex: 1; overflow: hidden; }
+      .columns-wrap { overflow: hidden; padding: 20px 24px; gap: 16px; height: 100%; scroll-snap-type: none; }
+      .kanban-col { flex: 1; min-width: 0; }
+      .col-cards-area { flex: 1; overflow-y: auto; padding: 10px 12px 20px; }
+      .bs-panel { bottom: auto; left: 50%; right: auto; top: 50%; transform: translate(-50%,-50%); width: 420px; animation: fadein 200ms ease; box-shadow: 0 8px 32px rgba(17,16,14,.2); border: 1px solid #E9E6E0; border-top: 1px solid #E9E6E0; }
+      .mob-only  { display: none !important; }
+      .desk-only { display: flex !important; }
+    }
+  </style>
+</helmet>
+
+<div style="position:relative;min-height:100vh">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div style="padding:20px 18px 16px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+      </div>
+    </div>
+    <nav style="padding:12px 0;flex:1">
+      <a class="nav-item" href="#">
+        <i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes
+      </a>
+      <a class="nav-item active" href="#">
+        <i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Oportunidades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="calendar" style="width:16px;height:16px;flex-shrink:0"></i>Actividades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="bar-chart-2" style="width:16px;height:16px;flex-shrink:0"></i>Reportes
+      </a>
+    </nav>
+    <div style="padding:14px 18px;border-top:1px solid #2D2924;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">CV</span>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:500;color:#D6C48A">Carlos Vargas</div>
+        <div style="font-size:11px;color:#5C574F">Vendedor</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN WRAP ── -->
+  <div class="main-wrap">
+
+    <!-- PAGE HEADER -->
+    <header class="page-hdr">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:10px">
+          <h1 style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0">Ventas</h1>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A9A49C;letter-spacing:.02em">Pipeline · {{ pipelineTotal }}</span>
+        </div>
+      </div>
+      <button class="btn-p desk-only" style="gap:6px;font-size:12px;height:36px;padding:0 14px">
+        <i data-lucide="plus" style="width:13px;height:13px"></i>Nueva oportunidad
+      </button>
+    </header>
+
+    <!-- KANBAN BODY -->
+    <div class="kanban-body">
+
+      <!-- ═════ COLUMNS (populated + empty-col) ═════ -->
+      <sc-if value="{{ isNotEmptyAll }}" hint-placeholder-val="{{ true }}">
+        <div class="columns-wrap">
+
+          <!-- ── COLUMNA 1: INTERESADO ── -->
+          <div class="kanban-col" style="border-color:rgba(42,83,160,.18)">
+            <div class="col-header" style="background:#EEF3FD;border-bottom:1px solid rgba(42,83,160,.12)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#2A53A0;letter-spacing:.01em;text-transform:uppercase">Interesado</span>
+                  <span style="background:rgba(42,83,160,.15);color:#2A53A0;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px">{{ interesadoCount }}</span>
+                </div>
+                <button class="btn-icon" onClick="{{ noop }}" style="padding:2px;color:#7B766D">
+                  <i data-lucide="plus" style="width:14px;height:14px"></i>
+                </button>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:#11100E">{{ interesadoTotal }}</div>
+            </div>
+            <div class="col-cards-area col-drop-zone" style="background:#F6F9FE">
+              <sc-if value="{{ showInteresadoCards }}" hint-placeholder-val="{{ true }}">
+                <!-- Card: Eduardo Ruiz -->
+                <div class="kanban-card" data-card-id="c1">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:600;color:#11100E;line-height:1.3">Eduardo Ruiz</span>
+                    <button class="card-menu" onClick="{{ openMoveSheet }}">
+                      <i data-lucide="more-horizontal" style="width:14px;height:14px"></i>
+                    </button>
+                  </div>
+                  <div style="font-size:12px;color:#7B766D;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Plan Básico</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#11100E">$12,000</span>
+                    <span style="font-size:11px;color:#A9A49C">3 días</span>
+                  </div>
+                </div>
+                <!-- Card: Hilda Moreno -->
+                <div class="kanban-card" data-card-id="c2">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:600;color:#11100E;line-height:1.3">Hilda Moreno</span>
+                    <button class="card-menu" onClick="{{ openMoveSheet }}">
+                      <i data-lucide="more-horizontal" style="width:14px;height:14px"></i>
+                    </button>
+                  </div>
+                  <div style="font-size:12px;color:#7B766D;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Consultoría Digital</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#11100E">$28,500</span>
+                    <span style="font-size:11px;color:#A9A49C">8 días</span>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ showInteresadoEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:20px;text-align:center;border:1.5px dashed rgba(42,83,160,.2);margin:2px">
+                  <div style="font-size:12px;color:#A9A49C">Sin oportunidades aquí</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- ── COLUMNA 2: COTIZADO ── -->
+          <div class="kanban-col" style="border-color:rgba(201,138,10,.22)">
+            <div class="col-header" style="background:#FEF8E7;border-bottom:1px solid rgba(201,138,10,.14)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#8F6010;letter-spacing:.01em;text-transform:uppercase">Cotizado</span>
+                  <span style="background:rgba(201,138,10,.18);color:#7E5407;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px">{{ cotizadoCount }}</span>
+                </div>
+                <button class="btn-icon" onClick="{{ noop }}" style="padding:2px;color:#7B766D">
+                  <i data-lucide="plus" style="width:14px;height:14px"></i>
+                </button>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:#11100E">{{ cotizadoTotal }}</div>
+            </div>
+            <div class="col-cards-area col-drop-zone" style="background:#FFFDF8">
+              <sc-if value="{{ showCotizadoCards }}" hint-placeholder-val="{{ true }}">
+                <!-- Card: Ana García -->
+                <div class="kanban-card" data-card-id="c3">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:600;color:#11100E;line-height:1.3">Ana García</span>
+                    <button class="card-menu" onClick="{{ openMoveSheet }}">
+                      <i data-lucide="more-horizontal" style="width:14px;height:14px"></i>
+                    </button>
+                  </div>
+                  <div style="font-size:12px;color:#7B766D;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Plan Pro Anual</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#11100E">$48,000</span>
+                    <span style="font-size:11px;color:#A9A49C">2 días</span>
+                  </div>
+                </div>
+                <!-- Card: Carlos Mendoza -->
+                <div class="kanban-card" data-card-id="c4">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:600;color:#11100E;line-height:1.3">Carlos Mendoza</span>
+                    <button class="card-menu" onClick="{{ openMoveSheet }}">
+                      <i data-lucide="more-horizontal" style="width:14px;height:14px"></i>
+                    </button>
+                  </div>
+                  <div style="font-size:12px;color:#7B766D;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">CRM Empresarial</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#11100E">$35,000</span>
+                    <span style="font-size:11px;color:#A9A49C">5 días</span>
+                  </div>
+                </div>
+                <!-- Card: Diana López -->
+                <div class="kanban-card" data-card-id="c5">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:600;color:#11100E;line-height:1.3">Diana López</span>
+                    <button class="card-menu" onClick="{{ openMoveSheet }}">
+                      <i data-lucide="more-horizontal" style="width:14px;height:14px"></i>
+                    </button>
+                  </div>
+                  <div style="font-size:12px;color:#7B766D;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Soporte Premium</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#11100E">$15,000</span>
+                    <span style="font-size:11px;color:#A9A49C">12 días</span>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ showCotizadoEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:28px 16px;text-align:center;border:1.5px dashed rgba(201,138,10,.25);margin:2px;display:flex;flex-direction:column;align-items:center;gap:8px">
+                  <div style="width:36px;height:36px;background:#FEF8E7;border-radius:9999px;display:flex;align-items:center;justify-content:center">
+                    <i data-lucide="inbox" style="width:16px;height:16px;color:#C98A0A"></i>
+                  </div>
+                  <div style="font-size:12px;color:#A9A49C">Sin cotizaciones activas</div>
+                  <div style="font-size:11px;color:#C9C4BB">Arrastra un trato aquí</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- ── COLUMNA 3: CERRADO ── -->
+          <div class="kanban-col" style="border-color:rgba(37,145,58,.22)">
+            <div class="col-header" style="background:#ECFAED;border-bottom:1px solid rgba(37,145,58,.14)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <i data-lucide="check-circle-2" style="width:13px;height:13px;color:#25913A;flex-shrink:0"></i>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#1A6629;letter-spacing:.01em;text-transform:uppercase">Cerrado</span>
+                  <span style="background:rgba(37,145,58,.18);color:#1A6629;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px">{{ cerradoCount }}</span>
+                </div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;color:#1A6629">{{ cerradoTotal }}</div>
+            </div>
+            <div class="col-cards-area" style="background:#F4FAF5">
+              <sc-if value="{{ showCerradoCards }}" hint-placeholder-val="{{ true }}">
+                <!-- Card: Fernanda Castro -->
+                <div class="kanban-card" style="border-color:rgba(37,145,58,.22);border-left:3px solid #25913A">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:600;color:#11100E;line-height:1.3">Fernanda Castro</span>
+                    <i data-lucide="check-circle" style="width:15px;height:15px;color:#25913A;flex-shrink:0;margin-top:1px"></i>
+                  </div>
+                  <div style="font-size:12px;color:#7B766D;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Plan Básico</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#1A6629">$12,000</span>
+                    <span style="background:#ECFAED;color:#1A6629;font-size:10px;font-weight:500;padding:1px 7px;border-radius:2px;border:1px solid rgba(37,145,58,.25)">Ganado</span>
+                  </div>
+                </div>
+                <!-- Card: Gonzalo Herrera -->
+                <div class="kanban-card" style="border-color:rgba(37,145,58,.22);border-left:3px solid #25913A">
+                  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:3px">
+                    <span style="font-size:13px;font-weight:600;color:#11100E;line-height:1.3">Gonzalo Herrera</span>
+                    <i data-lucide="check-circle" style="width:15px;height:15px;color:#25913A;flex-shrink:0;margin-top:1px"></i>
+                  </div>
+                  <div style="font-size:12px;color:#7B766D;margin-bottom:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">CRM Starter</div>
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:#1A6629">$8,500</span>
+                    <span style="background:#ECFAED;color:#1A6629;font-size:10px;font-weight:500;padding:1px 7px;border-radius:2px;border:1px solid rgba(37,145,58,.25)">Ganado</span>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ showCerradoEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:28px 16px;text-align:center;border:1.5px dashed rgba(37,145,58,.25);margin:2px;display:flex;flex-direction:column;align-items:center;gap:8px">
+                  <div style="width:36px;height:36px;background:#ECFAED;border-radius:9999px;display:flex;align-items:center;justify-content:center">
+                    <i data-lucide="trophy" style="width:16px;height:16px;color:#25913A"></i>
+                  </div>
+                  <div style="font-size:12px;color:#A9A49C">Aún sin tratos cerrados</div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+
+        </div><!-- /columns-wrap -->
+      </sc-if>
+
+      <!-- ═════ EMPTY ALL ═════ -->
+      <sc-if value="{{ isEmptyAll }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center;min-height:400px">
+          <div style="width:60px;height:60px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:20px">
+            <i data-lucide="briefcase" style="width:28px;height:28px;color:#A9A49C"></i>
+          </div>
+          <h2 style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0 0 8px">Registra tu primera venta</h2>
+          <p style="font-size:14px;color:#7B766D;margin:0 0 24px;line-height:1.6;max-width:280px">Agrega oportunidades para visualizar tu pipeline y mover tratos entre etapas.</p>
+          <button class="btn-p">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>Nueva oportunidad
+          </button>
+        </div>
+      </sc-if>
+
+    </div><!-- /kanban-body -->
+  </div><!-- /main-wrap -->
+
+  <!-- ── FAB (mobile) ── -->
+  <div class="fab mob-only">
+    <i data-lucide="plus" style="width:24px;height:24px;color:#fff"></i>
+  </div>
+
+  <!-- ═════ "MOVER A" BOTTOM SHEET ═════ -->
+  <sc-if value="{{ showMoveSheet }}" hint-placeholder-val="{{ false }}">
+    <div class="bs-overlay" onClick="{{ closeMoveSheet }}"></div>
+    <div class="bs-panel">
+      <!-- Drag handle -->
+      <div style="display:flex;justify-content:center;padding:10px 0 6px">
+        <div style="width:32px;height:4px;background:#D6D2CB;border-radius:9999px"></div>
+      </div>
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 12px">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Mover a etapa</h3>
+        <button class="btn-icon" onClick="{{ closeMoveSheet }}">
+          <i data-lucide="x" style="width:18px;height:18px"></i>
+        </button>
+      </div>
+      <div style="border-top:1px solid #E9E6E0">
+        <!-- Opción: Interesado -->
+        <button class="move-opt" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:none;border:none;border-bottom:1px solid #F3F1EC;cursor:pointer;text-align:left" onClick="{{ closeMoveSheet }}">
+          <div style="width:20px;height:20px;border-radius:9999px;border:2px solid #D6D2CB;flex-shrink:0"></div>
+          <div style="flex:1;text-align:left">
+            <div style="font-size:14px;color:#11100E;font-weight:500">Interesado</div>
+            <div style="font-size:12px;color:#7B766D">2 tratos activos</div>
+          </div>
+          <span style="background:#EEF3FD;color:#2A53A0;font-size:11px;font-weight:500;padding:2px 9px;border-radius:2px;white-space:nowrap">$40,500</span>
+        </button>
+        <!-- Opción: Cotizado — ACTUAL (disabled) -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:#F8F7F4;border-bottom:1px solid #F3F1EC;opacity:.55;cursor:not-allowed">
+          <div style="width:20px;height:20px;border-radius:9999px;border:2px solid #C98A0A;background:#C98A0A;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <i data-lucide="check" style="width:10px;height:10px;color:#fff"></i>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:14px;color:#11100E;font-weight:500">Cotizado</div>
+            <div style="font-size:12px;color:#7B766D">Etapa actual</div>
+          </div>
+          <span style="font-size:11px;color:#A9A49C;white-space:nowrap">Actual</span>
+        </div>
+        <!-- Opción: Cerrado -->
+        <button class="move-opt" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:none;border:none;cursor:pointer;text-align:left" onClick="{{ closeMoveSheet }}">
+          <div style="width:20px;height:20px;border-radius:9999px;border:2px solid rgba(37,145,58,.4);flex-shrink:0"></div>
+          <div style="flex:1;text-align:left">
+            <div style="font-size:14px;color:#1A6629;font-weight:500">Cerrado</div>
+            <div style="font-size:12px;color:#7B766D">2 tratos ganados</div>
+          </div>
+          <span style="background:#ECFAED;color:#1A6629;font-size:11px;font-weight:500;padding:2px 9px;border-radius:2px;white-space:nowrap">$20,500</span>
+        </button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ═════ STATE SWITCHER ═════ -->
+  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+    <sc-if value="{{ isPopSw }}"    hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setPopulated }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">TABLERO</button></sc-if>
+    <sc-if value="{{ isPopSwOff }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setPopulated }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">TABLERO</button></sc-if>
+
+    <sc-if value="{{ isEColSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmptyCol }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">COL. VACÍA</button></sc-if>
+    <sc-if value="{{ isEColSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEmptyCol }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">COL. VACÍA</button></sc-if>
+
+    <sc-if value="{{ isEAllSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmptyAll }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">VACÍO</button></sc-if>
+    <sc-if value="{{ isEAllSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEmptyAll }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">VACÍO</button></sc-if>
+
+    <button type="button" onClick="{{ openMoveSheet }}" style="padding:7px 14px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px">
+      <i data-lucide="move-right" style="width:12px;height:12px"></i>MOVER
+    </button>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}}">
+class Component extends DCLogic {
+  state = { viewState: 'populated', showMoveSheet: false };
+
+  renderVals() {
+    const { viewState, showMoveSheet } = this.state;
+    const vs = viewState;
+
+    const isPopulated  = vs === 'populated';
+    const isEmptyCol   = vs === 'empty-col';
+    const isEmptyAll   = vs === 'empty-all';
+    const isNotEmptyAll = !isEmptyAll;
+
+    const showInteresadoCards = !isEmptyAll;
+    const showInteresadoEmpty = isEmptyAll;
+    const showCotizadoCards   = isPopulated;
+    const showCotizadoEmpty   = !isPopulated;
+    const showCerradoCards    = !isEmptyAll;
+    const showCerradoEmpty    = isEmptyAll;
+
+    const interesadoCount = isEmptyAll ? '0' : '2';
+    const cotizadoCount   = isPopulated ? '3' : '0';
+    const cerradoCount    = isEmptyAll ? '0' : '2';
+
+    const interesadoTotal = isEmptyAll ? '$0' : '$40,500';
+    const cotizadoTotal   = isPopulated ? '$98,000' : '$0';
+    const cerradoTotal    = isEmptyAll ? '$0' : '$20,500';
+    const pipelineTotal   = isPopulated ? '$138,500 MXN' : isEmptyCol ? '$40,500 MXN' : '$0 MXN';
+
+    return {
+      isPopulated, isEmptyCol, isEmptyAll, isNotEmptyAll,
+      showInteresadoCards, showInteresadoEmpty,
+      showCotizadoCards,   showCotizadoEmpty,
+      showCerradoCards,    showCerradoEmpty,
+      interesadoCount, cotizadoCount, cerradoCount,
+      interesadoTotal, cotizadoTotal, cerradoTotal, pipelineTotal,
+      showMoveSheet,
+
+      isPopSw:   vs === 'populated',  isPopSwOff:   vs !== 'populated',
+      isEColSw:  vs === 'empty-col',  isEColSwOff:  vs !== 'empty-col',
+      isEAllSw:  vs === 'empty-all',  isEAllSwOff:  vs !== 'empty-all',
+
+      setPopulated:  () => this.setState({ viewState: 'populated'  }),
+      setEmptyCol:   () => this.setState({ viewState: 'empty-col'  }),
+      setEmptyAll:   () => this.setState({ viewState: 'empty-all'  }),
+      openMoveSheet: () => this.setState({ showMoveSheet: true  }),
+      closeMoveSheet: () => this.setState({ showMoveSheet: false }),
+      noop: () => {},
+    };
+  }
+
+  _setupDragDrop() {
+    if (window.innerWidth < 1024) return;
+    document.querySelectorAll('.kanban-card').forEach(card => {
+      card.setAttribute('draggable', 'true');
+      card.ondragstart = (e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => card.classList.add('dragging'), 0);
+      };
+      card.ondragend = () => {
+        card.classList.remove('dragging');
+        document.querySelectorAll('.col-drop-zone').forEach(z => z.classList.remove('drag-over'));
+      };
+    });
+    document.querySelectorAll('.col-drop-zone').forEach(zone => {
+      zone.ondragenter = (e) => { e.preventDefault(); zone.classList.add('drag-over'); };
+      zone.ondragleave = (e) => { if (!zone.contains(e.relatedTarget)) zone.classList.remove('drag-over'); };
+      zone.ondragover  = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; };
+      zone.ondrop      = (e) => { e.preventDefault(); zone.classList.remove('drag-over'); };
+    });
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+    this._setupDragDrop();
+  }
+
+  componentDidUpdate() {
+    if (window.lucide) window.lucide.createIcons();
+    this._setupDragDrop();
+  }
+}
+</script>
+</body>
+</html>

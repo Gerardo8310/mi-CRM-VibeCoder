@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Form inputs ── */
+    .fi {
+      width: 100%; height: 48px; padding: 0 12px;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 15px;
+      color: #11100E; background: #fff;
+      border: 1px solid #E9E6E0; border-radius: 0;
+      outline: none; transition: border-color 120ms, box-shadow 120ms;
+    }
+    .fi:focus { border-color: #C98A0A; box-shadow: 0 0 0 2px #F8F7F4, 0 0 0 4px #C98A0A; }
+    .fi:disabled { background: #F3F1EC; color: #A9A49C; cursor: not-allowed; }
+    .fi-icon { padding-left: 38px; }
+    .fta {
+      width: 100%; padding: 11px 12px; min-height: 88px; resize: vertical;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; line-height: 1.5;
+      color: #11100E; background: #fff;
+      border: 1px solid #E9E6E0; border-radius: 0;
+      outline: none; transition: border-color 120ms, box-shadow 120ms;
+    }
+    .fta:focus { border-color: #C98A0A; box-shadow: 0 0 0 2px #F8F7F4, 0 0 0 4px #C98A0A; }
+    .fta:disabled { background: #F3F1EC; color: #A9A49C; cursor: not-allowed; }
+
+    /* ── Buttons ── */
+    .btn-save {
+      background: #C98A0A; color: #fff; border: 1px solid #C98A0A;
+      font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500;
+      letter-spacing: -0.01em; border-radius: 0; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      height: 48px; transition: background 120ms, border-color 120ms;
+    }
+    .btn-save:hover:not(:disabled) { background: #A56E08; border-color: #A56E08; }
+    .btn-save:disabled { opacity: 0.42; cursor: not-allowed; }
+    .btn-cancel {
+      background: transparent; color: #11100E; border: 1px solid #D6D2CB;
+      font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500;
+      letter-spacing: -0.01em; border-radius: 0; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 48px; padding: 0 20px; transition: background 120ms;
+    }
+    .btn-cancel:hover { background: rgba(0,0,0,0.04); }
+    .hdr-save {
+      font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
+      background: none; border: none; letter-spacing: -0.01em;
+      transition: opacity 120ms; margin-left: auto; flex-shrink: 0;
+    }
+    .hdr-save:not(:disabled) { color: #C98A0A; cursor: pointer; }
+    .hdr-save:disabled { color: #A9A49C; cursor: not-allowed; }
+
+    /* ── Mobile layout (default) ── */
+    .app-bg   { display: none; }
+    .form-ovl { display: none; }
+    .form-panel {
+      position: fixed; inset: 0; z-index: 90;
+      background: #fff; display: flex; flex-direction: column;
+    }
+    .fhdr {
+      height: 52px; padding: 0 16px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid #E9E6E0; background: #fff;
+    }
+    .fbody { flex: 1; overflow-y: auto; padding: 28px 16px 0; }
+    .ffoot {
+      padding: 12px 16px 28px; border-top: 1px solid #E9E6E0;
+      background: #fff; flex-shrink: 0;
+    }
+    .mob-full   { display: flex; width: 100%; }
+    .desk-only  { display: none; }
+    .mob-only   { display: flex; }
+
+    /* ── Desktop layout ── */
+    @media (min-width: 1024px) {
+      .app-bg {
+        display: flex; position: fixed; inset: 0; z-index: 70;
+      }
+      .form-ovl {
+        display: block; position: fixed; inset: 0; z-index: 80;
+        background: rgba(17,16,14,0.45);
+      }
+      .form-panel {
+        position: fixed; right: 0; top: 0; bottom: 0; left: auto;
+        width: 400px; z-index: 90;
+        box-shadow: -8px 0 32px rgba(17,16,14,0.14);
+      }
+      .fhdr { padding: 0 20px; height: 58px; }
+      .fbody { padding: 28px 20px 0; }
+      .ffoot { padding: 16px 20px 24px; display: flex; gap: 10px; }
+      .mob-full { flex: 1; }
+      .desk-only { display: flex; }
+      .mob-only  { display: none !important; }
+    }
+
+    /* Nav items in app-bg */
+    .nav-bg {
+      display: flex; align-items: center; gap: 10px;
+      height: 40px; padding: 0 18px;
+      font-size: 13px; color: #7B766D;
+      border-left: 2px solid transparent;
+      text-decoration: none;
+    }
+    .nav-bg.active { color: #C98A0A; background: rgba(201,138,10,0.10); border-left-color: #C98A0A; }
+  </style>
+</helmet>
+
+<!-- ═══ DESKTOP BACKGROUND (app behind panel) ═══ -->
+<div class="app-bg">
+  <!-- Sidebar -->
+  <div style="width:220px;background:#181512;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid #2D2924">
+    <div style="padding:20px 18px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+      </div>
+    </div>
+    <nav style="padding:12px 0">
+      <a class="nav-bg" href="#"><i data-lucide="clock" style="width:16px;height:16px"></i>Hoy</a>
+      <a class="nav-bg active" href="#"><i data-lucide="users" style="width:16px;height:16px"></i>Clientes</a>
+      <a class="nav-bg" href="#"><i data-lucide="briefcase" style="width:16px;height:16px"></i>Oportunidades</a>
+      <a class="nav-bg" href="#"><i data-lucide="calendar" style="width:16px;height:16px"></i>Actividades</a>
+    </nav>
+  </div>
+  <!-- App content -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:#fff;border-bottom:1px solid #E9E6E0;height:56px;display:flex;align-items:center;padding:0 24px;justify-content:space-between">
+      <h1 style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0">Clientes</h1>
+    </div>
+    <div style="padding:16px 24px 0">
+      <div style="background:#fff;border:1px solid #E9E6E0;height:42px;display:flex;align-items:center;padding:0 12px;gap:8px">
+        <i data-lucide="search" style="width:15px;height:15px;color:#A9A49C"></i>
+        <span style="font-size:14px;color:#A9A49C">Buscar por nombre o teléfono...</span>
+      </div>
+    </div>
+    <div style="padding:12px 24px 0">
+      <div style="background:#fff;border:1px solid #E9E6E0">
+        <div style="display:flex;align-items:center;gap:12px;height:54px;padding:0 16px;border-bottom:1px solid #E9E6E0">
+          <div style="width:34px;height:34px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#7E5407">AG</span></div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500;color:#11100E">Ana García</div><div style="font-size:12px;color:#7B766D">+52 55 1234 5678</div></div>
+          <i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C"></i>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;height:54px;padding:0 16px;border-bottom:1px solid #E9E6E0">
+          <div style="width:34px;height:34px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#2A53A0">CM</span></div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500;color:#11100E">Carlos Mendoza</div><div style="font-size:12px;color:#7B766D">+52 33 9876 5432</div></div>
+          <i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C"></i>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;height:54px;padding:0 16px">
+          <div style="width:34px;height:34px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;color:#1A6629">DL</span></div>
+          <div style="flex:1"><div style="font-size:14px;font-weight:500;color:#11100E">Diana López</div><div style="font-size:12px;color:#7B766D">+52 81 2345 6789</div></div>
+          <i data-lucide="chevron-right" style="width:15px;height:15px;color:#A9A49C"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ OVERLAY ═══ -->
+<div class="form-ovl"></div>
+
+<!-- ═══ FORM PANEL ═══ -->
+<div class="form-panel">
+
+  <!-- Header -->
+  <header class="fhdr">
+    <!-- Back button (mobile) / Close × (desktop) -->
+    <button class="mob-only" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;color:#5C574F;padding:4px;flex-shrink:0">
+      <i data-lucide="arrow-left" style="width:20px;height:20px"></i>
+    </button>
+    <button class="desk-only" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7B766D;width:32px;height:32px;flex-shrink:0">
+      <i data-lucide="x" style="width:18px;height:18px"></i>
+    </button>
+    <h1 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0;flex:1">Nuevo cliente</h1>
+    <!-- Mobile: header save button -->
+    <button class="hdr-save mob-only" disabled="{{ isButtonDisabled }}">Guardar</button>
+  </header>
+
+  <!-- Form body -->
+  <div class="fbody">
+
+    <!-- ── Nombre * ── -->
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">
+        Nombre <span style="color:#C98A0A">*</span>
+      </label>
+      <div style="position:relative">
+        <input class="fi" type="text" value="{{ nombreValue }}" placeholder="Ej. Sofía Ramírez"
+               disabled="{{ isFieldsDisabled }}" onChange="{{ noop }}" autoComplete="name">
+        <sc-if value="{{ isErrorState }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;border:1px solid #D13B1E;pointer-events:none"></div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ isErrorState }}" hint-placeholder-val="{{ false }}">
+        <p style="font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:#D13B1E;margin:5px 0 0;display:flex;align-items:center;gap:5px">
+          <i data-lucide="alert-circle" style="width:12px;height:12px;flex-shrink:0"></i>Este campo es requerido
+        </p>
+      </sc-if>
+    </div>
+
+    <!-- ── Teléfono * ── -->
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">
+        Teléfono <span style="color:#C98A0A">*</span>
+      </label>
+      <div style="position:relative">
+        <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none">
+          <i data-lucide="phone" style="width:15px;height:15px;color:#A9A49C"></i>
+        </div>
+        <input class="fi fi-icon" type="tel" value="{{ telefonoValue }}" placeholder="+52 55 0000 0000"
+               disabled="{{ isFieldsDisabled }}" onChange="{{ noop }}" inputMode="tel" autoComplete="tel">
+        <sc-if value="{{ isErrorState }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;border:1px solid #D13B1E;pointer-events:none"></div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ isErrorState }}" hint-placeholder-val="{{ false }}">
+        <p style="font-family:'IBM Plex Sans',sans-serif;font-size:12px;color:#D13B1E;margin:5px 0 0;display:flex;align-items:center;gap:5px">
+          <i data-lucide="alert-circle" style="width:12px;height:12px;flex-shrink:0"></i>Este campo es requerido
+        </p>
+      </sc-if>
+    </div>
+
+    <!-- ── Correo (opcional) ── -->
+    <div style="margin-bottom:20px">
+      <label style="display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">
+        Correo <span style="color:#A9A49C;font-weight:400;letter-spacing:.02em">opcional</span>
+      </label>
+      <div style="position:relative">
+        <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none">
+          <i data-lucide="mail" style="width:15px;height:15px;color:#A9A49C"></i>
+        </div>
+        <input class="fi fi-icon" type="email" value="{{ correoValue }}" placeholder="correo@empresa.mx"
+               disabled="{{ isFieldsDisabled }}" onChange="{{ noop }}" autoComplete="email">
+      </div>
+    </div>
+
+    <!-- ── Nota (opcional) ── -->
+    <div style="margin-bottom:28px">
+      <label style="display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;font-weight:500;color:#5C574F;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">
+        Nota <span style="color:#A9A49C;font-weight:400;letter-spacing:.02em">opcional</span>
+      </label>
+      <textarea class="fta" placeholder="Algo que quieras recordar..."
+                disabled="{{ isFieldsDisabled }}" onChange="{{ noop }}"></textarea>
+      <p style="font-family:'IBM Plex Sans',sans-serif;font-size:11px;color:#A9A49C;margin:5px 0 0">Solo tú puedes verla</p>
+    </div>
+
+  </div><!-- /fbody -->
+
+  <!-- Footer buttons -->
+  <div class="ffoot">
+    <!-- Desktop: Cancel button -->
+    <button class="btn-cancel desk-only">Cancelar</button>
+    <!-- Save button (both layouts) -->
+    <button class="btn-save mob-full" disabled="{{ isButtonDisabled }}">
+      <sc-if value="{{ isSavingState }}" hint-placeholder-val="{{ false }}">
+        <div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:9999px;animation:spin 600ms linear infinite;flex-shrink:0"></div>
+      </sc-if>
+      {{ buttonLabel }}
+    </button>
+  </div>
+
+</div><!-- /form-panel -->
+
+<!-- ═══ SELECTOR DE ESTADO (prototipo) ═══ -->
+<div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:300;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,0.35)">
+  <sc-if value="{{ isEmptyActive }}"   hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEmpty }}"  style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Vacío</button></sc-if>
+  <sc-if value="{{ isEmptyInactive }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmpty }}"  style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Vacío</button></sc-if>
+
+  <sc-if value="{{ isFilledActive }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setFilled }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Lleno</button></sc-if>
+  <sc-if value="{{ isFilledInactive }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setFilled }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Lleno</button></sc-if>
+
+  <sc-if value="{{ isErrorActive }}"   hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setError }}"  style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Error</button></sc-if>
+  <sc-if value="{{ isErrorInactive }}"  hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setError }}"  style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Error</button></sc-if>
+
+  <sc-if value="{{ isSavingActive }}"  hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setSaving }}" style="padding:7px 14px;border:none;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Guardando</button></sc-if>
+  <sc-if value="{{ isSavingInactive }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setSaving }}" style="padding:7px 14px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;letter-spacing:.03em;cursor:pointer;white-space:nowrap">Guardando</button></sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 820}}">
+class Component extends DCLogic {
+  state = { viewState: 'empty' };
+
+  renderVals() {
+    const { viewState } = this.state;
+    const is = (s) => viewState === s;
+
+    const isEmptyState   = is('empty');
+    const isFilledState  = is('filled');
+    const isErrorState   = is('error');
+    const isSavingState  = is('saving');
+
+    const isFilledOrSaving = isFilledState || isSavingState;
+    const isFieldsDisabled = isSavingState;
+    const isButtonDisabled = !isFilledState;
+
+    return {
+      viewState,
+      isEmptyState, isFilledState, isErrorState, isSavingState,
+      isFilledOrSaving, isFieldsDisabled, isButtonDisabled,
+
+      nombreValue:   isFilledOrSaving ? 'Sofía Ramírez'      : '',
+      telefonoValue: isFilledOrSaving ? '+52 55 9876 5432'  : '',
+      correoValue:   isFilledOrSaving ? 'sofia.r@empresa.mx' : '',
+      buttonLabel:   isSavingState    ? 'Guardando...'       : 'Guardar cliente',
+
+      isEmptyActive:   isEmptyState,  isEmptyInactive:   !isEmptyState,
+      isFilledActive:  isFilledState, isFilledInactive:  !isFilledState,
+      isErrorActive:   isErrorState,  isErrorInactive:   !isErrorState,
+      isSavingActive:  isSavingState, isSavingInactive:  !isSavingState,
+
+      setEmpty:  () => this.setState({ viewState: 'empty'  }),
+      setFilled: () => this.setState({ viewState: 'filled' }),
+      setError:  () => this.setState({ viewState: 'error'  }),
+      setSaving: () => this.setState({ viewState: 'saving' }),
+      noop: () => {},
+    };
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>

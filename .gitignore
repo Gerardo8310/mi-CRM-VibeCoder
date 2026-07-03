@@ -1,0 +1,44 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# convex
+# OJO: convex/_generated NO se ignora — se versiona a propósito. Railway compila
+# el frontend con `next build` SIN correr la codegen de Convex, así que necesita
+# estos archivos generados dentro del repo o el build falla al resolver
+# `@convex/_generated/*`. Al agregar módulos nuevos en convex/, corre
+# `npx convex dev` (o `npx convex codegen`) y commitea los cambios generados.
+
+# editor
+.idea

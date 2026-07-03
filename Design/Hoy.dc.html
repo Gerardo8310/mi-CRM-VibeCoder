@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    @keyframes slideup { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadein  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes itemfadeout {
+      0%   { opacity: 1; max-height: 120px; }
+      38%  { opacity: 0; max-height: 120px; }
+      100% { opacity: 0; max-height: 0; }
+    }
+    @keyframes checkpop {
+      0%   { transform: scale(0); opacity: 0; }
+      60%  { transform: scale(1.25); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .item-fading { animation: itemfadeout 430ms ease forwards !important; overflow: hidden; pointer-events: none; }
+
+    .sidebar { display: none; position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #181512; flex-direction: column; z-index: 50; border-right: 1px solid #2D2924; }
+    .main-wrap { display: flex; flex-direction: column; min-height: 100vh; }
+    .page-hdr { height: 52px; padding: 0 16px; display: flex; align-items: center; gap: 10px; background: #fff; border-bottom: 1px solid #E9E6E0; position: sticky; top: 0; z-index: 40; flex-shrink: 0; }
+
+    .layout-area { display: flex; flex: 1; min-height: 0; }
+    .todo-col { flex: 1; overflow-y: auto; padding: 20px 16px 96px; }
+    .cal-col { display: none; }
+
+    .nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 18px; font-size: 13px; color: #7B766D; cursor: pointer; transition: color 120ms, background 120ms; border-left: 2px solid transparent; text-decoration: none; }
+    .nav-item:hover { color: #D6C48A; background: rgba(255,255,255,.04); }
+    .nav-item.active { color: #C98A0A; background: rgba(201,138,10,.1); border-left-color: #C98A0A; font-weight: 500; }
+
+    .todo-row { cursor: pointer; transition: background 120ms; }
+    .todo-row:hover { background: #F8F7F4 !important; }
+
+    .done-btn { height: 30px; padding: 0 10px; background: transparent; border: 1px solid #D6D2CB; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; color: #5C574F; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 120ms; white-space: nowrap; flex-shrink: 0; border-radius: 0; }
+    .done-btn:hover { background: #ECFAED; border-color: #25913A; color: #1A6629; }
+
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; color: #7B766D; transition: color 120ms; }
+    .btn-icon:hover { color: #11100E; }
+    .btn-p { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: #C98A0A; color: #fff; border: 1px solid #C98A0A; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 18px; letter-spacing: -.01em; transition: background 120ms; }
+    .btn-p:hover { background: #A56E08; }
+
+    .sec-lbl { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+    .cal-item { padding: 10px 0; border-bottom: 1px solid #F3F1EC; }
+
+    /* Alta rápida */
+    .qa-trigger { width:100%; display:flex; align-items:center; gap:10px; padding:11px 14px; background:transparent; border:1.5px dashed #D6D2CB; cursor:pointer; transition:all 140ms; text-align:left; }
+    .qa-trigger:hover { border-color:#C98A0A; background:#FEFCF5; }
+    .qa-trigger:hover .qa-icon { background:#FEF6E4; color:#C98A0A; }
+    .qa-icon { width:28px; height:28px; border-radius:9999px; background:#F3F1EC; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 140ms; color:#7B766D; }
+    .fi { width:100%; height:44px; padding:0 12px; font-family:'IBM Plex Sans',sans-serif; font-size:14px; color:#11100E; background:#fff; border:1px solid #E9E6E0; outline:none; transition:border-color 120ms,box-shadow 120ms; border-radius:0; }
+    .fi:focus { border-color:#C98A0A; box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A; }
+    .fta { width:100%; padding:10px 12px; font-family:'IBM Plex Sans',sans-serif; font-size:14px; line-height:1.5; color:#11100E; background:#fff; border:1px solid #E9E6E0; outline:none; resize:none; transition:border-color 120ms,box-shadow 120ms; border-radius:0; }
+    .fta:focus { border-color:#C98A0A; box-shadow:0 0 0 2px #F8F7F4,0 0 0 4px #C98A0A; }
+    .lbl-u { font-size:11px; font-weight:500; color:#5C574F; letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:5px; font-family:'IBM Plex Sans',sans-serif; }
+    .bs-overlay { position:fixed; inset:0; background:rgba(17,16,14,.5); z-index:100; animation:fadein 200ms ease; }
+    .bs-panel { position:fixed; bottom:0; left:0; right:0; background:#fff; z-index:101; animation:slideup 230ms ease; border-top:1px solid #E9E6E0; }
+
+    /* Segmented stage selector */
+    .seg-b { flex:1; height:38px; background:transparent; border:1px solid #D6D2CB; border-right:none; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:500; color:#7B766D; cursor:pointer; transition:all 120ms; border-radius:0; }
+    .seg-b:last-child { border-right:1px solid #D6D2CB; }
+    .seg-b:hover { background:rgba(0,0,0,.04); }
+    .seg-interesado-on { background:#EEF3FD !important; border-color:rgba(42,83,160,.35) !important; color:#2A53A0 !important; font-weight:700 !important; }
+    .seg-cotizado-on   { background:#FEF8E7 !important; border-color:rgba(201,138,10,.45) !important; color:#7E5407 !important; font-weight:700 !important; }
+    .seg-cerrado-on    { background:#ECFAED !important; border-color:rgba(37,145,58,.35) !important; color:#1A6629 !important; font-weight:700 !important; }
+    .seg-llamada-on    { background:#EEF3FD !important; border-color:rgba(42,83,160,.35) !important; color:#2A53A0 !important; font-weight:700 !important; }
+    .seg-mensaje-on    { background:#FEF8E7 !important; border-color:rgba(201,138,10,.45) !important; color:#7E5407 !important; font-weight:700 !important; }
+    .seg-visita-on     { background:#ECFAED !important; border-color:rgba(37,145,58,.35) !important; color:#1A6629 !important; font-weight:700 !important; }
+
+    @media (min-width:1024px) {
+      .bs-panel { bottom:auto; left:50%; right:auto; top:50%; transform:translate(-50%,-50%); width:460px; animation:fadein 200ms ease; box-shadow:0 8px 32px rgba(17,16,14,.2); border:1px solid #E9E6E0; }
+    }
+    .cal-item:last-child { border-bottom: none; }
+
+    @media (min-width: 1024px) {
+      .sidebar { display: flex; }
+      .main-wrap { margin-left: 220px; height: 100vh; overflow: hidden; }
+      .page-hdr { position: relative; padding: 0 24px; height: 56px; }
+      .layout-area { flex: 1; overflow: hidden; }
+      .todo-col { overflow-y: auto; padding: 24px 32px 40px; max-width: 660px; }
+      .cal-col { display: block; width: 280px; flex-shrink: 0; border-left: 1px solid #E9E6E0; overflow-y: auto; padding: 24px 20px; background: #fff; }
+      .mob-only { display: none !important; }
+    }
+  </style>
+</helmet>
+
+<div style="position:relative;min-height:100vh">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div style="padding:20px 18px 16px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+      </div>
+    </div>
+    <nav style="padding:12px 0;flex:1">
+      <a class="nav-item active" href="#">
+        <i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Oportunidades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="calendar" style="width:16px;height:16px;flex-shrink:0"></i>Actividades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="bar-chart-2" style="width:16px;height:16px;flex-shrink:0"></i>Reportes
+      </a>
+    </nav>
+    <div style="padding:14px 18px;border-top:1px solid #2D2924;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">CV</span>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:500;color:#D6C48A">Carlos Vargas</div>
+        <div style="font-size:11px;color:#5C574F">Vendedor</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN WRAP ── -->
+  <div class="main-wrap">
+
+    <!-- PAGE HEADER -->
+    <header class="page-hdr">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h1 style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0">Hoy</h1>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#A9A49C;letter-spacing:.02em">Lunes, 23 de junio</span>
+          <span style="{{ badgeStyle }}">{{ badgeLabel }}</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- LAYOUT AREA -->
+    <div class="layout-area">
+
+      <!-- TODO COLUMN -->
+      <div class="todo-col">
+
+        <!-- ══ ATRASADOS SECTION ══ -->
+        <sc-if value="{{ showAtrasadosSection }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-bottom:20px">
+            <div class="sec-lbl">
+              <div style="width:20px;height:20px;background:#FDEEED;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i data-lucide="alert-triangle" style="width:11px;height:11px;color:#D13B1E"></i>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#D13B1E;letter-spacing:.06em;text-transform:uppercase">Atrasados</span>
+              <span style="background:#FDEEED;color:#D13B1E;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px">{{ atrasadosCount }}</span>
+            </div>
+            <div style="background:#fff;border:1px solid rgba(209,59,30,.2);box-shadow:0 1px 4px rgba(209,59,30,.06)">
+              <!-- Atrasado a1: Marcos López -->
+              <sc-if value="{{ isItemA1Visible }}" hint-placeholder-val="{{ true }}">
+                <div data-item-id="a1" class="todo-row" style="display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border-bottom:1px solid rgba(209,59,30,.1);border-left:3px solid #D13B1E">
+                  <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">ML</span>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+                      <span style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Marcos López</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#D13B1E;font-weight:500;white-space:nowrap;flex-shrink:0">Hace 2 días</span>
+                    </div>
+                    <p style="font-size:13px;color:#7B766D;margin:0;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Llamar para confirmar la cotización enviada</p>
+                  </div>
+                  <button class="done-btn" onClick="{{ doneA1 }}">
+                    <i data-lucide="check" style="width:11px;height:11px"></i>Hecho
+                  </button>
+                </div>
+              </sc-if>
+              <!-- Atrasado a2: Eduardo Ruiz -->
+              <sc-if value="{{ isItemA2Visible }}" hint-placeholder-val="{{ true }}">
+                <div data-item-id="a2" class="todo-row" style="display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border-left:3px solid #D13B1E">
+                  <div style="width:36px;height:36px;border-radius:9999px;background:#FEF6E4;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#8F6010">ER</span>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+                      <span style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Eduardo Ruiz</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#D13B1E;font-weight:500;white-space:nowrap;flex-shrink:0">Hace 1 día</span>
+                    </div>
+                    <p style="font-size:13px;color:#7B766D;margin:0;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Enviar propuesta técnica revisada</p>
+                  </div>
+                  <button class="done-btn" onClick="{{ doneA2 }}">
+                    <i data-lucide="check" style="width:11px;height:11px"></i>Hecho
+                  </button>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ══ PARA HOY SECTION ══ -->
+        <sc-if value="{{ showHoySection }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <div class="sec-lbl">
+              <div style="width:20px;height:20px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i data-lucide="clock" style="width:11px;height:11px;color:#7B766D"></i>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#5C574F;letter-spacing:.06em;text-transform:uppercase">Para hoy</span>
+              <span style="background:#F3F1EC;color:#5C574F;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px">{{ hoyCount }}</span>
+            </div>
+            <div style="background:#fff;border:1px solid #E9E6E0;box-shadow:var(--shadow-xs)">
+              <!-- h1: Ana García -->
+              <sc-if value="{{ isItemH1Visible }}" hint-placeholder-val="{{ true }}">
+                <div data-item-id="h1" class="todo-row" style="display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border-bottom:1px solid #E9E6E0">
+                  <div style="width:36px;height:36px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#7E5407">AG</span>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+                      <span style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ana García</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#C98A0A;font-weight:500;white-space:nowrap;flex-shrink:0">Hoy</span>
+                    </div>
+                    <p style="font-size:13px;color:#7B766D;margin:0;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Confirmar reunión de presentación del jueves</p>
+                  </div>
+                  <button class="done-btn" onClick="{{ doneH1 }}">
+                    <i data-lucide="check" style="width:11px;height:11px"></i>Hecho
+                  </button>
+                </div>
+              </sc-if>
+              <!-- h2: Diana López -->
+              <sc-if value="{{ isItemH2Visible }}" hint-placeholder-val="{{ true }}">
+                <div data-item-id="h2" class="todo-row" style="display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border-bottom:1px solid #E9E6E0">
+                  <div style="width:36px;height:36px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#1A6629">DL</span>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+                      <span style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Diana López</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#C98A0A;font-weight:500;white-space:nowrap;flex-shrink:0">Hoy</span>
+                    </div>
+                    <p style="font-size:13px;color:#7B766D;margin:0;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Enviar demo del CRM por WhatsApp</p>
+                  </div>
+                  <button class="done-btn" onClick="{{ doneH2 }}">
+                    <i data-lucide="check" style="width:11px;height:11px"></i>Hecho
+                  </button>
+                </div>
+              </sc-if>
+              <!-- h3: Carlos Mendoza -->
+              <sc-if value="{{ isItemH3Visible }}" hint-placeholder-val="{{ true }}">
+                <div data-item-id="h3" class="todo-row" style="display:flex;align-items:flex-start;gap:12px;padding:13px 14px">
+                  <div style="width:36px;height:36px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#2A53A0">CM</span>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px">
+                      <span style="font-size:14px;font-weight:500;color:#11100E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Carlos Mendoza</span>
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#C98A0A;font-weight:500;white-space:nowrap;flex-shrink:0">Hoy</span>
+                    </div>
+                    <p style="font-size:13px;color:#7B766D;margin:0;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Hacer seguimiento de la propuesta enviada</p>
+                  </div>
+                  <button class="done-btn" onClick="{{ doneH3 }}">
+                    <i data-lucide="check" style="width:11px;height:11px"></i>Hecho
+                  </button>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- ══ ALTA RÁPIDA TRIGGER ══ -->
+        <div style="margin-top:20px">
+          <div class="sec-lbl">
+            <div style="width:20px;height:20px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i data-lucide="user-plus" style="width:11px;height:11px;color:#7B766D"></i>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#5C574F;letter-spacing:.06em;text-transform:uppercase">Alta rápida</span>
+          </div>
+
+          <!-- Success confirmation (after save) -->
+          <div style="{{ quickSavedStyle }}">
+            <div style="background:#fff;border:1px solid rgba(37,145,58,.25);padding:12px 14px;display:flex;align-items:center;gap:10px;animation:fadein 250ms ease">
+              <div style="width:32px;height:32px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">SR</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:#11100E">Sofía Ramírez guardada</div>
+                <div style="font-size:12px;color:#7B766D">+52 55 9988 7766 · Ahora</div>
+              </div>
+              <a href="#" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#C98A0A;text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:3px">
+                Ver ficha <i data-lucide="arrow-right" style="width:11px;height:11px"></i>
+              </a>
+            </div>
+            <button onClick="{{ openQuickAdd }}" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;height:32px;background:transparent;border:1px dashed #D6D2CB;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;cursor:pointer;transition:all 140ms">
+              <i data-lucide="plus" style="width:11px;height:11px"></i>Anotar otro cliente
+            </button>
+          </div>
+
+          <!-- Trigger button (default) -->
+          <div style="{{ quickTriggerStyle }}">
+            <button class="qa-trigger" onClick="{{ openQuickAdd }}">
+              <div class="qa-icon">
+                <i data-lucide="plus" style="width:14px;height:14px"></i>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:#11100E;margin-bottom:1px">¿Conociste a alguien hoy?</div>
+                <div style="font-size:12px;color:#A9A49C">Anota nombre y teléfono en segundos</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- ══ VENTA RÁPIDA TRIGGER ══ -->
+        <div style="margin-top:12px">
+          <div class="sec-lbl">
+            <div style="width:20px;height:20px;background:#FEF6E4;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i data-lucide="trending-up" style="width:11px;height:11px;color:#C98A0A"></i>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#5C574F;letter-spacing:.06em;text-transform:uppercase">Venta rápida</span>
+          </div>
+
+          <!-- Saved confirmation -->
+          <div style="{{ saleSavedStyle }}">
+            <div style="background:#fff;border:1px solid rgba(201,138,10,.25);padding:12px 14px;display:flex;align-items:center;gap:10px;animation:fadein 250ms ease">
+              <div style="width:32px;height:32px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">AG</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:#11100E">Ana García · <span style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#C98A0A">$32,000</span></div>
+                <div style="{{ saleSavedBadgeWrap }}">
+                  <span style="{{ saleSavedBadge }}">{{ saleSavedStageName }}</span>
+                  <span style="font-size:11px;color:#A9A49C"> · Ahora</span>
+                </div>
+              </div>
+              <a href="#" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#C98A0A;text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:3px">
+                Ver tablero <i data-lucide="arrow-right" style="width:11px;height:11px"></i>
+              </a>
+            </div>
+            <button onClick="{{ openSale }}" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;height:32px;background:transparent;border:1px dashed #D6D2CB;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;cursor:pointer;transition:all 140ms">
+              <i data-lucide="plus" style="width:11px;height:11px"></i>Anotar otra venta
+            </button>
+          </div>
+
+          <!-- Trigger button (idle) -->
+          <div style="{{ saleTriggerStyle }}">
+            <button class="qa-trigger" onClick="{{ openSale }}" style="border-color:#F0E8D0">
+              <div class="qa-icon" style="background:#FEF6E4;color:#C98A0A">
+                <i data-lucide="circle-dollar-sign" style="width:14px;height:14px"></i>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:#11100E;margin-bottom:1px">¿Cerraste o cotizaste algo?</div>
+                <div style="font-size:12px;color:#A9A49C">Registra cliente, monto y etapa al instante</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- ══ REGISTRO DE INTERACCIÓN TRIGGER ══ -->
+        <div style="margin-top:12px">
+          <div class="sec-lbl">
+            <div style="width:20px;height:20px;background:#EEF3FD;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i data-lucide="message-circle" style="width:11px;height:11px;color:#2A53A0"></i>
+            </div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:#5C574F;letter-spacing:.06em;text-transform:uppercase">Interacción</span>
+          </div>
+
+          <!-- Saved confirmation -->
+          <div style="{{ intSavedStyle }}">
+            <div style="background:#fff;border:1px solid rgba(42,83,160,.18);padding:12px 14px;display:flex;align-items:flex-start;gap:10px;animation:fadein 250ms ease">
+              <div style="width:32px;height:32px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#2A53A0">DL</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">
+                  <span style="font-size:13px;font-weight:500;color:#11100E">Diana López</span>
+                  <span style="{{ intSavedBadgeStyle }}">{{ intSavedTypeName }}</span>
+                </div>
+                <div style="font-size:12px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Pidió demo por WhatsApp para el viernes</div>
+              </div>
+              <a href="#" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#C98A0A;text-decoration:none;white-space:nowrap;display:flex;align-items:center;gap:3px;flex-shrink:0">
+                Ver ficha <i data-lucide="arrow-right" style="width:11px;height:11px"></i>
+              </a>
+            </div>
+            <button onClick="{{ openInt }}" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;height:32px;background:transparent;border:1px dashed #D6D2CB;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#A9A49C;cursor:pointer;transition:all 140ms">
+              <i data-lucide="plus" style="width:11px;height:11px"></i>Anotar otra interacción
+            </button>
+          </div>
+
+          <!-- Trigger (idle) -->
+          <div style="{{ intTriggerStyle }}">
+            <button class="qa-trigger" onClick="{{ openInt }}" style="border-color:rgba(42,83,160,.2)">
+              <div class="qa-icon" style="background:#EEF3FD;color:#2A53A0">
+                <i data-lucide="message-circle" style="width:14px;height:14px"></i>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:#11100E;margin-bottom:1px">¿Hablaste con alguien?</div>
+                <div style="font-size:12px;color:#A9A49C">Anota qué pasó para no perder el hilo</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- ══ EMPTY / CELEBRATION ══ -->
+        <sc-if value="{{ showEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 24px;text-align:center;min-height:280px">
+            <div style="width:64px;height:64px;background:#ECFAED;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 0 0 8px rgba(37,145,58,.08)">
+              <i data-lucide="check-circle-2" style="width:32px;height:32px;color:#25913A"></i>
+            </div>
+            <h2 style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0 0 8px">¡Todo al día!</h2>
+            <p style="font-size:14px;color:#7B766D;margin:0 0 24px;line-height:1.6;max-width:260px">No tienes pendientes para hoy. Buen trabajo, Carlos.</p>
+            <button class="btn-p" style="font-size:12px;height:36px;padding:0 14px">
+              <i data-lucide="calendar-plus" style="width:13px;height:13px"></i>Agendar próximo seguimiento
+            </button>
+          </div>
+        </sc-if>
+
+      </div><!-- /todo-col -->
+
+      <!-- ══ MINI CALENDARIO (desktop) ══ -->
+      <div class="cal-col">
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:#5C574F;letter-spacing:.08em;text-transform:uppercase;margin:0 0 16px">Próximos 7 días</h3>
+
+        <div class="cal-item">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#C98A0A;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Mañana · Mar 24</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#2A53A0">GH</span>
+            </div>
+            <div style="min-width:0">
+              <div style="font-size:12px;font-weight:500;color:#11100E">Gonzalo Herrera</div>
+              <div style="font-size:11px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Entregar demo del CRM</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cal-item">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#7B766D;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Mié 25</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:9999px;background:#F3F1EC;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#403C35">FC</span>
+            </div>
+            <div style="min-width:0">
+              <div style="font-size:12px;font-weight:500;color:#11100E">Fernanda Castro</div>
+              <div style="font-size:11px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Revisión de contrato</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cal-item">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#7B766D;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Jue 26</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#7E5407">AG</span>
+            </div>
+            <div style="min-width:0">
+              <div style="font-size:12px;font-weight:500;color:#11100E">Ana García</div>
+              <div style="font-size:11px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Presentación Plan Pro Anual</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cal-item">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;color:#7B766D;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px">Lun 30</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:8px;font-weight:700;color:#2A53A0">CM</span>
+            </div>
+            <div style="min-width:0">
+              <div style="font-size:12px;font-weight:500;color:#11100E">Carlos Mendoza</div>
+              <div style="font-size:11px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Cierre de trato</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agendar button -->
+        <button style="width:100%;margin-top:16px;height:34px;background:transparent;border:1px dashed #D6D2CB;display:flex;align-items:center;justify-content:center;gap:6px;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;color:#A9A49C;cursor:pointer;border-radius:0;transition:all 120ms">
+          <i data-lucide="plus" style="width:12px;height:12px"></i>Agendar seguimiento
+        </button>
+      </div><!-- /cal-col -->
+
+    </div><!-- /layout-area -->
+  </div><!-- /main-wrap -->
+
+  <!-- ═════ ALTA RÁPIDA BOTTOM SHEET ═════ -->
+  <div style="{{ bsOverlayStyle }}" onClick="{{ closeQuickAdd }}"></div>
+  <div style="{{ bsPanelStyle }}">
+    <!-- Handle (mobile) -->
+    <div style="display:flex;justify-content:center;padding:10px 0 4px">
+      <div style="width:32px;height:4px;background:#D6D2CB;border-radius:9999px"></div>
+    </div>
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 12px;border-bottom:1px solid #E9E6E0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:24px;height:24px;background:#FEF8E7;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i data-lucide="user-plus" style="width:12px;height:12px;color:#7E5407"></i>
+        </div>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Alta rápida</h3>
+      </div>
+      <button onClick="{{ closeQuickAdd }}" style="background:none;border:none;cursor:pointer;color:#7B766D;display:flex;align-items:center;padding:4px">
+        <i data-lucide="x" style="width:18px;height:18px"></i>
+      </button>
+    </div>
+    <!-- Body -->
+    <div style="padding:16px">
+      <p style="font-size:13px;color:#7B766D;margin:0 0 16px;line-height:1.5">Guarda los datos mientras hablas — completa la ficha después.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label class="lbl-u">Nombre <span style="color:#C98A0A">*</span></label>
+          <input class="fi" type="text" placeholder="Sofía Ramírez" value="">
+        </div>
+        <div>
+          <label class="lbl-u">Teléfono <span style="color:#C98A0A">*</span></label>
+          <div style="position:relative">
+            <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);pointer-events:none"><i data-lucide="phone" style="width:14px;height:14px;color:#A9A49C"></i></div>
+            <input class="fi" type="tel" placeholder="+52 55 0000 0000" style="padding-left:34px" value="">
+          </div>
+        </div>
+        <div>
+          <label class="lbl-u">Nota <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">opcional</span></label>
+          <textarea class="fta" rows="2" placeholder="Interesada en el plan Pro, trabaja en retail..."></textarea>
+        </div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div style="padding:0 16px 20px;display:flex;gap:10px">
+      <button onClick="{{ closeQuickAdd }}" style="flex:1;height:44px;background:transparent;color:#11100E;border:1px solid #D6D2CB;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;border-radius:0;transition:background 120ms">Cancelar</button>
+      <button onClick="{{ saveQuickAdd }}" style="flex:2;height:44px;background:#C98A0A;color:#fff;border:1px solid #C98A0A;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 120ms">
+        <i data-lucide="user-check" style="width:14px;height:14px"></i>Guardar cliente
+      </button>
+    </div>
+  </div>
+
+  <!-- ═════ VENTA RÁPIDA BOTTOM SHEET ═════ -->
+  <div style="{{ bsSaleOverlayStyle }}" onClick="{{ closeSale }}"></div>
+  <div style="{{ bsSalePanelStyle }}">
+    <div style="display:flex;justify-content:center;padding:10px 0 4px">
+      <div style="width:32px;height:4px;background:#D6D2CB;border-radius:9999px"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 12px;border-bottom:1px solid #E9E6E0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:24px;height:24px;background:#FEF6E4;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i data-lucide="trending-up" style="width:12px;height:12px;color:#C98A0A"></i>
+        </div>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Venta rápida</h3>
+      </div>
+      <button onClick="{{ closeSale }}" style="background:none;border:none;cursor:pointer;color:#7B766D;display:flex;align-items:center;padding:4px">
+        <i data-lucide="x" style="width:18px;height:18px"></i>
+      </button>
+    </div>
+    <div style="padding:16px">
+      <p style="font-size:13px;color:#7B766D;margin:0 0 16px;line-height:1.5">Anota el trato ahora — aparecerá en el tablero de ventas.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <!-- Etapa -->
+        <div>
+          <label class="lbl-u">Etapa <span style="color:#C98A0A">*</span></label>
+          <div style="display:flex">
+            <button type="button" class="{{ segInteresadoClass }}" onClick="{{ setSaleInteresado }}">Interesado</button>
+            <button type="button" class="{{ segCotizadoClass }}"   onClick="{{ setSaleCotizado }}">Cotizado</button>
+            <button type="button" class="{{ segCerradoClass }}"    onClick="{{ setSaleCerrado }}" style="border-right:1px solid #D6D2CB">Cerrado</button>
+          </div>
+          <div style="font-size:11px;color:#A9A49C;margin-top:5px">{{ saleStageDesc }}</div>
+        </div>
+        <!-- Cliente -->
+        <div>
+          <label class="lbl-u">Cliente <span style="color:#C98A0A">*</span></label>
+          <input class="fi" type="text" placeholder="Ana García">
+        </div>
+        <!-- Monto -->
+        <div>
+          <label class="lbl-u">Monto <span style="color:#C98A0A">*</span></label>
+          <div style="position:relative">
+            <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;color:#A9A49C;pointer-events:none">$</div>
+            <input class="fi" type="text" placeholder="32,000" style="padding-left:24px;font-family:'IBM Plex Mono',monospace;font-weight:600">
+          </div>
+        </div>
+        <!-- Producto -->
+        <div>
+          <label class="lbl-u">Producto <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">opcional</span></label>
+          <input class="fi" type="text" placeholder="Plan Pro Anual, consultoría…">
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 16px 20px;display:flex;gap:10px">
+      <button onClick="{{ closeSale }}" style="flex:1;height:44px;background:transparent;color:#11100E;border:1px solid #D6D2CB;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;border-radius:0">Cancelar</button>
+      <button onClick="{{ saveSale }}" style="{{ saveSaleBtnStyle }}">
+        <i data-lucide="check" style="width:14px;height:14px"></i>{{ saveSaleBtnLabel }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ═════ INTERACCIÓN BOTTOM SHEET ═════ -->
+  <div style="{{ bsIntOverlayStyle }}" onClick="{{ closeInt }}"></div>
+  <div style="{{ bsIntPanelStyle }}">
+    <div style="display:flex;justify-content:center;padding:10px 0 4px">
+      <div style="width:32px;height:4px;background:#D6D2CB;border-radius:9999px"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 12px;border-bottom:1px solid #E9E6E0">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:24px;height:24px;background:#EEF3FD;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i data-lucide="message-circle" style="width:12px;height:12px;color:#2A53A0"></i>
+        </div>
+        <h3 style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0">Anotar interacción</h3>
+      </div>
+      <button onClick="{{ closeInt }}" style="background:none;border:none;cursor:pointer;color:#7B766D;display:flex;align-items:center;padding:4px">
+        <i data-lucide="x" style="width:18px;height:18px"></i>
+      </button>
+    </div>
+    <div style="padding:16px">
+      <p style="font-size:13px;color:#7B766D;margin:0 0 16px;line-height:1.5">Registra la conversación en segundos — queda en el historial del cliente.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <!-- Tipo -->
+        <div>
+          <label class="lbl-u">Tipo <span style="color:#C98A0A">*</span></label>
+          <div style="display:flex">
+            <button type="button" class="{{ segLlamadaClass }}" onClick="{{ setIntLlamada }}">
+              <i data-lucide="phone" style="width:11px;height:11px;display:inline;margin-right:4px"></i>Llamada
+            </button>
+            <button type="button" class="{{ segMensajeClass }}" onClick="{{ setIntMensaje }}">
+              <i data-lucide="message-circle" style="width:11px;height:11px;display:inline;margin-right:4px"></i>Mensaje
+            </button>
+            <button type="button" class="{{ segVisitaClass }}"  onClick="{{ setIntVisita }}" style="border-right:1px solid #D6D2CB">
+              <i data-lucide="map-pin" style="width:11px;height:11px;display:inline;margin-right:4px"></i>Visita
+            </button>
+          </div>
+          <div style="font-size:11px;color:#A9A49C;margin-top:5px">{{ intTypeDesc }}</div>
+        </div>
+        <!-- Cliente -->
+        <div>
+          <label class="lbl-u">Cliente <span style="color:#C98A0A">*</span></label>
+          <input class="fi" type="text" placeholder="Diana López">
+        </div>
+        <!-- Nota -->
+        <div>
+          <label class="lbl-u">¿Qué pasó? <span style="color:#C98A0A">*</span></label>
+          <textarea class="fta" rows="3" placeholder="Pidió demo por WhatsApp para el viernes. Tiene presupuesto aprobado."></textarea>
+        </div>
+        <!-- Fecha -->
+        <div>
+          <label class="lbl-u">Fecha <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">opcional</span></label>
+          <input class="fi" type="date" style="font-family:'IBM Plex Sans',sans-serif;color:#7B766D">
+        </div>
+      </div>
+    </div>
+    <div style="padding:0 16px 20px;display:flex;gap:10px">
+      <button onClick="{{ closeInt }}" style="flex:1;height:44px;background:transparent;color:#11100E;border:1px solid #D6D2CB;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;border-radius:0">Cancelar</button>
+      <button onClick="{{ saveInt }}" style="flex:2;height:44px;background:#2A53A0;color:#fff;border:1px solid #2A53A0;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;cursor:pointer;border-radius:0;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 120ms">
+        <i data-lucide="check" style="width:14px;height:14px"></i>Guardar interacción
+      </button>
+    </div>
+  </div>
+
+  <!-- ═════ STATE SWITCHER ═════ -->
+  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+    <sc-if value="{{ isFullSw }}"    hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setFull }}"    style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CON ATRASADOS</button></sc-if>
+    <sc-if value="{{ isFullSwOff }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setFull }}"    style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CON ATRASADOS</button></sc-if>
+
+    <sc-if value="{{ isHoySw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setHoyOnly }}" style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">SOLO HOY</button></sc-if>
+    <sc-if value="{{ isHoySwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setHoyOnly }}" style="padding:7px 13px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">SOLO HOY</button></sc-if>
+
+    <sc-if value="{{ isEmptySw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmpty }}"   style="padding:7px 13px;border:none;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">TODO AL DÍA</button></sc-if>
+    <sc-if value="{{ isEmptySwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEmpty }}"   style="padding:7px 13px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">TODO AL DÍA</button></sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}}">
+class Component extends DCLogic {
+  state = { viewState: 'full', doneItems: [], fadingItems: [], quickAdd: 'idle', quickSale: 'idle', saleStage: 'cotizado', quickInt: 'idle', intType: 'llamada' };
+  // quickAdd/quickSale/quickInt: 'idle' | 'open' | 'saved'
+  // saleStage: 'interesado' | 'cotizado' | 'cerrado'
+  // intType: 'llamada' | 'mensaje' | 'visita'
+
+  _markDone(id) {
+    const { fadingItems, doneItems } = this.state;
+    if (fadingItems.includes(id) || doneItems.includes(id)) return;
+    this.setState(s => ({ fadingItems: [...s.fadingItems, id] }));
+    setTimeout(() => {
+      this.setState(s => ({
+        fadingItems: s.fadingItems.filter(x => x !== id),
+        doneItems: [...s.doneItems, id],
+      }));
+    }, 450);
+  }
+
+  renderVals() {
+    const { viewState, doneItems, fadingItems } = this.state;
+    const vs = viewState;
+
+    const isVisible = (id) => !doneItems.includes(id);
+
+    const isItemA1Visible = vs === 'full' && isVisible('a1');
+    const isItemA2Visible = vs === 'full' && isVisible('a2');
+    const isItemH1Visible = vs !== 'empty' && isVisible('h1');
+    const isItemH2Visible = vs !== 'empty' && isVisible('h2');
+    const isItemH3Visible = vs !== 'empty' && isVisible('h3');
+
+    const atrasadosCount = (isItemA1Visible ? 1 : 0) + (isItemA2Visible ? 1 : 0);
+    const hoyCount       = (isItemH1Visible ? 1 : 0) + (isItemH2Visible ? 1 : 0) + (isItemH3Visible ? 1 : 0);
+    const pendingCount   = atrasadosCount + hoyCount;
+
+    const showAtrasadosSection = atrasadosCount > 0;
+    const showHoySection       = hoyCount > 0;
+    const showEmpty            = pendingCount === 0;
+
+    const badgeLabel = pendingCount > 0
+      ? `${pendingCount} pendiente${pendingCount !== 1 ? 's' : ''}`
+      : '¡Al día!';
+    const badgeStyle = pendingCount > 0
+      ? { background: '#FDEEED', color: '#D13B1E', border: '1px solid rgba(209,59,30,.2)', fontSize: '12px', fontWeight: 500, padding: '2px 10px', borderRadius: '2px', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '.02em' }
+      : { background: '#ECFAED', color: '#1A6629', border: '1px solid rgba(37,145,58,.2)', fontSize: '12px', fontWeight: 500, padding: '2px 10px', borderRadius: '2px', fontFamily: "'IBM Plex Mono', monospace", letterSpacing: '.02em' };
+
+    // ── Interacción ──
+    const qi = this.state.quickInt;
+    const it = this.state.intType;
+
+    const intTriggerStyle = qi === 'idle'  ? {} : { display:'none' };
+    const intSavedStyle   = qi === 'saved' ? {} : { display:'none' };
+    const bsIntOverlayStyle = qi === 'open'
+      ? { position:'fixed', inset:0, background:'rgba(17,16,14,.5)', zIndex:100 }
+      : { display:'none' };
+    const bsIntPanelStyle = qi === 'open'
+      ? { position:'fixed', bottom:0, left:0, right:0, background:'#fff', zIndex:101, borderTop:'1px solid #E9E6E0' }
+      : { display:'none' };
+    const segLlamadaClass = it === 'llamada' ? 'seg-b seg-llamada-on' : 'seg-b';
+    const segMensajeClass = it === 'mensaje' ? 'seg-b seg-mensaje-on' : 'seg-b';
+    const segVisitaClass  = it === 'visita'  ? 'seg-b seg-visita-on'  : 'seg-b';
+    const intTypeDesc = it === 'llamada' ? 'Conversación telefónica o videollamada'
+      : it === 'mensaje' ? 'WhatsApp, SMS o correo electrónico'
+      : 'Reunión presencial o en sus oficinas';
+    const intSavedTypeName = it === 'llamada' ? 'Llamada' : it === 'mensaje' ? 'Mensaje' : 'Visita';
+    const intSavedBadgeStyle = it === 'llamada'
+      ? { background:'#EEF3FD', color:'#2A53A0', fontSize:'11px', fontWeight:500, padding:'1px 7px', borderRadius:'2px', border:'1px solid rgba(42,83,160,.2)' }
+      : it === 'mensaje'
+      ? { background:'#FEF8E7', color:'#7E5407', fontSize:'11px', fontWeight:500, padding:'1px 7px', borderRadius:'2px', border:'1px solid rgba(201,138,10,.25)' }
+      : { background:'#ECFAED', color:'#1A6629', fontSize:'11px', fontWeight:500, padding:'1px 7px', borderRadius:'2px', border:'1px solid rgba(37,145,58,.2)' };
+
+    return {
+      showAtrasadosSection, showHoySection, showEmpty,
+      atrasadosCount, hoyCount, pendingCount,
+      badgeLabel, badgeStyle,
+      isItemA1Visible, isItemA2Visible,
+      isItemH1Visible, isItemH2Visible, isItemH3Visible,
+
+      // ── Venta rápida ──
+      quickSale: this.state.quickSale,
+      saleStage: this.state.saleStage,
+
+      saleTriggerStyle: this.state.quickSale === 'idle'  ? {} : { display:'none' },
+      saleSavedStyle:   this.state.quickSale === 'saved' ? {} : { display:'none' },
+
+      bsSaleOverlayStyle: this.state.quickSale === 'open'
+        ? { position:'fixed', inset:0, background:'rgba(17,16,14,.5)', zIndex:100 }
+        : { display:'none' },
+      bsSalePanelStyle: this.state.quickSale === 'open'
+        ? { position:'fixed', bottom:0, left:0, right:0, background:'#fff', zIndex:101, borderTop:'1px solid #E9E6E0' }
+        : { display:'none' },
+
+      // Segmented buttons
+      segInteresadoClass: this.state.saleStage === 'interesado' ? 'seg-b seg-interesado-on' : 'seg-b',
+      segCotizadoClass:   this.state.saleStage === 'cotizado'   ? 'seg-b seg-cotizado-on'   : 'seg-b',
+      segCerradoClass:    this.state.saleStage === 'cerrado'    ? 'seg-b seg-cerrado-on'     : 'seg-b',
+
+      saleStageDesc: this.state.saleStage === 'interesado' ? 'Contacto que mostró interés — aún sin cotización'
+        : this.state.saleStage === 'cotizado' ? 'Propuesta enviada — esperando respuesta'
+        : '¡Trato ganado! Se registra como venta cerrada',
+
+      // Saved badge
+      saleSavedStageName: this.state.saleStage === 'interesado' ? 'Interesado'
+        : this.state.saleStage === 'cotizado' ? 'Cotizado' : 'Cerrado',
+      saleSavedBadgeWrap: { display:'flex', alignItems:'center', gap:'4px', marginTop:'2px' },
+      saleSavedBadge: this.state.saleStage === 'interesado'
+        ? { background:'#EEF3FD', color:'#2A53A0', fontSize:'11px', fontWeight:500, padding:'1px 7px', borderRadius:'2px', border:'1px solid rgba(42,83,160,.2)' }
+        : this.state.saleStage === 'cotizado'
+        ? { background:'#FEF8E7', color:'#7E5407', fontSize:'11px', fontWeight:500, padding:'1px 7px', borderRadius:'2px', border:'1px solid rgba(201,138,10,.25)' }
+        : { background:'#ECFAED', color:'#1A6629', fontSize:'11px', fontWeight:500, padding:'1px 7px', borderRadius:'2px', border:'1px solid rgba(37,145,58,.2)' },
+
+      // Save button
+      saveSaleBtnLabel: this.state.saleStage === 'cerrado' ? 'Registrar venta cerrada' : 'Guardar oportunidad',
+      saveSaleBtnStyle: {
+        flex:2, height:'44px',
+        background: this.state.saleStage === 'cerrado' ? '#25913A' : '#C98A0A',
+        color:'#fff',
+        border: this.state.saleStage === 'cerrado' ? '1px solid #25913A' : '1px solid #C98A0A',
+        fontFamily:"'IBM Plex Mono', monospace", fontSize:'13px', fontWeight:500,
+        cursor:'pointer', borderRadius:0,
+        display:'flex', alignItems:'center', justifyContent:'center', gap:'6px',
+        transition:'background 120ms',
+      },
+
+      intTriggerStyle, intSavedStyle,
+      bsIntOverlayStyle, bsIntPanelStyle,
+      segLlamadaClass, segMensajeClass, segVisitaClass,
+      intTypeDesc, intSavedTypeName, intSavedBadgeStyle,
+      openInt:       () => this.setState({ quickInt: 'open'    }),
+      closeInt:      () => this.setState({ quickInt: 'idle'    }),
+      saveInt:       () => this.setState({ quickInt: 'saved'   }),
+      setIntLlamada: () => this.setState({ intType:  'llamada' }),
+      setIntMensaje: () => this.setState({ intType:  'mensaje' }),
+      setIntVisita:  () => this.setState({ intType:  'visita'  }),
+
+      openSale:  () => this.setState({ quickSale: 'open'  }),
+      closeSale: () => this.setState({ quickSale: 'idle'  }),
+      saveSale:  () => this.setState({ quickSale: 'saved' }),
+      setSaleInteresado: () => this.setState({ saleStage: 'interesado' }),
+      setSaleCotizado:   () => this.setState({ saleStage: 'cotizado'   }),
+      setSaleCerrado:    () => this.setState({ saleStage: 'cerrado'    }),
+
+      // ── Quick add state
+      quickAdd: this.state.quickAdd,
+      quickSavedStyle:  this.state.quickAdd === 'saved' ? {} : { display: 'none' },
+      quickTriggerStyle: this.state.quickAdd === 'idle'  ? {} : { display: 'none' },
+      bsOverlayStyle: this.state.quickAdd === 'open'
+        ? { position:'fixed', inset:0, background:'rgba(17,16,14,.5)', zIndex:100 }
+        : { display:'none' },
+      bsPanelStyle: this.state.quickAdd === 'open'
+        ? { position:'fixed', bottom:0, left:0, right:0, background:'#fff', zIndex:101, borderTop:'1px solid #E9E6E0' }
+        : { display:'none' },
+
+      openQuickAdd:  () => this.setState({ quickAdd: 'open'  }),
+      closeQuickAdd: () => this.setState({ quickAdd: 'idle'  }),
+      saveQuickAdd:  () => this.setState({ quickAdd: 'saved' }),
+
+      isFullSw:   vs === 'full',     isFullSwOff:   vs !== 'full',
+      isHoySw:    vs === 'hoy-only', isHoySwOff:    vs !== 'hoy-only',
+      isEmptySw:  vs === 'empty',    isEmptySwOff:  vs !== 'empty',
+
+      setFull:    () => this.setState({ viewState: 'full',     doneItems: [], fadingItems: [], quickAdd: 'idle' }),
+      setHoyOnly: () => this.setState({ viewState: 'hoy-only', doneItems: [], fadingItems: [], quickAdd: 'idle' }),
+      setEmpty:   () => this.setState({ viewState: 'empty',    doneItems: [], fadingItems: [], quickAdd: 'idle' }),
+
+      doneA1: () => this._markDone('a1'),
+      doneA2: () => this._markDone('a2'),
+      doneH1: () => this._markDone('h1'),
+      doneH2: () => this._markDone('h2'),
+      doneH3: () => this._markDone('h3'),
+    };
+  }
+
+  _animateFading() {
+    this.state.fadingItems.forEach(id => {
+      const el = document.querySelector(`[data-item-id="${id}"]`);
+      if (el && !el.classList.contains('item-fading')) {
+        el.classList.add('item-fading');
+      }
+    });
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  componentDidUpdate() {
+    if (window.lucide) window.lucide.createIcons();
+    this._animateFading();
+  }
+}
+</script>
+</body>
+</html>

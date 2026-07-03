@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    @keyframes fadein { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes checkin { 0%{transform:scale(0)}60%{transform:scale(1.2)}100%{transform:scale(1)} }
+
+    .sidebar { display: none; position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #181512; flex-direction: column; z-index: 50; border-right: 1px solid #2D2924; }
+    .main-wrap { display: flex; flex-direction: column; min-height: 100vh; }
+    .page-hdr { height: 52px; padding: 0 16px; display: flex; align-items: center; gap: 10px; background: #fff; border-bottom: 1px solid #E9E6E0; position: sticky; top: 0; z-index: 40; flex-shrink: 0; }
+    .content-col { max-width: 600px; margin: 0 auto; padding: 24px 16px 96px; width: 100%; }
+
+    .nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 18px; font-size: 13px; color: #7B766D; cursor: pointer; transition: color 120ms, background 120ms; border-left: 2px solid transparent; text-decoration: none; }
+    .nav-item:hover { color: #D6C48A; background: rgba(255,255,255,.04); }
+    .nav-item.active { color: #C98A0A; background: rgba(201,138,10,.1); border-left-color: #C98A0A; font-weight: 500; }
+
+    .card { background: #fff; border: 1px solid #E9E6E0; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
+    .card-hdr { padding: 16px 20px 14px; border-bottom: 1px solid #F3F1EC; display: flex; align-items: center; justify-content: space-between; }
+    .card-body { padding: 20px; }
+
+    .fi { width: 100%; height: 44px; padding: 0 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; color: #11100E; background: #fff; border: 1px solid #E9E6E0; border-radius: 0; outline: none; transition: border-color 120ms, box-shadow 120ms; }
+    .fi:focus { border-color: #C98A0A; box-shadow: 0 0 0 2px #F8F7F4, 0 0 0 4px #C98A0A; }
+    .fi-err { border-color: #D13B1E !important; }
+    .fi-lock { background: #F8F7F4; color: #7B766D; cursor: not-allowed; }
+
+    .lbl { font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; font-weight: 500; color: #5C574F; letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: 5px; }
+
+    .btn-p { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: #C98A0A; color: #fff; border: 1px solid #C98A0A; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px; letter-spacing: -.01em; transition: background 120ms; }
+    .btn-p:hover { background: #A56E08; }
+    .btn-g { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: transparent; color: #11100E; border: 1px solid #D6D2CB; border-radius: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 16px; letter-spacing: -.01em; transition: background 120ms; }
+    .btn-g:hover { background: rgba(0,0,0,.04); }
+    .btn-logout { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; background: transparent; color: #5C574F; border: 1px solid #D6D2CB; border-radius: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; height: 44px; letter-spacing: -.01em; transition: all 120ms; }
+    .btn-logout:hover { background: #FDEEED; border-color: rgba(209,59,30,.3); color: #D13B1E; }
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; padding: 4px; color: #7B766D; transition: color 120ms; }
+    .btn-icon:hover { color: #11100E; }
+
+    .sec-title { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: #11100E; letter-spacing: -.01em; }
+    .sec-sub { font-size: 12px; color: #A9A49C; }
+    .field-row { margin-bottom: 16px; }
+    .field-row:last-child { margin-bottom: 0; }
+
+    .pw-eye { position: absolute; right: 0; top: 0; height: 100%; width: 40px; background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #A9A49C; }
+    .pw-eye:hover { color: #7B766D; }
+
+    @media (min-width: 1024px) {
+      .sidebar { display: flex; }
+      .main-wrap { margin-left: 220px; }
+      .page-hdr { position: relative; padding: 0 32px; height: 56px; }
+      .content-col { padding: 32px 24px 60px; }
+      .mob-only { display: none !important; }
+    }
+  </style>
+</helmet>
+
+<div style="position:relative;min-height:100vh">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div style="padding:20px 18px 16px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+      </div>
+    </div>
+    <nav style="padding:12px 0;flex:1">
+      <a class="nav-item" href="#"><i data-lucide="layout-dashboard" style="width:16px;height:16px;flex-shrink:0"></i>Inicio</a>
+      <a class="nav-item" href="#"><i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy</a>
+      <a class="nav-item" href="#"><i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes</a>
+      <a class="nav-item" href="#"><i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Ventas</a>
+    </nav>
+    <div style="border-top:1px solid #2D2924">
+      <a class="nav-item active" href="#" style="height:42px"><i data-lucide="user-circle" style="width:15px;height:15px;flex-shrink:0"></i>Mi perfil</a>
+    </div>
+    <div style="padding:14px 18px;border-top:1px solid #2D2924;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">CV</span>
+      </div>
+      <div style="min-width:0"><div style="font-size:12px;font-weight:500;color:#D6C48A">Carlos Vargas</div><div style="font-size:11px;color:#5C574F">Vendedor</div></div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main-wrap">
+
+    <!-- Header -->
+    <header class="page-hdr">
+      <h1 style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0">Mi cuenta</h1>
+    </header>
+
+    <!-- Content -->
+    <div style="flex:1;overflow-y:auto">
+      <div class="content-col">
+
+        <!-- ══ SUCCESS BANNER ══ -->
+        <sc-if value="{{ isSuccess }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#ECFAED;border:1px solid rgba(37,145,58,.25);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;animation:fadein 250ms ease">
+            <div style="width:24px;height:24px;background:#25913A;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:checkin 300ms ease">
+              <i data-lucide="check" style="width:13px;height:13px;color:#fff"></i>
+            </div>
+            <span style="font-size:13px;color:#1A6629;font-weight:500">Contraseña actualizada correctamente.</span>
+          </div>
+        </sc-if>
+
+        <!-- ══ SECCIÓN 1: MI PERFIL ══ -->
+        <div class="card">
+          <div class="card-hdr">
+            <div>
+              <div class="sec-title">Mi perfil</div>
+              <div class="sec-sub">Información de tu cuenta</div>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <!-- Avatar row -->
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #F3F1EC">
+              <div style="position:relative;flex-shrink:0">
+                <div style="width:64px;height:64px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 0 0 1px #F0E8D0">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:#7E5407">CV</span>
+                </div>
+                <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;background:#C98A0A;border-radius:9999px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;cursor:pointer">
+                  <i data-lucide="camera" style="width:10px;height:10px;color:#fff"></i>
+                </div>
+              </div>
+              <div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:#11100E;letter-spacing:-.01em">Carlos Vargas</div>
+                <span style="background:#EEF3FD;color:#2A53A0;font-size:11px;font-weight:500;padding:2px 8px;border-radius:2px;border:1px solid rgba(58,114,203,.2)">Vendedor</span>
+                <div style="font-size:12px;color:#A9A49C;margin-top:3px">Solo Martha puede cambiar tu rol</div>
+              </div>
+            </div>
+
+            <!-- Nombre -->
+            <div class="field-row">
+              <label class="lbl">Nombre completo</label>
+              <!-- View mode -->
+              <sc-if value="{{ isViewMode }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;height:44px;padding:0 12px;background:#F8F7F4;border:1px solid #E9E6E0;display:flex;align-items:center;font-size:14px;color:#11100E">Carlos Vargas</div>
+                  <button class="btn-icon" onClick="{{ setEditing }}" style="border:1px solid #E9E6E0;width:44px;height:44px;display:flex;align-items:center;justify-content:center">
+                    <i data-lucide="pencil" style="width:14px;height:14px"></i>
+                  </button>
+                </div>
+              </sc-if>
+              <!-- Edit mode -->
+              <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
+                <input class="fi" type="text" value="Carlos Vargas" autoFocus="">
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button class="btn-g" style="flex:1" onClick="{{ setView }}">Cancelar</button>
+                  <button class="btn-p" style="flex:2" onClick="{{ setView }}">
+                    <i data-lucide="check" style="width:13px;height:13px"></i>Guardar nombre
+                  </button>
+                </div>
+              </sc-if>
+            </div>
+
+            <!-- Correo (readonly) -->
+            <div class="field-row">
+              <label class="lbl">Correo electrónico <span style="color:#A9A49C;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">— solo lectura</span></label>
+              <div style="position:relative">
+                <div style="position:absolute;left:11px;top:50%;transform:translateY(-50%);display:flex;pointer-events:none"><i data-lucide="mail" style="width:14px;height:14px;color:#A9A49C"></i></div>
+                <input class="fi fi-lock" type="email" value="carlos@empresa.mx" readOnly="" style="padding-left:34px">
+              </div>
+              <p style="font-size:11px;color:#A9A49C;margin:5px 0 0">Para cambiar el correo contacta al administrador.</p>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ══ SECCIÓN 2: CONTRASEÑA ══ -->
+        <div class="card">
+          <div class="card-hdr">
+            <div>
+              <div class="sec-title">Contraseña</div>
+              <div class="sec-sub">Actualiza tu contraseña periódicamente</div>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <!-- Error banner (error state) -->
+            <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#FDEEED;border:1px solid rgba(209,59,30,.25);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;animation:fadein 200ms ease">
+                <i data-lucide="alert-circle" style="width:14px;height:14px;color:#D13B1E;flex-shrink:0"></i>
+                <span style="font-size:13px;color:#9E2B14">Contraseña actual incorrecta. Verifica e intenta de nuevo.</span>
+              </div>
+            </sc-if>
+
+            <!-- Campo: contraseña actual -->
+            <div class="field-row">
+              <label class="lbl">Contraseña actual</label>
+              <div style="position:relative">
+                <input class="{{ pwCurrentClass }}" type="password" value="{{ pwCurrentVal }}" placeholder="Tu contraseña actual" readOnly="" style="padding-right:40px">
+                <button class="pw-eye" type="button"><i data-lucide="eye" style="width:14px;height:14px"></i></button>
+                <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;inset:0;border:1px solid #D13B1E;pointer-events:none"></div>
+                </sc-if>
+              </div>
+              <sc-if value="{{ isError }}" hint-placeholder-val="{{ false }}">
+                <p style="font-size:12px;color:#D13B1E;margin:4px 0 0;display:flex;align-items:center;gap:4px">
+                  <i data-lucide="alert-circle" style="width:11px;height:11px"></i>Contraseña incorrecta
+                </p>
+              </sc-if>
+            </div>
+
+            <!-- Campo: nueva contraseña -->
+            <div class="field-row">
+              <label class="lbl">Nueva contraseña</label>
+              <div style="position:relative">
+                <input class="fi" type="password" value="{{ pwNewVal }}" placeholder="Mínimo 8 caracteres" readOnly="" style="padding-right:40px">
+                <button class="pw-eye" type="button"><i data-lucide="eye" style="width:14px;height:14px"></i></button>
+              </div>
+              <!-- Password strength -->
+              <sc-if value="{{ showStrength }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:8px">
+                  <div style="display:flex;gap:4px;margin-bottom:4px">
+                    <div style="flex:1;height:3px;background:#25913A;border-radius:2px"></div>
+                    <div style="flex:1;height:3px;background:#25913A;border-radius:2px"></div>
+                    <div style="flex:1;height:3px;background:#25913A;border-radius:2px"></div>
+                  </div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#25913A;font-weight:600;letter-spacing:.04em">CONTRASEÑA FUERTE</span>
+                </div>
+              </sc-if>
+            </div>
+
+            <!-- Campo: confirmar -->
+            <div class="field-row" style="margin-bottom:20px">
+              <label class="lbl">Confirmar nueva contraseña</label>
+              <div style="position:relative">
+                <input class="fi" type="password" value="{{ pwConfirmVal }}" placeholder="Repite la nueva contraseña" readOnly="" style="padding-right:40px">
+                <button class="pw-eye" type="button"><i data-lucide="eye" style="width:14px;height:14px"></i></button>
+              </div>
+            </div>
+
+            <button class="btn-p" style="width:100%;height:44px;font-size:14px" onClick="{{ setSuccess }}">
+              <i data-lucide="shield-check" style="width:14px;height:14px"></i>Cambiar contraseña
+            </button>
+
+          </div>
+        </div>
+
+
+        <!-- ══ SECCIÓN 3: SESIÓN ══ -->
+        <div class="card" style="margin-bottom:0">
+          <div class="card-hdr">
+            <div>
+              <div class="sec-title">Sesión</div>
+              <div class="sec-sub">Gestiona tu acceso activo</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px;background:#F8F7F4;border:1px solid #E9E6E0">
+              <div style="width:32px;height:32px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">CV</span>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:500;color:#11100E">Carlos Vargas</div>
+                <div style="font-size:11px;color:#7B766D">Sesión activa · carlos@empresa.mx</div>
+              </div>
+              <div style="margin-left:auto;display:flex;align-items:center;gap:5px">
+                <div style="width:7px;height:7px;background:#25913A;border-radius:9999px"></div>
+                <span style="font-size:11px;color:#1A6629;font-weight:500">Activo</span>
+              </div>
+            </div>
+            <button class="btn-logout">
+              <i data-lucide="log-out" style="width:15px;height:15px"></i>Cerrar sesión
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /main-wrap -->
+
+
+  <!-- ═══ STATE SWITCHER ═══ -->
+  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+    <sc-if value="{{ isViewSw }}"    hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setView }}"    style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">VER</button></sc-if>
+    <sc-if value="{{ isViewSwOff }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setView }}"    style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">VER</button></sc-if>
+
+    <sc-if value="{{ isEditSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEditing }}" style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">EDITAR</button></sc-if>
+    <sc-if value="{{ isEditSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEditing }}" style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">EDITAR</button></sc-if>
+
+    <sc-if value="{{ isPwSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setPassword }}" style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CONTRASEÑA</button></sc-if>
+    <sc-if value="{{ isPwSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setPassword }}" style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">CONTRASEÑA</button></sc-if>
+
+    <sc-if value="{{ isErrSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setError }}"    style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:#D13B1E;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ERROR</button></sc-if>
+    <sc-if value="{{ isErrSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setError }}"    style="padding:7px 12px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ERROR</button></sc-if>
+
+    <sc-if value="{{ isSuccSw }}"    hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setSuccess }}"  style="padding:7px 12px;border:none;background:#25913A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ÉXITO</button></sc-if>
+    <sc-if value="{{ isSuccSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setSuccess }}"  style="padding:7px 12px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ÉXITO</button></sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}}">
+class Component extends DCLogic {
+  state = { viewState: 'view' };
+
+  renderVals() {
+    const { viewState } = this.state;
+    const vs = viewState;
+
+    const isViewMode = vs === 'view';
+    const isEditing  = vs === 'editing';
+    const isPassword = vs === 'password' || vs === 'error' || vs === 'success';
+    const isError    = vs === 'error';
+    const isSuccess  = vs === 'success';
+
+    const showStrength = vs === 'password' || vs === 'error' || vs === 'success';
+    const pwCurrentVal = (vs === 'password' || vs === 'success') ? 'MiContraseña2024' : vs === 'error' ? 'ContraseñaFalsa' : '';
+    const pwNewVal     = (vs === 'password' || vs === 'error' || vs === 'success') ? 'NuevaSegura2025!' : '';
+    const pwConfirmVal = (vs === 'password' || vs === 'error' || vs === 'success') ? 'NuevaSegura2025!' : '';
+    const pwCurrentClass = isError ? 'fi fi-err' : 'fi';
+
+    return {
+      isViewMode, isEditing, isPassword, isError, isSuccess, showStrength,
+      pwCurrentVal, pwNewVal, pwConfirmVal, pwCurrentClass,
+
+      isViewSw:   vs === 'view',     isViewSwOff:    vs !== 'view',
+      isEditSw:   vs === 'editing',  isEditSwOff:    vs !== 'editing',
+      isPwSw:     vs === 'password', isPwSwOff:      vs !== 'password',
+      isErrSw:    vs === 'error',    isErrSwOff:     vs !== 'error',
+      isSuccSw:   vs === 'success',  isSuccSwOff:    vs !== 'success',
+
+      setView:     () => this.setState({ viewState: 'view'     }),
+      setEditing:  () => this.setState({ viewState: 'editing'  }),
+      setPassword: () => this.setState({ viewState: 'password' }),
+      setError:    () => this.setState({ viewState: 'error'    }),
+      setSuccess:  () => this.setState({ viewState: 'success'  }),
+    };
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  componentDidUpdate() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>

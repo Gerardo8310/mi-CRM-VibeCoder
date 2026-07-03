@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/tokens/shadows.css">
+  <link rel="stylesheet" href="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/styles.css">
+  <script src="_ds/solarcrm-design-system-6d236da5-53c9-46b5-9894-a275e46be89f/_ds_bundle.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body { background: #F8F7F4; font-family: 'IBM Plex Sans', sans-serif; }
+
+    .sidebar { display: none; position: fixed; left: 0; top: 0; bottom: 0; width: 220px; background: #181512; flex-direction: column; z-index: 50; border-right: 1px solid #2D2924; }
+    .main-wrap { display: flex; flex-direction: column; min-height: 100vh; }
+    .page-hdr { background: #fff; border-bottom: 1px solid #E9E6E0; padding: 20px 16px 16px; flex-shrink: 0; }
+    .content-area { flex: 1; overflow-y: auto; padding: 20px 16px 80px; }
+
+    .nav-item { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 18px; font-size: 13px; color: #7B766D; cursor: pointer; transition: color 120ms, background 120ms; border-left: 2px solid transparent; text-decoration: none; }
+    .nav-item:hover { color: #D6C48A; background: rgba(255,255,255,.04); }
+    .nav-item.active { color: #C98A0A; background: rgba(201,138,10,.1); border-left-color: #C98A0A; font-weight: 500; }
+
+    .cards-grid { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+    .metric-card { background: #fff; border: 1px solid #E9E6E0; padding: 20px; cursor: pointer; transition: box-shadow 150ms, transform 150ms; }
+    .metric-card:hover { box-shadow: 0 4px 20px rgba(30,20,5,.1); transform: translateY(-2px); }
+    .metric-number { font-family: 'IBM Plex Mono', monospace; font-size: 44px; font-weight: 700; color: #11100E; letter-spacing: -.04em; line-height: 1; margin: 12px 0 6px; }
+    .metric-empty { font-family: 'IBM Plex Mono', monospace; font-size: 44px; font-weight: 300; color: #D6D2CB; letter-spacing: -.04em; line-height: 1; margin: 12px 0 6px; }
+    .metric-label { font-size: 14px; color: #7B766D; line-height: 1.4; }
+
+    .trend-up   { font-size: 12px; color: #1A6629; display: flex; align-items: center; gap: 4px; }
+    .trend-down { font-size: 12px; color: #D13B1E; display: flex; align-items: center; gap: 4px; }
+    .trend-neu  { font-size: 12px; color: #A9A49C; display: flex; align-items: center; gap: 4px; }
+
+    .pipe-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; font-size: 12px; font-weight: 500; border: 1px solid; }
+
+    .act-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid #F3F1EC; cursor: pointer; transition: background 120ms; }
+    .act-row:last-child { border-bottom: none; }
+    .act-row:hover { background: #F8F7F4; }
+
+    .sec-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .sec-title { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: #5C574F; letter-spacing: .07em; text-transform: uppercase; }
+    .sec-link { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #C98A0A; text-decoration: none; display: flex; align-items: center; gap: 4px; transition: color 120ms; }
+    .sec-link:hover { color: #7E5407; }
+
+    .btn-icon { background: none; border: none; cursor: pointer; display: flex; align-items: center; padding: 4px; color: #7B766D; transition: color 120ms; }
+    .btn-icon:hover { color: #11100E; }
+
+    @media (min-width: 1024px) {
+      .sidebar { display: flex; }
+      .main-wrap { margin-left: 220px; height: 100vh; overflow: hidden; }
+      .page-hdr { padding: 28px 32px 24px; }
+      .content-area { padding: 24px 32px 40px; overflow-y: auto; }
+      .cards-grid { flex-direction: row; gap: 20px; }
+      .metric-card { flex: 1; padding: 24px; }
+      .metric-number { font-size: 52px; }
+      .metric-empty { font-size: 52px; }
+      .mob-only { display: none !important; }
+    }
+  </style>
+</helmet>
+
+<div style="position:relative;min-height:100vh">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div style="padding:20px 18px 16px;border-bottom:1px solid #2D2924">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="width:7px;height:7px;background:#C98A0A"></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#C98A0A">SolarCRM</span>
+      </div>
+    </div>
+    <nav style="padding:12px 0;flex:1">
+      <a class="nav-item active" href="#">
+        <i data-lucide="layout-dashboard" style="width:16px;height:16px;flex-shrink:0"></i>Inicio
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="clock" style="width:16px;height:16px;flex-shrink:0"></i>Hoy
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="users" style="width:16px;height:16px;flex-shrink:0"></i>Clientes
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="briefcase" style="width:16px;height:16px;flex-shrink:0"></i>Oportunidades
+      </a>
+      <a class="nav-item" href="#">
+        <i data-lucide="bar-chart-2" style="width:16px;height:16px;flex-shrink:0"></i>Reportes
+      </a>
+    </nav>
+    <div style="padding:14px 18px;border-top:1px solid #2D2924;display:flex;align-items:center;gap:10px">
+      <div style="width:30px;height:30px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#1A6629">MV</span>
+      </div>
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:500;color:#D6C48A">Martha Vargas</div>
+        <div style="font-size:11px;color:#5C574F">Dueña</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN WRAP ── -->
+  <div class="main-wrap">
+
+    <!-- PAGE HEADER -->
+    <div class="page-hdr">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <h1 style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:#11100E;letter-spacing:-.02em;margin:0 0 4px">Buenos días, Martha</h1>
+          <p style="font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:#A9A49C;margin:0">Lunes, 23 de junio</p>
+        </div>
+        <!-- Avatar (mobile / desktop) -->
+        <div style="width:44px;height:44px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 0 0 1px rgba(37,145,58,.2);flex-shrink:0">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#1A6629">MV</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content-area">
+
+      <!-- ═════ CARDS GRID ═════ -->
+      <div class="cards-grid">
+
+        <!-- ── CARD 1: CLIENTES NUEVOS ── -->
+        <div class="metric-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="width:34px;height:34px;background:#EEF3FD;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i data-lucide="user-plus" style="width:16px;height:16px;color:#2A53A0"></i>
+            </div>
+            <sc-if value="{{ showTrends }}" hint-placeholder-val="{{ true }}">
+              <span class="trend-up">
+                <i data-lucide="trending-up" style="width:12px;height:12px"></i>2 más que el mes pasado
+              </span>
+            </sc-if>
+            <sc-if value="{{ showTrendsOff }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:12px;color:#D6D2CB">Sin datos anteriores</span>
+            </sc-if>
+          </div>
+          <div class="{{ c1NumberClass }}">{{ c1Value }}</div>
+          <div class="metric-label">Clientes nuevos este mes</div>
+        </div>
+
+        <!-- ── CARD 2: VENTAS ── -->
+        <div class="metric-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="width:34px;height:34px;background:#ECFAED;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i data-lucide="circle-dollar-sign" style="width:16px;height:16px;color:#1A6629"></i>
+            </div>
+            <sc-if value="{{ showTrends }}" hint-placeholder-val="{{ true }}">
+              <span class="trend-up">
+                <i data-lucide="trending-up" style="width:12px;height:12px"></i>↑ $12,000 vs mes pasado
+              </span>
+            </sc-if>
+            <sc-if value="{{ showTrendsOff }}" hint-placeholder-val="{{ false }}">
+              <span style="font-size:12px;color:#D6D2CB">Sin datos anteriores</span>
+            </sc-if>
+          </div>
+          <div class="{{ c2NumberClass }}">{{ c2Value }}</div>
+          <div class="metric-label">Ventas cerradas este mes</div>
+        </div>
+
+        <!-- ── CARD 3: PENDIENTES — NORMAL / EMPTY ── -->
+        <sc-if value="{{ showNormalCard3 }}" hint-placeholder-val="{{ true }}">
+          <div class="metric-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="width:34px;height:34px;background:#FEF8E7;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i data-lucide="clock" style="width:16px;height:16px;color:#C98A0A"></i>
+              </div>
+              <sc-if value="{{ showTrends }}" hint-placeholder-val="{{ true }}">
+                <span class="trend-neu">
+                  <i data-lucide="minus" style="width:12px;height:12px"></i>Sin cambio vs semana pasada
+                </span>
+              </sc-if>
+              <sc-if value="{{ showTrendsOff }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:12px;color:#D6D2CB">Sin datos anteriores</span>
+              </sc-if>
+            </div>
+            <div class="{{ c3NumberClass }}">{{ c3Value }}</div>
+            <div class="metric-label">Seguimientos pendientes</div>
+          </div>
+        </sc-if>
+
+        <!-- ── CARD 3: PENDIENTES — ALERTA ── -->
+        <sc-if value="{{ showAlertCard3 }}" hint-placeholder-val="{{ false }}">
+          <div class="metric-card" style="border-color:rgba(209,59,30,.3);border-left:3px solid #D13B1E">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="width:34px;height:34px;background:#FDEEED;border-radius:9999px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <i data-lucide="alert-circle" style="width:16px;height:16px;color:#D13B1E"></i>
+              </div>
+              <span style="background:#FDEEED;color:#D13B1E;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:2px;border:1px solid rgba(209,59,30,.25);white-space:nowrap">⚠ 2 atrasados</span>
+            </div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:52px;font-weight:700;color:#D13B1E;letter-spacing:-.04em;line-height:1;margin:12px 0 6px">5</div>
+            <div class="metric-label">Seguimientos pendientes</div>
+          </div>
+        </sc-if>
+
+      </div><!-- /cards-grid -->
+
+
+      <!-- ═════ SECONDARY SECTION (con datos) ═════ -->
+      <sc-if value="{{ showSecondary }}" hint-placeholder-val="{{ true }}">
+        <div>
+
+          <!-- Pipeline abierto -->
+          <div style="background:#fff;border:1px solid #E9E6E0;padding:18px 20px;margin-bottom:16px;box-shadow:var(--shadow-xs)">
+            <div class="sec-hdr">
+              <span class="sec-title">Pipeline abierto</span>
+              <a href="#" class="sec-link">
+                Ver tablero <i data-lucide="arrow-right" style="width:12px;height:12px"></i>
+              </a>
+            </div>
+            <!-- Pipeline total -->
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:#11100E;letter-spacing:-.03em">$138,500</span>
+              <span style="font-size:13px;color:#7B766D">MXN · 5 oportunidades</span>
+            </div>
+            <!-- Stage chips -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div class="pipe-chip" style="background:#EEF3FD;border-color:rgba(42,83,160,.2);color:#2A53A0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700">Interesado</span>
+                <span style="font-size:12px;color:#5C77B8">2 · $40,500</span>
+              </div>
+              <div class="pipe-chip" style="background:#FEF8E7;border-color:rgba(201,138,10,.2);color:#8F6010">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700">Cotizado</span>
+                <span style="font-size:12px;color:#A56E08">3 · $98,000</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actividad reciente -->
+          <div style="background:#fff;border:1px solid #E9E6E0;padding:18px 20px;box-shadow:var(--shadow-xs)">
+            <div class="sec-hdr">
+              <span class="sec-title">Actividad reciente</span>
+              <a href="#" class="sec-link">
+                Ver todo <i data-lucide="arrow-right" style="width:12px;height:12px"></i>
+              </a>
+            </div>
+            <!-- Activity 1 -->
+            <div class="act-row">
+              <div style="width:32px;height:32px;border-radius:9999px;background:#FEF8E7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#7E5407">AG</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
+                  <span style="font-size:13px;font-weight:500;color:#11100E">Ana García</span>
+                  <span style="font-size:11px;color:#A9A49C;white-space:nowrap;flex-shrink:0">Ayer</span>
+                </div>
+                <div style="font-size:12px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Llamada — Solicitó propuesta formal, presupuesto aprobado</div>
+              </div>
+            </div>
+            <!-- Activity 2 -->
+            <div class="act-row">
+              <div style="width:32px;height:32px;border-radius:9999px;background:#EEF3FD;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#2A53A0">CM</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
+                  <span style="font-size:13px;font-weight:500;color:#11100E">Carlos Mendoza</span>
+                  <span style="font-size:11px;color:#A9A49C;white-space:nowrap;flex-shrink:0">Hace 3 días</span>
+                </div>
+                <div style="font-size:12px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Mensaje — Respondió por WhatsApp, disponible el martes</div>
+              </div>
+            </div>
+            <!-- Activity 3 -->
+            <div class="act-row">
+              <div style="width:32px;height:32px;border-radius:9999px;background:#ECFAED;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;color:#1A6629">DL</span>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:2px">
+                  <span style="font-size:13px;font-weight:500;color:#11100E">Diana López</span>
+                  <span style="font-size:11px;color:#A9A49C;white-space:nowrap;flex-shrink:0">Hace 1 semana</span>
+                </div>
+                <div style="font-size:12px;color:#7B766D;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Visita — Primera reunión en sus oficinas, muy interesada</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </sc-if>
+
+      <!-- ═════ SECONDARY SECTION (sin datos) ═════ -->
+      <sc-if value="{{ showEmptySecondary }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fff;border:1px solid #E9E6E0;padding:32px 24px;text-align:center;box-shadow:var(--shadow-xs)">
+          <div style="width:48px;height:48px;background:#F3F1EC;border-radius:9999px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+            <i data-lucide="bar-chart-2" style="width:22px;height:22px;color:#A9A49C"></i>
+          </div>
+          <h3 style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#11100E;letter-spacing:-.01em;margin:0 0 6px">Aún no hay datos este mes</h3>
+          <p style="font-size:13px;color:#7B766D;margin:0;line-height:1.6;max-width:240px;margin:0 auto">Registra clientes y ventas para ver el resumen aquí.</p>
+        </div>
+      </sc-if>
+
+    </div><!-- /content-area -->
+  </div><!-- /main-wrap -->
+
+  <!-- ═════ STATE SWITCHER ═════ -->
+  <div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:200;display:flex;background:#181512;border:1px solid #2D2924;box-shadow:0 4px 20px rgba(0,0,0,.35)">
+    <sc-if value="{{ isNormalSw }}"   hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setNormal }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">NORMAL</button></sc-if>
+    <sc-if value="{{ isNormalSwOff }}" hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setNormal }}" style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">NORMAL</button></sc-if>
+
+    <sc-if value="{{ isAlertSw }}"   hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setAlert }}"  style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ALERTA</button></sc-if>
+    <sc-if value="{{ isAlertSwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setAlert }}"  style="padding:7px 14px;border:none;border-right:1px solid #2D2924;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">ALERTA</button></sc-if>
+
+    <sc-if value="{{ isEmptySw }}"   hint-placeholder-val="{{ false }}"><button type="button" onClick="{{ setEmpty }}"  style="padding:7px 14px;border:none;background:#C98A0A;color:#fff;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">SIN DATOS</button></sc-if>
+    <sc-if value="{{ isEmptySwOff }}" hint-placeholder-val="{{ true  }}"><button type="button" onClick="{{ setEmpty }}"  style="padding:7px 14px;border:none;background:transparent;color:#7B766D;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.04em;cursor:pointer;white-space:nowrap">SIN DATOS</button></sc-if>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1280, &quot;height&quot;: 860}}">
+class Component extends DCLogic {
+  state = { viewState: 'normal' };
+
+  renderVals() {
+    const { viewState } = this.state;
+    const vs = viewState;
+    const isEmpty  = vs === 'empty';
+    const isAlert  = vs === 'alert';
+
+    const showTrends        = !isEmpty;
+    const showNormalCard3   = !isAlert;
+    const showAlertCard3    = isAlert;
+    const showSecondary     = !isEmpty;
+    const showEmptySecondary = isEmpty;
+
+    const c1Value = isEmpty ? '—' : '7';
+    const c2Value = isEmpty ? '—' : '$48,500';
+    const c3Value = isEmpty ? '—' : '5';
+
+    const c1NumberClass = isEmpty ? 'metric-empty' : 'metric-number';
+    const c2NumberClass = isEmpty ? 'metric-empty' : 'metric-number';
+    const c3NumberClass = isEmpty ? 'metric-empty' : 'metric-number';
+
+    return {
+      isEmpty, isAlert,
+      showTrends, showTrendsOff: !showTrends,
+      showNormalCard3, showAlertCard3,
+      showSecondary, showEmptySecondary,
+      c1Value, c2Value, c3Value,
+      c1NumberClass, c2NumberClass, c3NumberClass,
+
+      isNormalSw:   vs === 'normal', isNormalSwOff:  vs !== 'normal',
+      isAlertSw:    vs === 'alert',  isAlertSwOff:   vs !== 'alert',
+      isEmptySw:    vs === 'empty',  isEmptySwOff:   vs !== 'empty',
+
+      setNormal: () => this.setState({ viewState: 'normal' }),
+      setAlert:  () => this.setState({ viewState: 'alert'  }),
+      setEmpty:  () => this.setState({ viewState: 'empty'  }),
+    };
+  }
+
+  componentDidMount() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  componentDidUpdate() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+</script>
+</body>
+</html>
