@@ -39,5 +39,3 @@ export const create = mutation({
     });
   },
 });
-
-// TODO(GER-13): listForClient (para el historial, junto con oportunidades y seguimientos hechos).
