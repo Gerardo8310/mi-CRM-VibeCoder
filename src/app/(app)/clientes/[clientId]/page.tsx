@@ -24,6 +24,8 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/input";
 import { Field } from "@/components/hoy/quick-parts";
+import { AnotarInteractionSheet } from "@/components/clientes/anotar-interaction-sheet";
+import { ClientHistory } from "@/components/clientes/client-history";
 import { cn } from "@/lib/utils";
 
 /** Pantalla 3 — Ficha de cliente (datos y edición). GER-11. */
@@ -55,6 +57,7 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
   const [submitted, setSubmitted] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [noteExpanded, setNoteExpanded] = useState(false);
+  const [showAnotar, setShowAnotar] = useState(false);
 
   const nameError = submitted && name.trim().length === 0;
   const phoneError = submitted && phone.trim().length === 0;
@@ -280,15 +283,20 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
                 )}
               </div>
 
-              {/* Acciones directas (se cablean en Fases 3/4/5) */}
+              {/* Acciones directas — "Anotar" activo (Fase 3); "Registrar"/"Agendar" llegan en Fases 4/5 */}
               <div className="border-y border-neutral-100 px-5 py-4">
                 <div className="flex gap-2">
-                  <ActionButton icon={MessageCircle} label="Anotar" amber />
-                  <ActionButton icon={CircleDollarSign} label="Registrar" />
-                  <ActionButton icon={CalendarPlus} label="Agendar" />
+                  <ActionButton
+                    icon={MessageCircle}
+                    label="Anotar"
+                    amber
+                    onClick={() => setShowAnotar(true)}
+                  />
+                  <ActionButton icon={CircleDollarSign} label="Registrar" disabled />
+                  <ActionButton icon={CalendarPlus} label="Agendar" disabled />
                 </div>
                 <p className="mt-2 text-center text-[11px] text-neutral-400">
-                  Disponible en las próximas fases
+                  Registrar y agendar llegan pronto
                 </p>
               </div>
 
@@ -308,25 +316,20 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
           )}
         </div>
 
-        {/* ════ Columna derecha — Historial (placeholder Fases 3/4/5) ════ */}
+        {/* ════ Columna derecha — Historial (GER-13) ════ */}
         <div className="flex-1 overflow-y-auto px-4 pt-5 pb-24 lg:px-8 lg:pt-6 lg:pb-10">
-          <h2 className="mb-5 font-mono text-sm font-semibold tracking-[-0.01em] text-neutral-950">
-            Historial
-          </h2>
-          <div className="flex min-h-[240px] flex-col items-center justify-center border border-dashed border-neutral-200 bg-white px-6 py-10 text-center">
-            <div className="mb-4 flex size-[52px] items-center justify-center rounded-full bg-neutral-100">
-              <Clock className="size-6 text-neutral-400" />
-            </div>
-            <h3 className="mb-2 font-mono text-[15px] font-semibold tracking-[-0.01em] text-neutral-950">
-              Aún no hay historial
-            </h3>
-            <p className="max-w-[280px] text-sm leading-relaxed text-neutral-500">
-              Las interacciones, oportunidades y seguimientos de este cliente
-              aparecerán aquí (Fases 3, 4 y 5).
-            </p>
-          </div>
+          <ClientHistory
+            clientId={client._id}
+            onAnotar={() => setShowAnotar(true)}
+          />
         </div>
       </div>
+
+      <AnotarInteractionSheet
+        clientId={client._id}
+        open={showAnotar}
+        onClose={() => setShowAnotar(false)}
+      />
     </>
   );
 }
@@ -335,21 +338,29 @@ function ActionButton({
   icon: Icon,
   label,
   amber = false,
+  disabled = false,
+  onClick,
 }: {
   icon: LucideIcon;
   label: string;
   amber?: boolean;
+  disabled?: boolean;
+  onClick?: () => void;
 }) {
   return (
     <button
       type="button"
-      disabled
-      title="Disponible en las próximas fases"
+      disabled={disabled}
+      onClick={onClick}
+      title={disabled ? "Disponible en las próximas fases" : undefined}
       className={cn(
-        "flex h-[42px] flex-1 cursor-not-allowed items-center justify-center gap-1.5 border font-mono text-xs font-medium opacity-60",
+        "flex h-[42px] flex-1 items-center justify-center gap-1.5 border font-mono text-xs font-medium",
         amber
           ? "border-brand-500/30 bg-brand-50 text-brand-700"
-          : "border-neutral-200 bg-neutral-50 text-neutral-600"
+          : "border-neutral-200 bg-neutral-50 text-neutral-600",
+        disabled
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer transition-[filter] hover:brightness-95"
       )}
     >
       <Icon className="size-3.5" />

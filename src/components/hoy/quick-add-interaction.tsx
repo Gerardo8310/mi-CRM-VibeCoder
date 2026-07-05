@@ -3,18 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation } from "convex/react";
-import type { LucideIcon } from "lucide-react";
-import {
-  ArrowRight,
-  Check,
-  MapPin,
-  MessageCircle,
-  Phone,
-} from "lucide-react";
+import { ArrowRight, Check, MessageCircle } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
 import { timestampFromDateInput } from "@/lib/dates";
+import { INTERACTION_TYPES as TYPES, type IntType } from "@/lib/interaction-types";
 import { Input, Textarea } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { QuickSheet, SheetFooter } from "@/components/hoy/quick-sheet";
@@ -25,42 +19,6 @@ import {
   QuickTrigger,
   RepeatButton,
 } from "@/components/hoy/quick-parts";
-
-type IntType = "llamada" | "mensaje" | "visita";
-
-const TYPES: {
-  key: IntType;
-  label: string;
-  icon: LucideIcon;
-  onClass: string;
-  badge: string;
-  desc: string;
-}[] = [
-  {
-    key: "llamada",
-    label: "Llamada",
-    icon: Phone,
-    onClass: "bg-info-100 border-info-700/35 text-info-700 font-bold",
-    badge: "bg-info-100 text-info-700",
-    desc: "Conversación telefónica o videollamada",
-  },
-  {
-    key: "mensaje",
-    label: "Mensaje",
-    icon: MessageCircle,
-    onClass: "bg-brand-50 border-brand-500/45 text-brand-700 font-bold",
-    badge: "bg-brand-50 text-brand-700",
-    desc: "WhatsApp, SMS o correo electrónico",
-  },
-  {
-    key: "visita",
-    label: "Visita",
-    icon: MapPin,
-    onClass: "bg-success-100 border-success-500/35 text-success-700 font-bold",
-    badge: "bg-success-100 text-success-700",
-    desc: "Reunión presencial o en sus oficinas",
-  },
-];
 
 type Saved = {
   clientId: Id<"clients">;

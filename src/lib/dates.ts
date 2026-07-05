@@ -81,3 +81,31 @@ export function calendarLabel(ts: number): string {
   const short = `${WEEKDAYS_SHORT[d.getDay()]} ${d.getDate()}`;
   return dayOffset(ts) === 1 ? `Mañana · ${short}` : short;
 }
+
+const TIME_FMT = new Intl.DateTimeFormat("es-MX", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+const SHORT_DATE_FMT = new Intl.DateTimeFormat("es-MX", {
+  day: "numeric",
+  month: "short",
+});
+
+/**
+ * Marca de tiempo para el historial del cliente (GER-13): entradas recientes en
+ * relativo con hora ("Hoy · 10:30", "Ayer · 16:15"), luego "Hace N días",
+ * "Hace 1 semana", "Hace N semanas", y a partir de ~1 mes (o fechas futuras) la
+ * fecha corta "3 jul".
+ */
+export function historyTimestamp(ts: number): string {
+  const offset = dayOffset(ts); // negativo = pasado
+  if (offset === 0) return `Hoy · ${TIME_FMT.format(ts)}`;
+  if (offset === -1) return `Ayer · ${TIME_FMT.format(ts)}`;
+  const daysAgo = -offset;
+  if (daysAgo >= 2 && daysAgo <= 6) return `Hace ${daysAgo} días`;
+  if (daysAgo >= 7 && daysAgo <= 13) return "Hace 1 semana";
+  if (daysAgo >= 14 && daysAgo <= 27) return `Hace ${Math.floor(daysAgo / 7)} semanas`;
+  return SHORT_DATE_FMT.format(ts);
+}

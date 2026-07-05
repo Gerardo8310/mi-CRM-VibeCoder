@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as clients from "../clients.js";
 import type * as followUps from "../followUps.js";
+import type * as history from "../history.js";
 import type * as http from "../http.js";
 import type * as interactions from "../interactions.js";
 import type * as opportunities from "../opportunities.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   clients: typeof clients;
   followUps: typeof followUps;
+  history: typeof history;
   http: typeof http;
   interactions: typeof interactions;
   opportunities: typeof opportunities;
