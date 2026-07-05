@@ -327,7 +327,6 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
 
       <AnotarInteractionSheet
         clientId={client._id}
-        clientName={client.name}
         open={showAnotar}
         onClose={() => setShowAnotar(false)}
       />

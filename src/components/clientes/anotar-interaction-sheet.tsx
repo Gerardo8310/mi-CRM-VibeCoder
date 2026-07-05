@@ -24,7 +24,6 @@ export function AnotarInteractionSheet({
   onClose,
 }: {
   clientId: Id<"clients">;
-  clientName: string;
   open: boolean;
   onClose: () => void;
 }) {
