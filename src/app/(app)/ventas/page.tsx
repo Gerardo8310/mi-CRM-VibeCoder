@@ -10,6 +10,7 @@ import {
   Inbox,
   Plus,
   Trophy,
+  X,
 } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -39,6 +40,7 @@ export default function VentasPage() {
   const [createStage, setCreateStage] = useState<Stage | undefined>(undefined);
   const [draggingId, setDraggingId] = useState<Id<"opportunities"> | null>(null);
   const [dragOverStage, setDragOverStage] = useState<Stage | null>(null);
+  const [moveError, setMoveError] = useState(false);
 
   const { byStage, stats, pipeline } = useMemo(() => {
     const byStage: Record<Stage, BoardOpportunity[]> = {
@@ -68,6 +70,11 @@ export default function VentasPage() {
     setCreateOpen(true);
   }
 
+  function persistStage(id: Id<"opportunities">, stage: Stage) {
+    setMoveError(false);
+    void updateStage({ id, stage }).catch(() => setMoveError(true));
+  }
+
   function handleDrop(stage: Stage) {
     setDragOverStage(null);
     const id = draggingId;
@@ -75,11 +82,11 @@ export default function VentasPage() {
     if (!id) return;
     const opp = (board ?? []).find((o) => o._id === id);
     if (!opp || opp.stage === stage) return;
-    void updateStage({ id, stage });
+    persistStage(id, stage);
   }
 
   function handleMove(stage: Stage) {
-    if (moveOpp) void updateStage({ id: moveOpp._id, stage });
+    if (moveOpp) persistStage(moveOpp._id, stage);
     setMoveOpp(null);
   }
 
@@ -119,6 +126,22 @@ export default function VentasPage() {
         <EmptyBoard onCreate={() => openCreate()} />
       ) : (
         <>
+          {moveError && (
+            <div className="mx-4 mt-4 flex items-start justify-between gap-3 border border-error-500/20 bg-error-100 px-3.5 py-2.5 text-[13px] leading-snug text-error-700 lg:mx-6">
+              <span>
+                No se pudo mover la oportunidad. Revisa tu conexión e inténtalo
+                de nuevo.
+              </span>
+              <button
+                type="button"
+                onClick={() => setMoveError(false)}
+                aria-label="Descartar"
+                className="shrink-0 text-error-700/70 transition-colors hover:text-error-700"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+          )}
           <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto px-4 py-4 lg:gap-4 lg:px-6 lg:py-5">
             {STAGE_ORDER.map((stage) => {
               const cfg = STAGES[stage];
