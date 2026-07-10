@@ -3,10 +3,12 @@
 import { QuickAddClient } from "@/components/hoy/quick-add-client";
 import { QuickAddSale } from "@/components/hoy/quick-add-sale";
 import { QuickAddInteraction } from "@/components/hoy/quick-add-interaction";
+import { QuickAddFollowUp } from "@/components/hoy/quick-add-followup";
 
 /**
- * Los tres accesos rápidos bajo la lista de "Hoy" (GER-50): alta de cliente,
- * venta e interacción. Ver Design/Hoy.dc.html.
+ * Los accesos rápidos bajo la lista de "Hoy": alta de cliente, venta e
+ * interacción (GER-50) y "nueva tarea" para programar un seguimiento (GER-16).
+ * Ver Design/Hoy.dc.html.
  */
 export function QuickAddPanel() {
   return (
@@ -14,6 +16,7 @@ export function QuickAddPanel() {
       <QuickAddClient />
       <QuickAddSale />
       <QuickAddInteraction />
+      <QuickAddFollowUp />
     </div>
   );
 }
