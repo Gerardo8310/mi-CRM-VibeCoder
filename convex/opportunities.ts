@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -38,6 +38,36 @@ export const create = mutation({
       closedAt: stage === "cerrado" ? now : undefined,
       createdBy: userId,
     });
+  },
+});
+
+/**
+ * Oportunidades de un cliente, para el selector desplegable al agendar un
+ * seguimiento (GER-16). Recibe el id como string y lo normaliza: id inválido /
+ * sin sesión → `[]`. Orden por fecha de alta descendente (lo más reciente
+ * arriba). Estará vacío hasta que la Fase 4 registre oportunidades.
+ */
+export const listForClient = query({
+  args: { id: v.string() },
+  handler: async (ctx, { id }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const clientId = ctx.db.normalizeId("clients", id);
+    if (!clientId) return [];
+
+    const rows = await ctx.db
+      .query("opportunities")
+      .withIndex("by_client", (q) => q.eq("clientId", clientId))
+      .collect();
+
+    return rows
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .map((o) => ({
+        _id: o._id,
+        product: o.product,
+        amount: o.amount,
+        stage: o.stage,
+      }));
   },
 });
 

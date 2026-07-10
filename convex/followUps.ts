@@ -122,4 +122,78 @@ export const markDone = mutation({
   },
 });
 
-// TODO(GER-16): create (programar seguimiento, opcionalmente ligado a una oportunidad).
+/**
+ * Programa un seguimiento (recordatorio) para un cliente (GER-16). Nace en
+ * estado "pendiente", ligado al cliente y al usuario que lo crea. Es la lógica
+ * que reutilizan la ficha (botón "Agendar", cliente fijado) y el acceso rápido
+ * "nueva tarea" desde "Hoy" (con selección de cliente). Puede ligarse opcional-
+ * mente a una oportunidad **del mismo cliente**.
+ */
+export const create = mutation({
+  args: {
+    clientId: v.id("clients"),
+    note: v.string(),
+    dueDate: v.number(),
+    opportunityId: v.optional(v.id("opportunities")),
+  },
+  handler: async (ctx, { clientId, note, dueDate, opportunityId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Necesitas iniciar sesión.");
+
+    const client = await ctx.db.get(clientId);
+    if (!client) throw new Error("El cliente no existe.");
+
+    const trimmed = note.trim();
+    if (!trimmed) throw new Error("Escribe qué hacer.");
+    if (!Number.isFinite(dueDate)) throw new Error("La fecha no es válida.");
+
+    // El vínculo con oportunidad es opcional, pero si viene debe ser de este cliente.
+    if (opportunityId) {
+      const opportunity = await ctx.db.get(opportunityId);
+      if (!opportunity || opportunity.clientId !== clientId) {
+        throw new Error("La oportunidad no pertenece a este cliente.");
+      }
+    }
+
+    return await ctx.db.insert("followUps", {
+      clientId,
+      opportunityId: opportunityId ?? undefined,
+      dueDate,
+      note: trimmed,
+      status: "pendiente",
+      ownerId: userId,
+    });
+  },
+});
+
+/**
+ * Seguimientos **pendientes** de un cliente, para la sección "Pendientes" de su
+ * ficha (GER-16). Los ya "hecho" no van aquí — aparecen en el historial
+ * (`history.forClient`, GER-13). Recibe el id como string (viene de la ficha) y
+ * lo normaliza: id inválido / sin sesión → `[]`. Orden por fecha ascendente
+ * (lo más urgente arriba).
+ */
+export const listForClient = query({
+  args: { id: v.string() },
+  handler: async (ctx, { id }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const clientId = ctx.db.normalizeId("clients", id);
+    if (!clientId) return [];
+
+    const rows = await ctx.db
+      .query("followUps")
+      .withIndex("by_client", (q) => q.eq("clientId", clientId))
+      .collect();
+
+    return rows
+      .filter((f) => f.status === "pendiente")
+      .sort((a, b) => a.dueDate - b.dueDate)
+      .map((f) => ({
+        _id: f._id,
+        dueDate: f.dueDate,
+        note: f.note,
+        opportunityId: f.opportunityId,
+      }));
+  },
+});

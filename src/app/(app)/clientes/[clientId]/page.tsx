@@ -25,7 +25,9 @@ import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/input";
 import { Field } from "@/components/hoy/quick-parts";
 import { AnotarInteractionSheet } from "@/components/clientes/anotar-interaction-sheet";
+import { AgendarSeguimientoSheet } from "@/components/clientes/agendar-seguimiento-sheet";
 import { ClientHistory } from "@/components/clientes/client-history";
+import { ClientFollowUps } from "@/components/clientes/client-follow-ups";
 import { cn } from "@/lib/utils";
 
 /** Pantalla 3 — Ficha de cliente (datos y edición). GER-11. */
@@ -58,6 +60,7 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [noteExpanded, setNoteExpanded] = useState(false);
   const [showAnotar, setShowAnotar] = useState(false);
+  const [showAgendar, setShowAgendar] = useState(false);
 
   const nameError = submitted && name.trim().length === 0;
   const phoneError = submitted && phone.trim().length === 0;
@@ -283,7 +286,7 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
                 )}
               </div>
 
-              {/* Acciones directas — "Anotar" activo (Fase 3); "Registrar"/"Agendar" llegan en Fases 4/5 */}
+              {/* Acciones directas — "Anotar" (Fase 3) y "Agendar" (Fase 5) activos; "Registrar" llega en Fase 4 */}
               <div className="border-y border-neutral-100 px-5 py-4">
                 <div className="flex gap-2">
                   <ActionButton
@@ -293,24 +296,26 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
                     onClick={() => setShowAnotar(true)}
                   />
                   <ActionButton icon={CircleDollarSign} label="Registrar" disabled />
-                  <ActionButton icon={CalendarPlus} label="Agendar" disabled />
+                  <ActionButton
+                    icon={CalendarPlus}
+                    label="Agendar"
+                    onClick={() => setShowAgendar(true)}
+                  />
                 </div>
                 <p className="mt-2 text-center text-[11px] text-neutral-400">
-                  Registrar y agendar llegan pronto
+                  Registrar oportunidad llega pronto
                 </p>
               </div>
 
-              {/* Pendientes del cliente (Fase 5) */}
+              {/* Pendientes del cliente (GER-16) */}
               <div className="px-5 py-4">
-                <div className="mb-2 flex items-center gap-1.5">
+                <div className="mb-2.5 flex items-center gap-1.5">
                   <Clock className="size-3 text-neutral-400" />
                   <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-neutral-400">
                     Pendientes
                   </span>
                 </div>
-                <p className="text-[13px] leading-relaxed text-neutral-400">
-                  Los seguimientos de este cliente aparecerán aquí (Fase 5).
-                </p>
+                <ClientFollowUps clientId={client._id} />
               </div>
             </>
           )}
@@ -329,6 +334,12 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
         clientId={client._id}
         open={showAnotar}
         onClose={() => setShowAnotar(false)}
+      />
+
+      <AgendarSeguimientoSheet
+        clientId={client._id}
+        open={showAgendar}
+        onClose={() => setShowAgendar(false)}
       />
     </>
   );
