@@ -59,6 +59,11 @@ export function QuickAddFollowUp() {
     setOpportunityId("");
   }
 
+  function close() {
+    if (saving) return; // no cerrar a media escritura
+    setOpen(false);
+  }
+
   async function handleSave() {
     if (!canSave || !clientId || saving || dueDate === undefined) return;
     setSaving(true);
@@ -128,13 +133,13 @@ export function QuickAddFollowUp() {
 
       <QuickSheet
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={close}
         icon={<CalendarClock className="size-3 text-brand-700" />}
         iconWrapClass="bg-brand-50"
         title="Agendar seguimiento"
         footer={
           <SheetFooter
-            onCancel={() => setOpen(false)}
+            onCancel={close}
             onSave={handleSave}
             saving={saving}
             canSave={canSave}
@@ -163,6 +168,7 @@ export function QuickAddFollowUp() {
               <Input
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
+                disabled={saving}
                 placeholder="Llamar para confirmar la demo del jueves..."
               />
             </Field>
@@ -171,6 +177,7 @@ export function QuickAddFollowUp() {
               <Input
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
+                disabled={saving}
                 type="date"
                 className="text-neutral-500"
               />
@@ -181,6 +188,7 @@ export function QuickAddFollowUp() {
                 clientId={clientId}
                 value={opportunityId}
                 onChange={setOpportunityId}
+                disabled={saving}
               />
             </Field>
           </div>

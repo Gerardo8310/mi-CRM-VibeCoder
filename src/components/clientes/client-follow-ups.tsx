@@ -17,13 +17,23 @@ export function ClientFollowUps({ clientId }: { clientId: Id<"clients"> }) {
   const followUps = useQuery(api.followUps.listForClient, { id: clientId });
   const markDone = useMutation(api.followUps.markDone);
   const [failed, setFailed] = useState(false);
+  // Filas con "Hecho" en curso, para no disparar la mutación dos veces por doble clic.
+  const [doing, setDoing] = useState<Set<Id<"followUps">>>(new Set());
 
   async function handleDone(id: Id<"followUps">) {
+    if (doing.has(id)) return;
     setFailed(false);
+    setDoing((prev) => new Set(prev).add(id));
     try {
       await markDone({ id });
+      // La fila sale sola de la lista por reactividad; no hace falta limpiar `doing`.
     } catch {
       setFailed(true);
+      setDoing((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     }
   }
 
@@ -78,7 +88,8 @@ export function ClientFollowUps({ clientId }: { clientId: Id<"clients"> }) {
             <button
               type="button"
               onClick={() => handleDone(f._id)}
-              className="flex h-[28px] shrink-0 items-center gap-1 border border-neutral-300 px-2 font-mono text-[11px] font-medium text-neutral-600 transition-colors hover:border-success-500 hover:bg-success-100 hover:text-success-700"
+              disabled={doing.has(f._id)}
+              className="flex h-[28px] shrink-0 items-center gap-1 border border-neutral-300 px-2 font-mono text-[11px] font-medium text-neutral-600 transition-colors hover:border-success-500 hover:bg-success-100 hover:text-success-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Check className="size-[11px]" />
               Hecho
