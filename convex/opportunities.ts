@@ -16,9 +16,10 @@ export const create = mutation({
       v.literal("cerrado")
     ),
     amount: v.number(),
-    product: v.optional(v.string()),
+    product: v.string(),
+    note: v.optional(v.string()),
   },
-  handler: async (ctx, { clientId, stage, amount, product }) => {
+  handler: async (ctx, { clientId, stage, amount, product, note }) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Necesitas iniciar sesión.");
 
@@ -27,11 +28,15 @@ export const create = mutation({
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error("El monto debe ser mayor a cero.");
     }
+    // Producto obligatorio (GER-14): toda oportunidad describe qué se ofreció.
+    const trimmedProduct = product.trim();
+    if (!trimmedProduct) throw new Error("El producto es obligatorio.");
 
     const now = Date.now();
     return await ctx.db.insert("opportunities", {
       clientId,
-      product: product?.trim() || "",
+      product: trimmedProduct,
+      note: note?.trim() || undefined,
       amount,
       stage,
       createdAt: now,
@@ -71,6 +76,59 @@ export const listForClient = query({
   },
 });
 
-// TODO(GER-14): updateStage (al pasar a "cerrado", fijar closedAt).
-// TODO(GER-15): listByStage (tablero Kanban, ver Design/Tablero.dc.html).
+/**
+ * Todas las oportunidades del negocio con el nombre del cliente resuelto, para
+ * el tablero Kanban (GER-15). La UI las agrupa por etapa. Negocio pequeño: se
+ * traen todas y se resuelve el nombre por fila (patrón de followUps.withClientName).
+ */
+export const board = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const opportunities = await ctx.db.query("opportunities").collect();
+    return Promise.all(
+      opportunities.map(async (o) => {
+        const client = await ctx.db.get(o.clientId);
+        return {
+          _id: o._id,
+          clientId: o.clientId,
+          clientName: client?.name ?? "Cliente sin nombre",
+          product: o.product,
+          amount: o.amount,
+          stage: o.stage,
+          createdAt: o.createdAt,
+          closedAt: o.closedAt,
+        };
+      })
+    );
+  },
+});
+
+/**
+ * Cambia la etapa de una oportunidad (mover en el tablero, GER-15). Al pasar a
+ * "cerrado" se fija la fecha de cierre; al salir de "cerrado" se limpia (reabrir).
+ */
+export const updateStage = mutation({
+  args: {
+    id: v.id("opportunities"),
+    stage: v.union(
+      v.literal("interesado"),
+      v.literal("cotizado"),
+      v.literal("cerrado")
+    ),
+  },
+  handler: async (ctx, { id, stage }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const opportunity = await ctx.db.get(id);
+    if (!opportunity) throw new Error("La oportunidad no existe.");
+    await ctx.db.patch(id, {
+      stage,
+      closedAt:
+        stage === "cerrado" ? (opportunity.closedAt ?? Date.now()) : undefined,
+    });
+  },
+});
+
 // TODO(GER-18): monthlyClosedTotal / openPipelineByStage (para "Inicio").

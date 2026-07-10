@@ -47,6 +47,7 @@ export default defineSchema({
     clientId: v.id("clients"),
     product: v.string(),
     amount: v.number(),
+    note: v.optional(v.string()),
     stage: v.union(
       v.literal("interesado"),
       v.literal("cotizado"),

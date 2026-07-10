@@ -16,6 +16,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import type { TimelineEntry } from "@convex/history";
 import { cn } from "@/lib/utils";
 import { historyTimestamp } from "@/lib/dates";
+import { STAGES } from "@/lib/opportunity-stages";
 import { buttonVariants } from "@/components/ui/button";
 
 /** Ícono + color del círculo por tipo de interacción (ver Design/FichaCliente). */
@@ -40,25 +41,6 @@ const INT_VISUAL: Record<
     circle: "bg-success-100 text-success-700",
     badge: "bg-success-100 text-success-700 border-success-500/20",
     label: "Visita",
-  },
-};
-
-/** Insignia de etapa de la oportunidad. */
-const STAGE_VISUAL: Record<
-  "interesado" | "cotizado" | "cerrado",
-  { badge: string; label: string }
-> = {
-  interesado: {
-    badge: "bg-info-100 text-info-700 border-info-700/25",
-    label: "Interesado",
-  },
-  cotizado: {
-    badge: "bg-warning-100 text-warning-700 border-warning-500/25",
-    label: "Cotizado",
-  },
-  cerrado: {
-    badge: "bg-success-100 text-success-700 border-success-500/25",
-    label: "Cerrado",
   },
 };
 
@@ -149,7 +131,7 @@ function RowContent({ entry }: { entry: TimelineEntry }) {
   }
 
   if (entry.kind === "opportunity") {
-    const v = STAGE_VISUAL[entry.stage];
+    const v = STAGES[entry.stage];
     return (
       <>
         <div className="mb-1.5 flex flex-wrap items-start justify-between gap-2">
