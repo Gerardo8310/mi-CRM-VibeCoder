@@ -7,6 +7,11 @@ import { ArrowRight, Check, CircleDollarSign, TrendingUp } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
+import {
+  STAGES,
+  STAGE_LIST,
+  type Stage,
+} from "@/lib/opportunity-stages";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
 import { QuickSheet, SheetFooter } from "@/components/hoy/quick-sheet";
@@ -17,38 +22,6 @@ import {
   QuickTrigger,
   RepeatButton,
 } from "@/components/hoy/quick-parts";
-
-type Stage = "interesado" | "cotizado" | "cerrado";
-
-const STAGES: {
-  key: Stage;
-  label: string;
-  onClass: string;
-  badge: string;
-  desc: string;
-}[] = [
-  {
-    key: "interesado",
-    label: "Interesado",
-    onClass: "bg-info-100 border-info-700/35 text-info-700 font-bold",
-    badge: "bg-info-100 text-info-700",
-    desc: "Contacto que mostró interés — aún sin cotización",
-  },
-  {
-    key: "cotizado",
-    label: "Cotizado",
-    onClass: "bg-brand-50 border-brand-500/45 text-brand-700 font-bold",
-    badge: "bg-brand-50 text-brand-700",
-    desc: "Propuesta enviada — esperando respuesta",
-  },
-  {
-    key: "cerrado",
-    label: "Cerrado",
-    onClass: "bg-success-100 border-success-500/35 text-success-700 font-bold",
-    badge: "bg-success-100 text-success-700",
-    desc: "¡Trato ganado! Se registra como venta cerrada",
-  },
-];
 
 type Saved = { name: string; amount: number; stage: Stage };
 
@@ -66,8 +39,9 @@ export function QuickAddSale() {
   const [saved, setSaved] = useState<Saved | null>(null);
 
   const amountValue = Number(amount.replace(/[^\d.]/g, ""));
-  const canSave = clientId !== null && amountValue > 0;
-  const stageConfig = STAGES.find((s) => s.key === stage)!;
+  const canSave =
+    clientId !== null && amountValue > 0 && product.trim().length > 0;
+  const stageConfig = STAGES[stage];
 
   function resetForm() {
     setStage("cotizado");
@@ -87,7 +61,7 @@ export function QuickAddSale() {
         clientId,
         stage,
         amount: amountValue,
-        product: product.trim() || undefined,
+        product: product.trim(),
       });
       setSaved({ name: clientName, amount: amountValue, stage });
       setOpen(false);
@@ -99,7 +73,7 @@ export function QuickAddSale() {
     }
   }
 
-  const savedStage = saved ? STAGES.find((s) => s.key === saved.stage)! : null;
+  const savedStage = saved ? STAGES[saved.stage] : null;
   const isCerrado = stage === "cerrado";
 
   return (
@@ -191,14 +165,14 @@ export function QuickAddSale() {
           <div className="flex flex-col gap-3.5">
             <Field label="Etapa" required>
               <div className="flex">
-                {STAGES.map((s) => (
+                {STAGE_LIST.map((s) => (
                   <button
                     key={s.key}
                     type="button"
                     onClick={() => setStage(s.key)}
                     className={cn(
                       "-ml-px h-[38px] flex-1 border border-neutral-300 font-mono text-[11px] font-medium text-neutral-500 transition-colors first:ml-0 hover:bg-neutral-950/4",
-                      stage === s.key && s.onClass
+                      stage === s.key && s.segOn
                     )}
                   >
                     {s.label}
@@ -235,7 +209,7 @@ export function QuickAddSale() {
               </div>
             </Field>
 
-            <Field label="Producto" optional>
+            <Field label="Producto" required>
               <Input
                 value={product}
                 onChange={(e) => setProduct(e.target.value)}

@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/input";
 import { Field } from "@/components/hoy/quick-parts";
 import { AnotarInteractionSheet } from "@/components/clientes/anotar-interaction-sheet";
 import { AgendarSeguimientoSheet } from "@/components/clientes/agendar-seguimiento-sheet";
+import { RegistrarOportunidadSheet } from "@/components/ventas/registrar-oportunidad-sheet";
 import { ClientHistory } from "@/components/clientes/client-history";
 import { ClientFollowUps } from "@/components/clientes/client-follow-ups";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
   const [noteExpanded, setNoteExpanded] = useState(false);
   const [showAnotar, setShowAnotar] = useState(false);
   const [showAgendar, setShowAgendar] = useState(false);
+  const [showRegistrar, setShowRegistrar] = useState(false);
 
   const nameError = submitted && name.trim().length === 0;
   const phoneError = submitted && phone.trim().length === 0;
@@ -286,7 +288,7 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
                 )}
               </div>
 
-              {/* Acciones directas — "Anotar" (Fase 3) y "Agendar" (Fase 5) activos; "Registrar" llega en Fase 4 */}
+              {/* Acciones directas — Anotar (Fase 3), Registrar (Fase 4) y Agendar (Fase 5) */}
               <div className="border-y border-neutral-100 px-5 py-4">
                 <div className="flex gap-2">
                   <ActionButton
@@ -295,16 +297,17 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
                     amber
                     onClick={() => setShowAnotar(true)}
                   />
-                  <ActionButton icon={CircleDollarSign} label="Registrar" disabled />
+                  <ActionButton
+                    icon={CircleDollarSign}
+                    label="Registrar"
+                    onClick={() => setShowRegistrar(true)}
+                  />
                   <ActionButton
                     icon={CalendarPlus}
                     label="Agendar"
                     onClick={() => setShowAgendar(true)}
                   />
                 </div>
-                <p className="mt-2 text-center text-[11px] text-neutral-400">
-                  Registrar oportunidad llega pronto
-                </p>
               </div>
 
               {/* Pendientes del cliente (GER-16) */}
@@ -340,6 +343,12 @@ function FichaContent({ client }: { client: Doc<"clients"> }) {
         clientId={client._id}
         open={showAgendar}
         onClose={() => setShowAgendar(false)}
+      />
+
+      <RegistrarOportunidadSheet
+        fixedClientId={client._id}
+        open={showRegistrar}
+        onClose={() => setShowRegistrar(false)}
       />
     </>
   );
