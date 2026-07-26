@@ -1,14 +1,21 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
+import Google from "@auth/core/providers/google";
+import type { DatabaseReader } from "./_generated/server";
 
 /**
- * Autenticación por correo + contraseña (GER-7).
+ * Autenticación por correo + contraseña (GER-7) y, desde GER-51, "Entrar
+ * con Google" como segundo método.
  *
  * El flujo normal del MVP es invitación por correo (GER-48) — no hay
  * registro público. La única excepción es arrancar de cero: el "signUp"
  * solo funciona mientras la tabla `users` esté vacía (crea a la dueña);
  * en cuanto existe un usuario, el alta se bloquea sola y todo pasa por
  * "Gestión de usuarios". Ver el toggle temporal en (auth)/login/page.tsx.
+ *
+ * Google también respeta el registro cerrado: solo entra quien ya tiene
+ * un usuario provisionado con ese correo (ver createOrUpdateUser abajo).
+ * Nunca crea una cuenta nueva vía Google.
  */
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
@@ -24,12 +31,48 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         };
       },
     }),
+    Google({
+      // El profile() por defecto de Convex Auth no conserva email_verified;
+      // lo reenviamos explícitamente porque createOrUpdateUser lo exige.
+      profile(googleProfile) {
+        return {
+          id: googleProfile.sub,
+          name: googleProfile.name,
+          email: googleProfile.email,
+          email_verified: googleProfile.email_verified,
+        };
+      },
+    }),
   ],
   callbacks: {
     async createOrUpdateUser(ctx, args) {
       if (args.existingUserId) {
         // Usuario que ya existe: no tocar su ficha (rol/nombre) al iniciar sesión.
         return args.existingUserId;
+      }
+
+      if (args.type === "oauth") {
+        // Login con Google. Registro cerrado: solo entra quien ya está
+        // provisionado con ese correo — nunca se crea un usuario aquí.
+        const email = args.profile.email as string | undefined;
+        const verified = args.profile.email_verified === true;
+        // El ctx del callback de Convex Auth no conoce nuestros índices
+        // (solo los del sistema); ctx.db es, en tiempo de ejecución, el
+        // mismo DatabaseReader que usa el resto de convex/.
+        const db = ctx.db as unknown as DatabaseReader;
+        const match =
+          verified && email
+            ? await db
+                .query("users")
+                .withIndex("by_email", (q) => q.eq("email", email))
+                .unique()
+            : null;
+        if (!match) {
+          throw new Error(
+            "Esta cuenta de Google no está autorizada. Pide a Martha que te invite desde Gestión de usuarios."
+          );
+        }
+        return match._id;
       }
 
       const someUserExists = await ctx.db.query("users").first();
