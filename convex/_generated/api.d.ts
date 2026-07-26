@@ -9,7 +9,9 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as authCleanup from "../authCleanup.js";
 import type * as clients from "../clients.js";
+import type * as crons from "../crons.js";
 import type * as followUps from "../followUps.js";
 import type * as history from "../history.js";
 import type * as http from "../http.js";
@@ -25,7 +27,9 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  authCleanup: typeof authCleanup;
   clients: typeof clients;
+  crons: typeof crons;
   followUps: typeof followUps;
   history: typeof history;
   http: typeof http;
