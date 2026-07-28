@@ -22,6 +22,18 @@ export default defineSchema({
     invitedAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
+  // Límite de solicitudes de recuperación de contraseña (GER-53 · auditoría M2).
+  // La librería solo limita los intentos de *verificar* un código, no los de
+  // pedirlo, y cada petición nueva destruye el código anterior — sin esto,
+  // alguien podría dejar a un usuario sin poder recuperar nunca su cuenta.
+  // Las filas caducadas las barre el cron de convex/authCleanup.ts.
+  passwordResetRequests: defineTable({
+    email: v.string(),
+    count: v.number(),
+    windowStart: v.number(),
+    lastRequestAt: v.number(),
+  }).index("by_email", ["email"]),
+
   // Cliente — a quien el negocio le vende. Ver GER-9, GER-10, GER-11.
   clients: defineTable({
     name: v.string(),

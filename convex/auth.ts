@@ -2,6 +2,8 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import Google from "@auth/core/providers/google";
 import type { DatabaseReader } from "./_generated/server";
+import { ResendOTP } from "./ResendOTP";
+import { PasswordResetRequest } from "./passwordReset";
 
 /**
  * Autenticación por correo + contraseña (GER-7) y, desde GER-51, "Entrar
@@ -21,6 +23,16 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
       profile(params) {
+        // Cierra la rama `reset` de la librería (GER-53 · auditoría M2). El
+        // `profile` es lo primero que corre en el `authorize` de Password, así
+        // que esto detiene la petición antes de `retrieveAccount` y antes de
+        // crear o destruir ningún código. Pedir el código va por el proveedor
+        // "password-reset-request", que sí pasa por el límite (convex/
+        // passwordReset.ts). El error es constante a propósito: no revela nada
+        // sobre el correo. No afecta a `reset-verification`, que sigue igual.
+        if (params.flow === "reset") {
+          throw new Error("Usa el proveedor password-reset-request.");
+        }
         return {
           email: params.email as string,
           name: (params.name as string) || "Sin nombre",
@@ -30,7 +42,13 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           status: "activo" as const,
         };
       },
+      // Habilita `flow: "reset-verification"`: verifica el código y aplica la
+      // contraseña nueva. También invalida las sesiones de los demás
+      // dispositivos (src/providers/Password.ts).
+      reset: ResendOTP,
     }),
+    // Pedir el código de recuperación. Ver convex/passwordReset.ts.
+    PasswordResetRequest,
     Google({
       // El profile() por defecto de Convex Auth no conserva email_verified;
       // lo reenviamos explícitamente porque createOrUpdateUser lo exige.
