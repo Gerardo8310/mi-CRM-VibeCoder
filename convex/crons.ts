@@ -3,11 +3,13 @@ import { internal } from "./_generated/api";
 
 const crons = cronJobs();
 
-// GER-51 · M1: barre authVerifiers huérfanos (ver convex/authCleanup.ts).
+// Barre restos de autenticación: verificadores de OAuth huérfanos (GER-51 · M1)
+// y filas caducadas del límite de recuperación (GER-53 · M2).
+// Ver convex/authCleanup.ts. El identificador debe ser ASCII puro.
 crons.interval(
-  "limpiar verificadores OAuth huerfanos",
+  "limpiar restos de auth",
   { minutes: 5 },
-  internal.authCleanup.pruneStaleVerifiers
+  internal.authCleanup.pruneStaleAuthRecords
 );
 
 export default crons;
