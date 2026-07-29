@@ -44,13 +44,22 @@ export default function LoginPage() {
 
 type Mode = "signIn" | "signUp" | "reset-request" | "reset-verify";
 
+// Debe coincidir con CODE_LENGTH de convex/ResendOTP.ts (GER-57 · Issue 2.7).
+const CODE_LENGTH = 8;
+
 // Mismo texto exista o no la cuenta: si dijéramos "ese correo no existe",
 // cualquiera podría averiguar quién tiene acceso al CRM probando correos.
-const RESET_SENT_MESSAGE =
-  "Si ese correo tiene una cuenta, le enviamos un código de 6 dígitos. Puede tardar un minuto en llegar.";
+const RESET_SENT_MESSAGE = `Si ese correo tiene una cuenta, le enviamos un código de ${CODE_LENGTH} dígitos. Puede tardar un minuto en llegar.`;
 
 const RESET_FAILED_MESSAGE =
   "El código no es correcto o ya caducó. Revisa tu correo o pide uno nuevo.";
+
+// Debe coincidir con MIN_PASSWORD_LENGTH de convex/authz.ts (GER-57). El
+// servidor es quien manda; esto solo evita que el usuario descubra la regla
+// mediante RESET_FAILED_MESSAGE, que no puede explicarle nada (Convex redacta
+// en producción los errores que no son `ConvexError`, así que el motivo real
+// nunca llega hasta aquí).
+const MIN_PASSWORD_LENGTH = 10;
 
 function LoginPageContent() {
   const { signIn } = useAuthActions();
@@ -145,8 +154,10 @@ function LoginPageContent() {
     const newPassword = String(formData.get("newPassword") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-    if (newPassword.length < 8) {
-      setError("La contraseña nueva debe tener al menos 8 caracteres.");
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setError(
+        `La contraseña nueva debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
+      );
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -157,11 +168,14 @@ function LoginPageContent() {
     setInfo(null);
     setLoading(true);
     try {
-      const result = await signIn("password", {
+      // Proveedor propio desde GER-57 (Issue 2.1). `Password` ya no acepta
+      // `flow: "reset-verification"`: el canje se movió para poder canonizar el
+      // correo antes de que la librería lo use como identificador del límite de
+      // intentos. Ver convex/passwordReset.ts.
+      const result = await signIn("password-reset-verify", {
         email: resetEmail,
         code: String(formData.get("code") ?? "").trim(),
         newPassword,
-        flow: "reset-verification",
       });
       if (!result.signingIn) {
         throw new Error("No se pudo canjear el código");
@@ -186,8 +200,7 @@ function LoginPageContent() {
     signIn: "Entra a tu CRM",
     signUp:
       "Esta cuenta será la dueña (Martha). Solo funciona si el sistema todavía no tiene usuarios.",
-    "reset-request":
-      "Escribe tu correo y te enviamos un código de 6 dígitos para elegir una contraseña nueva.",
+    "reset-request": `Escribe tu correo y te enviamos un código de ${CODE_LENGTH} dígitos para elegir una contraseña nueva.`,
     "reset-verify": resetEmail
       ? `Escribe el código que enviamos a ${resetEmail} y elige tu contraseña nueva.`
       : "Escribe el código que te enviamos y elige tu contraseña nueva.",
@@ -359,17 +372,17 @@ function LoginPageContent() {
           {mode === "reset-verify" && (
             <form onSubmit={handleResetVerify} className="flex flex-col gap-4">
               <div>
-                <Label htmlFor="code">Código de 6 dígitos</Label>
+                <Label htmlFor="code">Código de {CODE_LENGTH} dígitos</Label>
                 <Input
                   id="code"
                   name="code"
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  placeholder="123456"
+                  placeholder="12345678"
                   required
                   autoFocus
-                  maxLength={6}
+                  maxLength={CODE_LENGTH}
                   disabled={loading}
                   error={!!error}
                   className="text-center font-mono text-lg tracking-[0.4em]"
@@ -383,9 +396,9 @@ function LoginPageContent() {
                     id="newPassword"
                     name="newPassword"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
                     required
-                    minLength={8}
+                    minLength={MIN_PASSWORD_LENGTH}
                     disabled={loading}
                     error={!!error}
                     className="pl-8.5 pr-10.5"
@@ -415,7 +428,7 @@ function LoginPageContent() {
                     type={showPassword ? "text" : "password"}
                     placeholder="La misma de arriba"
                     required
-                    minLength={8}
+                    minLength={MIN_PASSWORD_LENGTH}
                     disabled={loading}
                     error={!!error}
                     className="pl-8.5"

@@ -26,6 +26,11 @@ import type { QueryCtx } from "./_generated/server";
  * lectura y escritura protegida, así que una sesión o un refresh token válidos
  * dejan de bastar en cuanto la ficha pasa a `inactivo`. `beforeSessionCreation`
  * se mantiene en convex/auth.ts como defensa en profundidad, no como el control.
+ *
+ * Desde GER-57 este archivo guarda también la política de contraseña (abajo).
+ * Son dos cosas distintas —quién puede entrar y qué contraseña se acepta— pero
+ * ambas son reglas de autorización sin estado, y tenerlas juntas evita que la
+ * política acabe duplicada en cada proveedor que la necesita.
  */
 
 /**
@@ -63,4 +68,85 @@ export async function requireActiveUserId(
   const userId = await getActiveUserId(ctx);
   if (userId === null) throw new Error("Necesitas iniciar sesión.");
   return userId;
+}
+
+/**
+ * Política de contraseña (GER-57 · Issue 2.5 de la auditoría del login).
+ *
+ * Entra en este issue y no en el 3 por una razón concreta: quitar `reset:
+ * ResendOTP` de `Password` (ver convex/passwordReset.ts) también quita la
+ * validación por defecto que la librería aplicaba al canje del código
+ * (Password.ts:129-135). Sin esto, el proveedor nuevo aceptaría una contraseña
+ * vacía desde su primer despliegue.
+ *
+ * Está partida en dos a propósito. El enganche de la librería,
+ * `validatePasswordRequirements`, recibe SOLO la contraseña y corre antes de
+ * `profile()` (Password.ts:88, :130), así que nunca puede ver el correo. Si
+ * hubiera una sola función que exigiera ambos, el enganche tendría que
+ * inventarse un correo para poder llamarla. De ahí la separación:
+ *
+ * - `validatePasswordRequirements(password)` — lo que se puede comprobar sin
+ *   el correo. Es la que usará el alta en el Issue 3.
+ * - `validatePassword(password, email)` — todo lo anterior más la regla que sí
+ *   necesita el correo. Es la que usa el canje del código, que sí lo tiene.
+ */
+
+const MIN_PASSWORD_LENGTH = 10;
+
+/**
+ * Lista corta y deliberadamente genérica. No pretende ser un diccionario —eso
+ * es trabajo de un servicio externo, no de una constante— sino descartar lo que
+ * alguien escribe cuando quiere salir del paso. Solo tiene sentido incluir
+ * candidatas de al menos MIN_PASSWORD_LENGTH caracteres: las más cortas ya las
+ * rechaza la regla de longitud.
+ */
+const OBVIOUS_PASSWORDS = new Set([
+  "1234567890",
+  "0123456789",
+  "contraseña",
+  "contrasena",
+  "password12",
+  "password123",
+  "passw0rd123",
+  "qwertyuiop",
+  "administrador",
+  "1234512345",
+  "aaaaaaaaaa",
+]);
+
+/**
+ * Reglas que no dependen del correo. Lanza con el motivo; devolver un booleano
+ * obligaría a cada sitio a inventarse el mensaje.
+ */
+export function validatePasswordRequirements(password: string): void {
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(
+      `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
+    );
+  }
+  if (OBVIOUS_PASSWORDS.has(password.toLowerCase())) {
+    throw new Error("Esa contraseña es demasiado común. Elige otra.");
+  }
+}
+
+/**
+ * La política completa. `email` debe llegar ya en forma canónica
+ * (convex/email.ts): la comparación es en minúsculas, así que un correo sin
+ * normalizar no rompe nada, pero pasarlo crudo aquí sería señal de que falta
+ * normalizar más arriba.
+ *
+ * La regla dependiente se salta cuando la parte local es muy corta: con dos o
+ * tres caracteres, exigir que no aparezca en la contraseña rechazaría
+ * contraseñas perfectamente buenas por coincidencia.
+ */
+export function validatePassword(password: string, email: string): void {
+  validatePasswordRequirements(password);
+
+  const localPart = email.split("@")[0] ?? "";
+  if (
+    localPart.length >= 4 &&
+    password.toLowerCase().includes(localPart.toLowerCase())
+  ) {
+    throw new Error("La contraseña no puede contener tu correo.");
+  }
 }
