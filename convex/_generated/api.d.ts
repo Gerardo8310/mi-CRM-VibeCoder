@@ -11,6 +11,7 @@
 import type * as ResendOTP from "../ResendOTP.js";
 import type * as auth from "../auth.js";
 import type * as authCleanup from "../authCleanup.js";
+import type * as authConstants from "../authConstants.js";
 import type * as authz from "../authz.js";
 import type * as clients from "../clients.js";
 import type * as crons from "../crons.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   ResendOTP: typeof ResendOTP;
   auth: typeof auth;
   authCleanup: typeof authCleanup;
+  authConstants: typeof authConstants;
   authz: typeof authz;
   clients: typeof clients;
   crons: typeof crons;

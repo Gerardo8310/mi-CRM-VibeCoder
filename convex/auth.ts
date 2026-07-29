@@ -4,6 +4,10 @@ import Google from "@auth/core/providers/google";
 import type { DatabaseReader } from "./_generated/server";
 import { PasswordResetRequest, PasswordResetVerify } from "./passwordReset";
 import { normalizeEmail } from "./email";
+import {
+  validatePasswordLocalPart,
+  validatePasswordRequirements,
+} from "./authz";
 
 /**
  * Autenticación por correo + contraseña (GER-7) y, desde GER-51, "Entrar
@@ -22,6 +26,16 @@ import { normalizeEmail } from "./email";
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
+      // Sustituye a la validación por defecto de la librería, que solo exigía 8
+      // caracteres no vacíos (Password.ts:251-255). La librería la llama SOLO
+      // con `flow: "signUp"` —el otro caso, "reset-verification", ya no existe
+      // en este proveedor— así que nunca corre al iniciar sesión: endurecer la
+      // política no puede dejar fuera a nadie que ya tenga cuenta (GER-59 · 3.1).
+      //
+      // Recibe únicamente la contraseña, sin el correo (Password.ts:88). La
+      // regla que sí necesita el correo va en `profile()`, justo debajo.
+      validatePasswordRequirements,
+
       profile(params) {
         // Defensa en profundidad sobre las dos ramas de recuperación de la
         // librería (GER-53 · auditoría M2, y GER-57 · Issue 2.1). Desde GER-57
@@ -36,13 +50,27 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
             "Usa los proveedores password-reset-request / password-reset-verify."
           );
         }
+        // Forma canónica del correo (GER-57 · Issue 2.2). `profile` corre en
+        // signUp y en signIn, así que este es el único sitio que hay que tocar
+        // para que ambos flujos usen el mismo identificador: `createAccount` y
+        // `retrieveAccount` reciben `profile.email` (Password.ts:137, :147,
+        // :159). Sin esto, "Ana@x.com" y "ana@x.com" son dos cuentas.
+        const email = normalizeEmail(params.email as string);
+
+        // La mitad de la política que necesita el correo (GER-59 · 3.1). Va
+        // aquí porque `profile` es el único enganche que recibe los `params`
+        // completos; `validatePasswordRequirements` solo ve la contraseña.
+        //
+        // El `flow === "signUp"` NO es decorativo: `profile` también corre al
+        // iniciar sesión, y sin esa condición alguien cuya contraseña contenga
+        // su propio correo dejaría de poder entrar el día que despleguemos esto.
+        // La política se aplica al crear y al cambiar, nunca al entrar.
+        if (params.flow === "signUp" && typeof params.password === "string") {
+          validatePasswordLocalPart(params.password, email);
+        }
+
         return {
-          // Forma canónica del correo (GER-57 · Issue 2.2). `profile` corre en
-          // signUp y en signIn, así que este es el único sitio que hay que tocar
-          // para que ambos flujos usen el mismo identificador: `createAccount` y
-          // `retrieveAccount` reciben `profile.email` (Password.ts:137, :147,
-          // :159). Sin esto, "Ana@x.com" y "ana@x.com" son dos cuentas.
-          email: normalizeEmail(params.email as string),
+          email,
           name: (params.name as string) || "Sin nombre",
           // role/status reales los decide callbacks.createOrUpdateUser abajo;
           // este valor solo rellena el tipo del documento.
@@ -68,6 +96,33 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       },
     }),
   ],
+  /**
+   * Duraciones explícitas en vez de heredadas (GER-59 · 3.2).
+   *
+   * Antes no se configuraba ninguna, así que corrían los valores por defecto de
+   * la librería: 30 días de sesión total, 30 días de inactividad
+   * (sessions.ts) y **1 hora** de JWT (tokens.ts). Escribirlas aquí no es
+   * cosmético: fija el contrato en el repositorio en vez de dejarlo a merced de
+   * la versión de la dependencia.
+   *
+   * Lo que acota de verdad es `jwt.durationMs`. El control de acceso NO es este
+   * —`requireActiveUserId` (convex/authz.ts) deniega en la siguiente llamada—
+   * pero un JWT ya emitido sigue siendo válido hasta que caduca, aunque su
+   * sesión se haya revocado: `ctx.auth.getUserIdentity()` solo verifica la
+   * firma. Pasar de 1 hora a 15 minutos reduce esa ventana en la misma
+   * proporción. El precio es más renovaciones, que el cliente hace solo.
+   *
+   * `inactiveDurationMs` baja a 7 días: quien no entra en una semana vuelve a
+   * autenticarse. La duración total se deja en los 30 días de siempre.
+   */
+  session: {
+    totalDurationMs: 30 * 24 * 60 * 60 * 1000, // 30 días
+    inactiveDurationMs: 7 * 24 * 60 * 60 * 1000, // 7 días
+  },
+  jwt: {
+    durationMs: 15 * 60 * 1000, // 15 minutos
+  },
+
   callbacks: {
     /**
      * Defensa en profundidad contra el acceso de un usuario desactivado

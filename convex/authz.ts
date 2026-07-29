@@ -1,6 +1,10 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import type { Id } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
+import {
+  MIN_LOCAL_PART_FOR_PASSWORD_CHECK,
+  MIN_PASSWORD_LENGTH,
+} from "./authConstants";
 
 /**
  * Autoridad de acceso del backend (GER-56 · auditoría de seguridad del login).
@@ -79,19 +83,23 @@ export async function requireActiveUserId(
  * (Password.ts:129-135). Sin esto, el proveedor nuevo aceptaría una contraseña
  * vacía desde su primer despliegue.
  *
- * Está partida en dos a propósito. El enganche de la librería,
+ * Está partida a propósito. El enganche de la librería,
  * `validatePasswordRequirements`, recibe SOLO la contraseña y corre antes de
  * `profile()` (Password.ts:88, :130), así que nunca puede ver el correo. Si
  * hubiera una sola función que exigiera ambos, el enganche tendría que
- * inventarse un correo para poder llamarla. De ahí la separación:
+ * inventarse un correo para poder llamarla. De ahí las tres piezas:
  *
- * - `validatePasswordRequirements(password)` — lo que se puede comprobar sin
- *   el correo. Es la que usará el alta en el Issue 3.
- * - `validatePassword(password, email)` — todo lo anterior más la regla que sí
- *   necesita el correo. Es la que usa el canje del código, que sí lo tiene.
+ * - `validatePasswordRequirements(password)` — lo que se puede comprobar sin el
+ *   correo. Es la que recibe el enganche de `Password` en el alta.
+ * - `validatePasswordLocalPart(password, email)` — solo la regla que necesita el
+ *   correo. La usa `profile()` en el alta, donde sí hay `params` completos.
+ * - `validatePassword(password, email)` — las dos juntas. La usa el canje del
+ *   código (convex/passwordReset.ts), que tiene ambos datos de una vez.
+ *
+ * IMPORTANTE (GER-59): ninguna de estas corre al INICIAR SESIÓN. Solo al crear
+ * la cuenta o al cambiar la contraseña. Si corrieran al entrar, endurecer la
+ * política dejaría fuera a quien ya tuviera una contraseña que no la cumple.
  */
-
-const MIN_PASSWORD_LENGTH = 10;
 
 /**
  * Lista corta y deliberadamente genérica. No pretende ser un diccionario —eso
@@ -130,23 +138,29 @@ export function validatePasswordRequirements(password: string): void {
 }
 
 /**
- * La política completa. `email` debe llegar ya en forma canónica
- * (convex/email.ts): la comparación es en minúsculas, así que un correo sin
- * normalizar no rompe nada, pero pasarlo crudo aquí sería señal de que falta
+ * La única regla que necesita el correo. `email` debe llegar ya en forma
+ * canónica (convex/email.ts): la comparación es en minúsculas, así que un correo
+ * sin normalizar no rompe nada, pero pasarlo crudo aquí sería señal de que falta
  * normalizar más arriba.
  *
- * La regla dependiente se salta cuando la parte local es muy corta: con dos o
- * tres caracteres, exigir que no aparezca en la contraseña rechazaría
- * contraseñas perfectamente buenas por coincidencia.
+ * Se salta cuando la parte local es corta — ver
+ * `MIN_LOCAL_PART_FOR_PASSWORD_CHECK` en convex/authConstants.ts, donde está
+ * documentada la excepción y su motivo.
  */
-export function validatePassword(password: string, email: string): void {
-  validatePasswordRequirements(password);
-
+export function validatePasswordLocalPart(
+  password: string,
+  email: string
+): void {
   const localPart = email.split("@")[0] ?? "";
-  if (
-    localPart.length >= 4 &&
-    password.toLowerCase().includes(localPart.toLowerCase())
-  ) {
+  if (localPart.length < MIN_LOCAL_PART_FOR_PASSWORD_CHECK) return;
+
+  if (password.toLowerCase().includes(localPart.toLowerCase())) {
     throw new Error("La contraseña no puede contener tu correo.");
   }
+}
+
+/** La política completa: las reglas independientes más la del correo. */
+export function validatePassword(password: string, email: string): void {
+  validatePasswordRequirements(password);
+  validatePasswordLocalPart(password, email);
 }
