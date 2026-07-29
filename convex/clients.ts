@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId, requireActiveUserId } from "./authz";
 
 /**
  * Crea un cliente (nombre y teléfono obligatorios, correo y nota opcionales).
@@ -16,8 +16,7 @@ export const create = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, { name, phone, email, note }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const userId = await requireActiveUserId(ctx);
 
     const trimmedName = name.trim();
     const trimmedPhone = phone.trim();
@@ -42,8 +41,8 @@ export const create = mutation({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return [];
     const clients = await ctx.db.query("clients").withIndex("by_name").collect();
     return clients.map((c) => ({
       _id: c._id,
@@ -62,8 +61,8 @@ export const list = query({
 export const get = query({
   args: { id: v.string() },
   handler: async (ctx, { id }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return null;
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return null;
     const clientId = ctx.db.normalizeId("clients", id);
     if (!clientId) return null;
     return await ctx.db.get(clientId);
@@ -80,8 +79,7 @@ export const update = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, { id, name, phone, email, note }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const userId = await requireActiveUserId(ctx);
 
     const client = await ctx.db.get(id);
     if (!client) throw new Error("El cliente no existe.");
@@ -108,8 +106,8 @@ export const update = mutation({
 export const search = query({
   args: { term: v.string() },
   handler: async (ctx, { term }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return [];
 
     const all = await ctx.db.query("clients").withIndex("by_name").collect();
     const needle = term.trim().toLowerCase();

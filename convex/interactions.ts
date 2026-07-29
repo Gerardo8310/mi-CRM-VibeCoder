@@ -1,6 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireActiveUserId } from "./authz";
 
 /**
  * Anota una interacción (llamada/mensaje/visita) ligada a un cliente existente.
@@ -19,8 +19,7 @@ export const create = mutation({
     date: v.optional(v.number()),
   },
   handler: async (ctx, { clientId, type, text, date }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const userId = await requireActiveUserId(ctx);
 
     const client = await ctx.db.get(clientId);
     if (!client) throw new Error("El cliente no existe.");

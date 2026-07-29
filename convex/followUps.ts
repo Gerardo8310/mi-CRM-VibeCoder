@@ -1,6 +1,6 @@
 import { query, mutation, type QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId, requireActiveUserId } from "./authz";
 import type { Doc, Id } from "./_generated/dataModel";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -45,8 +45,8 @@ async function withClientName(
 export const pendingCountForViewer = query({
   args: { endOfDay: v.number() },
   handler: async (ctx, { endOfDay }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return 0;
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return 0;
     const due = await ctx.db
       .query("followUps")
       .withIndex("by_owner_status_dueDate", (q) =>
@@ -72,8 +72,8 @@ export const pendingCountForViewer = query({
 export const listForViewer = query({
   args: { endOfToday: v.number() },
   handler: async (ctx, { endOfToday }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) {
       return { pending: [] as FollowUpRow[], upcoming: [] as FollowUpRow[] };
     }
 
@@ -112,8 +112,7 @@ export const listForViewer = query({
 export const markDone = mutation({
   args: { id: v.id("followUps") },
   handler: async (ctx, { id }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const userId = await requireActiveUserId(ctx);
     const followUp = await ctx.db.get(id);
     if (!followUp || followUp.ownerId !== userId) {
       throw new Error("No encontramos ese seguimiento o no te pertenece.");
@@ -137,8 +136,7 @@ export const create = mutation({
     opportunityId: v.optional(v.id("opportunities")),
   },
   handler: async (ctx, { clientId, note, dueDate, opportunityId }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const userId = await requireActiveUserId(ctx);
 
     const client = await ctx.db.get(clientId);
     if (!client) throw new Error("El cliente no existe.");
@@ -176,8 +174,8 @@ export const create = mutation({
 export const listForClient = query({
   args: { id: v.string() },
   handler: async (ctx, { id }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return [];
     const clientId = ctx.db.normalizeId("clients", id);
     if (!clientId) return [];
 
