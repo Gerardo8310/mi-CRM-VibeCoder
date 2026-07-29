@@ -8,6 +8,7 @@ import {
   validatePasswordLocalPart,
   validatePasswordRequirements,
 } from "./authz";
+import { MIN_PASSWORD_LENGTH } from "./authConstants";
 
 /**
  * Autenticación por correo + contraseña (GER-7) y, desde GER-51, "Entrar
@@ -72,7 +73,23 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         // iniciar sesión, y sin esa condición alguien cuya contraseña contenga
         // su propio correo dejaría de poder entrar el día que despleguemos esto.
         // La política se aplica al crear y al cambiar, nunca al entrar.
-        if (params.flow === "signUp" && typeof params.password === "string") {
+        if (params.flow === "signUp") {
+          // Este `throw` es el que cierra `password: null` (GER-59, encontrado
+          // al probar el contrato runtime que sugirió el auditor). La librería
+          // filtra con `if (passwordToValidate !== null)` (Password.ts:129), así
+          // que un `null` NO llega a `validatePasswordRequirements`: se salta la
+          // política entera. Sin esta línea, la petición sigue hasta
+          // `createAccount` con `secret: null` y solo la detiene el validador de
+          // argumentos de `auth:store` —`secret: v.optional(v.string())`—, que
+          // es una defensa de la librería, no nuestra, y dos capas más abajo.
+          //
+          // Mismo mensaje que una contraseña corta: las formas de incumplir la
+          // política no deben distinguirse por la respuesta.
+          if (typeof params.password !== "string") {
+            throw new Error(
+              `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
+            );
+          }
           validatePasswordLocalPart(params.password, email);
         }
 
