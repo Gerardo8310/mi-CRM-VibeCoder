@@ -125,9 +125,21 @@ const OBVIOUS_PASSWORDS = new Set([
 /**
  * Reglas que no dependen del correo. Lanza con el motivo; devolver un booleano
  * obligaría a cada sitio a inventarse el mensaje.
+ *
+ * La comprobación de tipo NO es redundante con la firma `password: string`
+ * (GER-59). Esta función la invoca la librería, y lo hace con una aserción, no
+ * con una comprobación: `passwordToValidate = params.password as string`
+ * (Password.ts:123). Un `signUp` sin `password` llega aquí como `undefined`
+ * —que no es `null`, así que pasa el filtro de Password.ts:129— y sin esta
+ * guarda `password.length` reventaría con un TypeError. El validador por
+ * defecto de la librería sí lo cubría (`!password ||`, Password.ts:251-255); al
+ * sustituirlo hay que reponerlo.
+ *
+ * El mensaje es el mismo que para una contraseña corta, a propósito: no
+ * mandarla y mandarla demasiado corta no merecen respuestas distinguibles.
  */
 export function validatePasswordRequirements(password: string): void {
-  if (password.length < MIN_PASSWORD_LENGTH) {
+  if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
     throw new Error(
       `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
     );

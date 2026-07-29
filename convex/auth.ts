@@ -27,10 +27,17 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
       // Sustituye a la validación por defecto de la librería, que solo exigía 8
-      // caracteres no vacíos (Password.ts:251-255). La librería la llama SOLO
-      // con `flow: "signUp"` —el otro caso, "reset-verification", ya no existe
-      // en este proveedor— así que nunca corre al iniciar sesión: endurecer la
-      // política no puede dejar fuera a nadie que ya tenga cuenta (GER-59 · 3.1).
+      // caracteres no vacíos (Password.ts:251-255).
+      //
+      // Lo que garantiza que endurecer la política no deje fuera a nadie que ya
+      // tenga cuenta (GER-59 · 3.1): con `flow: "signIn"` la librería deja
+      // `passwordToValidate` en `null` y no llama aquí (Password.ts:123-135).
+      // **Nunca corre al iniciar sesión.**
+      //
+      // Sí puede correr con `flow: "reset-verification"` si un cliente lo pide,
+      // porque la librería la invoca (:130) antes de que el guard de `profile()`
+      // rechace ese flujo (:136). Da igual —la petición muere ahí de todos
+      // modos— pero conviene no afirmar que solo corre en el alta.
       //
       // Recibe únicamente la contraseña, sin el correo (Password.ts:88). La
       // regla que sí necesita el correo va en `profile()`, justo debajo.
