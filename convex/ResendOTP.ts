@@ -1,5 +1,6 @@
 import { Email } from "@convex-dev/auth/providers/Email";
 import { normalizeEmail } from "./email";
+import { CODE_LENGTH } from "./authConstants";
 
 /**
  * Proveedor de correo que manda el código de recuperación (GER-53).
@@ -43,10 +44,6 @@ import { normalizeEmail } from "./email";
  * `onboarding@resend.dev` cuando coinciden ese id y el `from` por defecto
  * (src/server/implementation/signIn.ts).
  */
-
-// Si cambia, hay que cambiar también `CODE_LENGTH` en
-// src/app/(auth)/login/page.tsx, que es lo que el usuario ve y teclea.
-const CODE_LENGTH = 8;
 
 // La librería usa 1 hora por defecto (src/providers/Email.ts) — demasiado
 // para un código corto que viaja por correo.
@@ -147,7 +144,12 @@ export const ResendOTP = Email({
       body: JSON.stringify({
         from: provider.from,
         to: [email],
-        subject: `${token} es tu código para recuperar tu contraseña`,
+        // Sin el código (GER-59 · 3.3). Antes iba en el asunto, que es
+        // justo lo que se lee sin desbloquear el teléfono: en la
+        // previsualización de la bandeja y en la pantalla de bloqueo. Quien
+        // tuviera el móvil a la vista un momento se llevaba el código entero
+        // sin tocarlo. En el cuerpo sigue estando.
+        subject: "Código para recuperar tu contraseña de SolarCRM",
         text: plainTextBody(token, minutes),
         html: htmlBody(token, minutes),
       }),

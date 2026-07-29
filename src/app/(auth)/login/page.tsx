@@ -14,6 +14,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+// Fuente única de estas dos reglas, compartida con el servidor (GER-59).
+// Antes estaban duplicadas aquí y en `convex/`, sincronizadas solo por un
+// comentario; el auditor lo marcó como riesgo de divergencia.
+import { CODE_LENGTH, MIN_PASSWORD_LENGTH } from "@convex/authConstants";
 
 /**
  * Pantalla 0 del MVP — ver Design/Login.dc.html y GER-7.
@@ -44,9 +48,6 @@ export default function LoginPage() {
 
 type Mode = "signIn" | "signUp" | "reset-request" | "reset-verify";
 
-// Debe coincidir con CODE_LENGTH de convex/ResendOTP.ts (GER-57 · Issue 2.7).
-const CODE_LENGTH = 8;
-
 // Mismo texto exista o no la cuenta: si dijéramos "ese correo no existe",
 // cualquiera podría averiguar quién tiene acceso al CRM probando correos.
 const RESET_SENT_MESSAGE = `Si ese correo tiene una cuenta, le enviamos un código de ${CODE_LENGTH} dígitos. Puede tardar un minuto en llegar.`;
@@ -54,12 +55,16 @@ const RESET_SENT_MESSAGE = `Si ese correo tiene una cuenta, le enviamos un códi
 const RESET_FAILED_MESSAGE =
   "El código no es correcto o ya caducó. Revisa tu correo o pide uno nuevo.";
 
-// Debe coincidir con MIN_PASSWORD_LENGTH de convex/authz.ts (GER-57). El
-// servidor es quien manda; esto solo evita que el usuario descubra la regla
-// mediante RESET_FAILED_MESSAGE, que no puede explicarle nada (Convex redacta
-// en producción los errores que no son `ConvexError`, así que el motivo real
-// nunca llega hasta aquí).
-const MIN_PASSWORD_LENGTH = 10;
+// Aviso para quien entra siempre con Google (GER-59 · 3.4). Esas cuentas no
+// tienen credencial de contraseña, así que no existe cuenta `password` y NUNCA
+// les llegará un código — la pantalla se lo prometía igual y se quedaban
+// esperando un correo que no iba a existir.
+//
+// Se muestra a todo el mundo, sin condicionales. Enseñarlo solo a quien no
+// tiene contraseña convertiría la pantalla en un detector de qué método usa
+// cada cuenta, que es justo lo que RESET_SENT_MESSAGE evita.
+const GOOGLE_HINT =
+  "¿Sueles entrar con Google? Entonces no tienes contraseña que recuperar: vuelve y usa “Continuar con Google”.";
 
 function LoginPageContent() {
   const { signIn } = useAuthActions();
@@ -310,9 +315,18 @@ function LoginPageContent() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder={isSignUp ? "Mínimo 8 caracteres" : "Tu contraseña"}
+                    placeholder={
+                      isSignUp
+                        ? `Mínimo ${MIN_PASSWORD_LENGTH} caracteres`
+                        : "Tu contraseña"
+                    }
                     required
-                    minLength={8}
+                    // Solo en el alta (GER-59 · 3.1). Este mismo campo sirve
+                    // para entrar, y exigir el mínimo nuevo ahí dejaría fuera a
+                    // quien tenga una contraseña más corta de antes: no podría
+                    // ni enviar el formulario. La política se aplica al crear y
+                    // al cambiar, nunca al entrar — igual que en el servidor.
+                    minLength={isSignUp ? MIN_PASSWORD_LENGTH : undefined}
                     disabled={loading}
                     error={!!error}
                     className="pl-8.5 pr-10.5"
@@ -481,6 +495,12 @@ function LoginPageContent() {
                 {googleLoading ? "Conectando..." : "Continuar con Google"}
               </Button>
             </>
+          )}
+
+          {isResetting && (
+            <p className="mt-4 text-[13px] leading-snug text-neutral-500">
+              {GOOGLE_HINT}
+            </p>
           )}
 
           <div className="mt-4 flex items-center justify-between">
