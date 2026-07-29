@@ -4,23 +4,49 @@ import { normalizeEmail } from "./email";
 /**
  * Proveedor de correo que manda el código de recuperación (GER-53).
  *
- * Un código de 6 dígitos parece poco, pero es seguro aquí por dos motivos: el
+ * Dos condiciones sostienen que un código numérico corto sea aceptable: el
  * `authorize` de abajo exige que el código venga acompañado del correo correcto,
  * y `verifyCodeAndSignIn` corta a 10 intentos fallidos por hora y por correo.
- * Sin esas dos condiciones haría falta un código mucho más largo.
  *
- * Ese segundo motivo solo se sostiene si el "por correo" es un correo canónico,
- * y por eso este proveedor no se usa nunca directamente desde el cliente: los
- * dos proveedores de convex/passwordReset.ts lo invocan con el correo ya
+ * La segunda solo se sostiene si el "por correo" es un correo canónico, y por
+ * eso este proveedor no se usa nunca directamente desde el cliente: los dos
+ * proveedores de convex/passwordReset.ts lo invocan con el correo ya
  * normalizado. La librería indexa el límite por `params.email` tal cual se lo
  * den (mutations/verifyCodeAndSignIn.ts:42).
+ *
+ * POR QUÉ 8 DÍGITOS Y NO 6 (GER-57 · Issue 2.7)
+ *
+ * Porque hay una rama donde ese límite de 10 intentos sencillamente no existe.
+ * `auth:signIn` acepta que la llamen SIN `provider` y solo con `params.code`
+ * (signIn.ts:60). Ahí `verifyCodeAndSignInImpl` calcula el identificador del
+ * límite como `params.email ?? params.phone` — que en esa forma de llamada es
+ * `undefined`, así que no comprueba ni consume ningún cupo
+ * (verifyCodeAndSignIn.ts:42-53). Reproducido contra dev el 2026-07-29: tras un
+ * intento fallido por esa vía, `attemptsLeft` seguía idéntico hasta el último
+ * decimal.
+ *
+ * Y las dos respuestas se distinguen: un código incorrecto devuelve
+ * `{tokens: null}`, y uno correcto lanza "Provider `resend-otp` is not
+ * configured" (porque en esa rama `allowExtraProviders` es `false`) revirtiendo
+ * la transacción, así que el código ni siquiera se gasta. Es decir: un anónimo
+ * que conozca un correo con cuenta puede pedirle el código a la víctima —5
+ * veces por hora, lo que permite el límite de solicitudes— y buscar cada uno
+ * por fuerza bruta sin freno alguno.
+ *
+ * No se puede tapar desde aquí: `auth:signIn` es la acción pública de la
+ * librería y no hay forma de envolverla sin dejar la original expuesta bajo
+ * otro nombre. Lo que sí es nuestro es la entropía del código. Pasar de 6 a 8
+ * dígitos lleva el espacio de 10⁶ a 10⁸: no cierra la vía, la encarece cien
+ * veces. Queda declarado como riesgo residual, no como problema resuelto.
  *
  * El `id` NO puede ser "resend": la librería sustituye el remitente por
  * `onboarding@resend.dev` cuando coinciden ese id y el `from` por defecto
  * (src/server/implementation/signIn.ts).
  */
 
-const CODE_LENGTH = 6;
+// Si cambia, hay que cambiar también `CODE_LENGTH` en
+// src/app/(auth)/login/page.tsx, que es lo que el usuario ve y teclea.
+const CODE_LENGTH = 8;
 
 // La librería usa 1 hora por defecto (src/providers/Email.ts) — demasiado
 // para un código corto que viaja por correo.

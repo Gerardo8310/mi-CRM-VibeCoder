@@ -44,10 +44,12 @@ export default function LoginPage() {
 
 type Mode = "signIn" | "signUp" | "reset-request" | "reset-verify";
 
+// Debe coincidir con CODE_LENGTH de convex/ResendOTP.ts (GER-57 · Issue 2.7).
+const CODE_LENGTH = 8;
+
 // Mismo texto exista o no la cuenta: si dijéramos "ese correo no existe",
 // cualquiera podría averiguar quién tiene acceso al CRM probando correos.
-const RESET_SENT_MESSAGE =
-  "Si ese correo tiene una cuenta, le enviamos un código de 6 dígitos. Puede tardar un minuto en llegar.";
+const RESET_SENT_MESSAGE = `Si ese correo tiene una cuenta, le enviamos un código de ${CODE_LENGTH} dígitos. Puede tardar un minuto en llegar.`;
 
 const RESET_FAILED_MESSAGE =
   "El código no es correcto o ya caducó. Revisa tu correo o pide uno nuevo.";
@@ -198,8 +200,7 @@ function LoginPageContent() {
     signIn: "Entra a tu CRM",
     signUp:
       "Esta cuenta será la dueña (Martha). Solo funciona si el sistema todavía no tiene usuarios.",
-    "reset-request":
-      "Escribe tu correo y te enviamos un código de 6 dígitos para elegir una contraseña nueva.",
+    "reset-request": `Escribe tu correo y te enviamos un código de ${CODE_LENGTH} dígitos para elegir una contraseña nueva.`,
     "reset-verify": resetEmail
       ? `Escribe el código que enviamos a ${resetEmail} y elige tu contraseña nueva.`
       : "Escribe el código que te enviamos y elige tu contraseña nueva.",
@@ -371,17 +372,17 @@ function LoginPageContent() {
           {mode === "reset-verify" && (
             <form onSubmit={handleResetVerify} className="flex flex-col gap-4">
               <div>
-                <Label htmlFor="code">Código de 6 dígitos</Label>
+                <Label htmlFor="code">Código de {CODE_LENGTH} dígitos</Label>
                 <Input
                   id="code"
                   name="code"
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  placeholder="123456"
+                  placeholder="12345678"
                   required
                   autoFocus
-                  maxLength={6}
+                  maxLength={CODE_LENGTH}
                   disabled={loading}
                   error={!!error}
                   className="text-center font-mono text-lg tracking-[0.4em]"

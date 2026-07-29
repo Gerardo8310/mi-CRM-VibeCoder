@@ -37,7 +37,7 @@ import { validatePassword } from "./authz";
  * (mutations/verifyCodeAndSignIn.ts:42), y `Password.ts:191` le pasa los params
  * crudos. Normalizar el correo solo dentro de `ResendOTP` no arreglaría nada:
  * cada variante de caja —`Ana@x.com`, `ana@X.com`, `ANA@x.com`…— estrenaría su
- * propio cupo de 10 intentos, y un código de 6 dígitos se vuelve adivinable.
+ * propio cupo de 10 intentos, y un código numérico corto se vuelve adivinable.
  * Con un proveedor propio el correo se canoniza ANTES de entrar a la librería,
  * así que todas las variantes comparten un único cupo.
  *
