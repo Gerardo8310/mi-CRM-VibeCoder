@@ -6,12 +6,16 @@ import { normalizeEmail } from "./email";
 /**
  * Migración de un solo uso: pasar los correos a su forma canónica (GER-54).
  *
- * ESTE ARCHIVO ES INERTE EN GER-56. Nada lo llama y ningún comportamiento
- * cambia al desplegarlo. Se despliega ahora, antes de tocar la autenticación,
- * para poder ejecutar `inspectEmailNormalization` contra producción y revisar
- * las colisiones ANTES de activar la normalización en el Issue 2. Al revés
- * —desplegar el comportamiento y descubrir después una colisión— dejaría
- * cuentas sin poder entrar hasta una segunda corrección.
+ * Se desplegó inerte en GER-56, antes de tocar la autenticación, para poder
+ * ejecutar `inspectEmailNormalization` contra producción y revisar las
+ * colisiones ANTES de activar la normalización. Al revés —desplegar el
+ * comportamiento y descubrir después una colisión— dejaría cuentas sin poder
+ * entrar hasta una segunda corrección.
+ *
+ * El dry-run de producción del 2026-07-29 salió en vacío (`safeToMigrate: true`,
+ * 1 usuario, 1 cuenta, cero cambios), así que `normalizeEmails` no cambiará
+ * nada. Se ejecuta igualmente tras desplegar GER-57, por si el estado cambia
+ * entre aquella lectura y el despliegue.
  *
  * Qué se normaliza y qué no:
  *  - `users.email`: sí.
@@ -41,6 +45,16 @@ type Report = {
     userId: string;
     accountEmail: string;
     userEmail: string;
+  }[];
+  /**
+   * Cuenta de contraseña cuyo `emailVerified` no coincide con su
+   * `providerAccountId` ni siquiera comparándolos normalizados (GER-57 ·
+   * Issue 2.6, sugerencia del auditor).
+   */
+  emailVerifiedMismatches: {
+    accountId: string;
+    providerAccountId: string;
+    emailVerified: string;
   }[];
   /** `true` solo si no hay colisiones ni incoherencias. */
   safeToMigrate: boolean;
@@ -128,6 +142,32 @@ async function buildReport(db: DatabaseReader): Promise<Report> {
     }
   }
 
+  // 4. `emailVerified` que no cuadra con el identificador de acceso de su
+  //    propia cuenta. Se compara normalizado en ambos lados, así que aquí solo
+  //    aparecen desajustes reales, no diferencias de caja: esas las arregla la
+  //    migración.
+  //
+  //    NO entra en `safeToMigrate` a propósito. La migración normaliza los dos
+  //    campos por separado y nunca los mezcla, así que un desajuste no la hace
+  //    peligrosa — seguiría igual de desajustado después. Es información para
+  //    quien revisa: significaría que una cuenta verificó un correo distinto
+  //    del que usa para entrar, y hoy no existe ninguna función que produzca
+  //    eso. Si aparece, hay que entenderlo antes de seguir.
+  const emailVerifiedMismatches: Report["emailVerifiedMismatches"] = [];
+  for (const account of passwordAccounts) {
+    if (account.emailVerified === undefined) continue;
+    if (
+      normalizeEmail(account.emailVerified) !==
+      normalizeEmail(account.providerAccountId)
+    ) {
+      emailVerifiedMismatches.push({
+        accountId: account._id,
+        providerAccountId: account.providerAccountId,
+        emailVerified: account.emailVerified,
+      });
+    }
+  }
+
   return {
     usersTotal: users.length,
     passwordAccountsTotal: passwordAccounts.length,
@@ -136,6 +176,7 @@ async function buildReport(db: DatabaseReader): Promise<Report> {
     userEmailCollisions,
     passwordAccountCollisions,
     userAccountMismatches,
+    emailVerifiedMismatches,
     safeToMigrate:
       userEmailCollisions.length === 0 &&
       passwordAccountCollisions.length === 0 &&

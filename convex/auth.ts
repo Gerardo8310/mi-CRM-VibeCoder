@@ -2,8 +2,8 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import Google from "@auth/core/providers/google";
 import type { DatabaseReader } from "./_generated/server";
-import { ResendOTP } from "./ResendOTP";
-import { PasswordResetRequest } from "./passwordReset";
+import { PasswordResetRequest, PasswordResetVerify } from "./passwordReset";
+import { normalizeEmail } from "./email";
 
 /**
  * Autenticación por correo + contraseña (GER-7) y, desde GER-51, "Entrar
@@ -23,18 +23,26 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
       profile(params) {
-        // Cierra la rama `reset` de la librería (GER-53 · auditoría M2). El
-        // `profile` es lo primero que corre en el `authorize` de Password, así
-        // que esto detiene la petición antes de `retrieveAccount` y antes de
-        // crear o destruir ningún código. Pedir el código va por el proveedor
-        // "password-reset-request", que sí pasa por el límite (convex/
-        // passwordReset.ts). El error es constante a propósito: no revela nada
-        // sobre el correo. No afecta a `reset-verification`, que sigue igual.
-        if (params.flow === "reset") {
-          throw new Error("Usa el proveedor password-reset-request.");
+        // Defensa en profundidad sobre las dos ramas de recuperación de la
+        // librería (GER-53 · auditoría M2, y GER-57 · Issue 2.1). Desde GER-57
+        // este proveedor ya no configura `reset`, así que la propia librería
+        // rechaza sola ambos flujos (Password.ts:167 y :180); esto se queda
+        // porque `profile` es lo primero que corre en el `authorize` de
+        // `Password`, así que detiene la petición antes incluso de esa
+        // comprobación, y porque documenta a dónde ha ido cada flujo.
+        // El error es constante a propósito: no revela nada sobre el correo.
+        if (params.flow === "reset" || params.flow === "reset-verification") {
+          throw new Error(
+            "Usa los proveedores password-reset-request / password-reset-verify."
+          );
         }
         return {
-          email: params.email as string,
+          // Forma canónica del correo (GER-57 · Issue 2.2). `profile` corre en
+          // signUp y en signIn, así que este es el único sitio que hay que tocar
+          // para que ambos flujos usen el mismo identificador: `createAccount` y
+          // `retrieveAccount` reciben `profile.email` (Password.ts:137, :147,
+          // :159). Sin esto, "Ana@x.com" y "ana@x.com" son dos cuentas.
+          email: normalizeEmail(params.email as string),
           name: (params.name as string) || "Sin nombre",
           // role/status reales los decide callbacks.createOrUpdateUser abajo;
           // este valor solo rellena el tipo del documento.
@@ -42,13 +50,11 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           status: "activo" as const,
         };
       },
-      // Habilita `flow: "reset-verification"`: verifica el código y aplica la
-      // contraseña nueva. También invalida las sesiones de los demás
-      // dispositivos (src/providers/Password.ts).
-      reset: ResendOTP,
     }),
-    // Pedir el código de recuperación. Ver convex/passwordReset.ts.
+    // Recuperación de contraseña por código, en dos proveedores propios.
+    // Ver convex/passwordReset.ts.
     PasswordResetRequest,
+    PasswordResetVerify,
     Google({
       // El profile() por defecto de Convex Auth no conserva email_verified;
       // lo reenviamos explícitamente porque createOrUpdateUser lo exige.
@@ -98,7 +104,12 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       if (args.type === "oauth") {
         // Login con Google. Registro cerrado: solo entra quien ya está
         // provisionado con ese correo — nunca se crea un usuario aquí.
-        const email = args.profile.email as string | undefined;
+        // Canonizado antes de buscar (GER-57 · Issue 2.2): la búsqueda es por
+        // el índice `by_email`, que compara la cadena exacta. Si Google
+        // devolviera el correo con otra caja que la ficha provisionada, un
+        // usuario legítimo se quedaría fuera con el mensaje de "no autorizada".
+        const rawEmail = args.profile.email as string | undefined;
+        const email = rawEmail === undefined ? undefined : normalizeEmail(rawEmail);
         const verified = args.profile.email_verified === true;
         // El ctx del callback de Convex Auth no conoce nuestros índices
         // (solo los del sistema); ctx.db es, en tiempo de ejecución, el
@@ -127,9 +138,13 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       }
 
       // Bootstrap: el primer usuario del sistema es siempre la dueña.
+      // El correo ya viene canonizado desde `profile()`, pero se vuelve a
+      // normalizar porque esta rama es la única que ESCRIBE en `users`: si
+      // mañana llegara por otro camino, la ficha seguiría naciendo canónica.
+      // `normalizeEmail` es idempotente, así que repetirlo no cuesta nada.
       return await ctx.db.insert("users", {
         name: (args.profile.name as string) || "Sin nombre",
-        email: args.profile.email as string,
+        email: normalizeEmail(args.profile.email as string),
         role: "duena",
         status: "activo",
       });

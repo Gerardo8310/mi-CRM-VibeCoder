@@ -1,14 +1,19 @@
 import { Email } from "@convex-dev/auth/providers/Email";
+import { normalizeEmail } from "./email";
 
 /**
  * Proveedor de correo que manda el código de recuperación (GER-53).
  *
- * Un código de 6 dígitos parece poco, pero es seguro aquí por dos motivos
- * que aporta la librería: el `authorize` por defecto de `Email()` exige que
- * el código venga acompañado del correo correcto (node_modules/@convex-dev/
- * auth/src/providers/Email.ts), y `verifyCodeAndSignIn` corta a 10 intentos
- * fallidos por hora y por correo. Sin esas dos condiciones haría falta un
- * código mucho más largo.
+ * Un código de 6 dígitos parece poco, pero es seguro aquí por dos motivos: el
+ * `authorize` de abajo exige que el código venga acompañado del correo correcto,
+ * y `verifyCodeAndSignIn` corta a 10 intentos fallidos por hora y por correo.
+ * Sin esas dos condiciones haría falta un código mucho más largo.
+ *
+ * Ese segundo motivo solo se sostiene si el "por correo" es un correo canónico,
+ * y por eso este proveedor no se usa nunca directamente desde el cliente: los
+ * dos proveedores de convex/passwordReset.ts lo invocan con el correo ya
+ * normalizado. La librería indexa el límite por `params.email` tal cual se lo
+ * den (mutations/verifyCodeAndSignIn.ts:42).
  *
  * El `id` NO puede ser "resend": la librería sustituye el remitente por
  * `onboarding@resend.dev` cuando coinciden ese id y el `from` por defecto
@@ -71,6 +76,33 @@ export const ResendOTP = Email({
 
   async generateVerificationToken() {
     return generateNumericCode();
+  },
+
+  /**
+   * Sustituye al `authorize` por defecto de `Email()` (GER-57 · Issue 2.2), que
+   * compara `account.providerAccountId !== params.email` como cadenas exactas
+   * (providers/Email.ts:50). Se puede sobrescribir porque `providerDefaults`
+   * fusiona `provider.options` —donde acaba esta configuración— encima del
+   * proveedor ya construido (server/provider_utils.ts, `providerDefaults`).
+   *
+   * Comparar normalizado en AMBOS lados es lo que hace que el cambio sea seguro
+   * de desplegar antes de la migración de datos: mientras haya cuentas cuyo
+   * `providerAccountId` todavía no sea canónico, la comparación cruda las
+   * rechazaría aunque el correo fuera el mismo.
+   */
+  async authorize(params, account) {
+    const claimedEmail = params.email;
+    // `account` viene tipado sobre el `GenericDataModel` de la librería, así
+    // que sus campos son `Value` y no `string`. La comprobación no es
+    // ceremonia del tipo: es la que garantiza que nunca comparamos dos cosas
+    // que no son correos.
+    const accountEmail = account.providerAccountId;
+    if (typeof claimedEmail !== "string" || typeof accountEmail !== "string") {
+      throw new Error("Verificar el código requiere un `email` en los params.");
+    }
+    if (normalizeEmail(accountEmail) !== normalizeEmail(claimedEmail)) {
+      throw new Error("El código no corresponde a ese correo.");
+    }
   },
 
   async sendVerificationRequest({ identifier: email, token, provider }) {

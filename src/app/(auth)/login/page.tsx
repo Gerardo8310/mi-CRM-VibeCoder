@@ -52,6 +52,13 @@ const RESET_SENT_MESSAGE =
 const RESET_FAILED_MESSAGE =
   "El código no es correcto o ya caducó. Revisa tu correo o pide uno nuevo.";
 
+// Debe coincidir con MIN_PASSWORD_LENGTH de convex/authz.ts (GER-57). El
+// servidor es quien manda; esto solo evita que el usuario descubra la regla
+// mediante RESET_FAILED_MESSAGE, que no puede explicarle nada (Convex redacta
+// en producción los errores que no son `ConvexError`, así que el motivo real
+// nunca llega hasta aquí).
+const MIN_PASSWORD_LENGTH = 10;
+
 function LoginPageContent() {
   const { signIn } = useAuthActions();
   const router = useRouter();
@@ -145,8 +152,10 @@ function LoginPageContent() {
     const newPassword = String(formData.get("newPassword") ?? "");
     const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
-    if (newPassword.length < 8) {
-      setError("La contraseña nueva debe tener al menos 8 caracteres.");
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      setError(
+        `La contraseña nueva debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
+      );
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -157,11 +166,14 @@ function LoginPageContent() {
     setInfo(null);
     setLoading(true);
     try {
-      const result = await signIn("password", {
+      // Proveedor propio desde GER-57 (Issue 2.1). `Password` ya no acepta
+      // `flow: "reset-verification"`: el canje se movió para poder canonizar el
+      // correo antes de que la librería lo use como identificador del límite de
+      // intentos. Ver convex/passwordReset.ts.
+      const result = await signIn("password-reset-verify", {
         email: resetEmail,
         code: String(formData.get("code") ?? "").trim(),
         newPassword,
-        flow: "reset-verification",
       });
       if (!result.signingIn) {
         throw new Error("No se pudo canjear el código");
@@ -383,9 +395,9 @@ function LoginPageContent() {
                     id="newPassword"
                     name="newPassword"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
                     required
-                    minLength={8}
+                    minLength={MIN_PASSWORD_LENGTH}
                     disabled={loading}
                     error={!!error}
                     className="pl-8.5 pr-10.5"
@@ -415,7 +427,7 @@ function LoginPageContent() {
                     type={showPassword ? "text" : "password"}
                     placeholder="La misma de arriba"
                     required
-                    minLength={8}
+                    minLength={MIN_PASSWORD_LENGTH}
                     disabled={loading}
                     error={!!error}
                     className="pl-8.5"

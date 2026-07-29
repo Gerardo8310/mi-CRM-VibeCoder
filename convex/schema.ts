@@ -32,7 +32,13 @@ export default defineSchema({
     count: v.number(),
     windowStart: v.number(),
     lastRequestAt: v.number(),
-  }).index("by_email", ["email"]),
+  })
+    .index("by_email", ["email"])
+    // Para que el cron barra por rango en vez de leerse la tabla entera
+    // (GER-57 · Issue 2.4). No sirve el índice de sistema `by_creation_time`:
+    // `consumeResetSlot` reutiliza la fila y reinicia `windowStart`, así que una
+    // fila antigua puede tener una ventana recién abierta.
+    .index("by_window", ["windowStart"]),
 
   // Cliente — a quien el negocio le vende. Ver GER-9, GER-10, GER-11.
   clients: defineTable({
