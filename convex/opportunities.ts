@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId, requireActiveUserId } from "./authz";
 
 /**
  * Registra una oportunidad (venta) ligada a un cliente existente. Es la lógica
@@ -20,8 +20,7 @@ export const create = mutation({
     note: v.optional(v.string()),
   },
   handler: async (ctx, { clientId, stage, amount, product, note }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const userId = await requireActiveUserId(ctx);
 
     const client = await ctx.db.get(clientId);
     if (!client) throw new Error("El cliente no existe.");
@@ -55,8 +54,8 @@ export const create = mutation({
 export const listForClient = query({
   args: { id: v.string() },
   handler: async (ctx, { id }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return [];
     const clientId = ctx.db.normalizeId("clients", id);
     if (!clientId) return [];
 
@@ -84,8 +83,8 @@ export const listForClient = query({
 export const board = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return [];
     const opportunities = await ctx.db.query("opportunities").collect();
     return Promise.all(
       opportunities.map(async (o) => {
@@ -119,8 +118,7 @@ export const updateStage = mutation({
     ),
   },
   handler: async (ctx, { id, stage }) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Necesitas iniciar sesión.");
+    const userId = await requireActiveUserId(ctx);
     const opportunity = await ctx.db.get(id);
     if (!opportunity) throw new Error("La oportunidad no existe.");
     await ctx.db.patch(id, {

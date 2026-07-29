@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@convex/_generated/api";
 
 /**
@@ -13,15 +14,23 @@ import { api } from "@convex/_generated/api";
 export default function RootRedirect() {
   const router = useRouter();
   const viewer = useQuery(api.users.viewer);
+  const { signOut } = useAuthActions();
+  const leaving = useRef(false);
 
   useEffect(() => {
     if (viewer === undefined) return; // cargando
     if (viewer === null) {
-      router.replace("/login");
+      // Token válido pero sin usuario utilizable: sesión huérfana o cuenta
+      // desactivada (GER-56). Hay que cerrar sesión ANTES de redirigir; si no,
+      // el middleware ve el token vivo, trata /login como ruta pública para un
+      // autenticado y devuelve aquí — bucle infinito.
+      if (leaving.current) return;
+      leaving.current = true;
+      void signOut().finally(() => router.replace("/login"));
       return;
     }
     router.replace(viewer.role === "duena" ? "/inicio" : "/hoy");
-  }, [viewer, router]);
+  }, [viewer, router, signOut]);
 
   return null;
 }

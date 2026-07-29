@@ -1,6 +1,6 @@
 import { query } from "./_generated/server";
 import { v } from "convex/values";
-import { getAuthUserId } from "@convex-dev/auth/server";
+import { getActiveUserId } from "./authz";
 import type { Id } from "./_generated/dataModel";
 
 /**
@@ -44,8 +44,8 @@ export type TimelineEntry =
 export const forClient = query({
   args: { id: v.string() },
   handler: async (ctx, { id }): Promise<TimelineEntry[]> => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) return [];
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return [];
 
     const clientId = ctx.db.normalizeId("clients", id);
     if (!clientId) return [];

@@ -63,6 +63,32 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     }),
   ],
   callbacks: {
+    /**
+     * Defensa en profundidad contra el acceso de un usuario desactivado
+     * (GER-56). El control de verdad está en `requireActiveUserId`
+     * (convex/authz.ts), porque este callback NO cubre las sesiones ya
+     * abiertas: `refreshSessionImpl` emite tokens nuevos para una sesión
+     * existente sin volver a llamarlo.
+     *
+     * Lo que sí aporta: corre en los tres flujos de login justo antes de
+     * persistir la sesión, así que no se crean sesiones para quien no puede
+     * usarlas. Y como lanzar aborta la transacción completa, un usuario
+     * desactivado tampoco puede cambiar su contraseña por código: el canje
+     * crea sesión, así que se revierte entero.
+     *
+     * El mensaje no llega al cliente (Convex redacta en producción los errores
+     * que no son `ConvexError`); la interfaz sigue mostrando el texto genérico
+     * de "correo o contraseña incorrectos", que es lo que queremos: distinguir
+     * "desactivado" revelaría el estado de la cuenta.
+     */
+    async beforeSessionCreation(ctx, { userId }) {
+      const db = ctx.db as unknown as DatabaseReader;
+      const user = await db.get(userId);
+      if (user === null || user.status !== "activo") {
+        throw new Error("Cuenta desactivada.");
+      }
+    },
+
     async createOrUpdateUser(ctx, args) {
       if (args.existingUserId) {
         // Usuario que ya existe: no tocar su ficha (rol/nombre) al iniciar sesión.
