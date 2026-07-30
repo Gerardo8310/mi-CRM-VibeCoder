@@ -3,12 +3,13 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import Google from "@auth/core/providers/google";
 import type { DatabaseReader } from "./_generated/server";
 import { PasswordResetRequest, PasswordResetVerify } from "./passwordReset";
-import { normalizeEmail } from "./email";
 import {
-  validatePasswordLocalPart,
-  validatePasswordRequirements,
-} from "./authz";
-import { MIN_PASSWORD_LENGTH } from "./authConstants";
+  PasswordSignIn,
+  PasswordSignUp,
+  REGISTRO_CERRADO_MESSAGE,
+} from "./passwordLogin";
+import { normalizeEmail } from "./email";
+import { validatePasswordRequirements } from "./authz";
 
 /**
  * Autenticación por correo + contraseña (GER-7) y, desde GER-51, "Entrar
@@ -23,86 +24,76 @@ import { MIN_PASSWORD_LENGTH } from "./authConstants";
  * Google también respeta el registro cerrado: solo entra quien ya tiene
  * un usuario provisionado con ese correo (ver createOrUpdateUser abajo).
  * Nunca crea una cuenta nueva vía Google.
+ *
+ * DÓNDE VIVE CADA FLUJO DESDE GER-54
+ *
+ * `Password` ya no atiende ninguno. Su `profile()` rechaza cualquier entrada, y
+ * el proveedor sigue registrado por dos cosas que sí se usan: es el titular del
+ * identificador de cuenta "password" en `authAccounts` y de su `crypto` (Scrypt
+ * de lucia), que resuelven por nombre `retrieveAccount`, `createAccount` y
+ * `modifyAccountCredentials`.
+ *
+ * - entrar  → `password-signin`         (convex/passwordLogin.ts)
+ * - alta    → `password-signup`         (convex/passwordLogin.ts)
+ * - pedir código → `password-reset-request` (convex/passwordReset.ts, GER-53/57)
+ * - canjearlo    → `password-reset-verify`  (convex/passwordReset.ts, GER-57)
+ *
+ * El motivo es el mismo en los cuatro casos: la librería relanza sus strings
+ * internos al cuerpo HTTP, y con proveedores propios controlamos qué se
+ * responde. Ver la cabecera de convex/passwordLogin.ts.
  */
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
-      // Sustituye a la validación por defecto de la librería, que solo exigía 8
-      // caracteres no vacíos (Password.ts:251-255).
+      // El enganche se queda configurado aunque `profile()` rechace todo, y no
+      // es decorativo: SIGUE SIENDO ALCANZABLE. La librería lo invoca en
+      // Password.ts:129-135, **antes** de llamar a `profile()` en :136, así que
+      // una llamada directa con `flow: "signUp"` o `"reset-verification"` pasa
+      // por él y la política se aplica igualmente, aunque la petición muera una
+      // línea después. Sin esto, esa superficie quedaría sin cubrir.
       //
-      // Lo que garantiza que endurecer la política no deje fuera a nadie que ya
-      // tenga cuenta (GER-59 · 3.1): con `flow: "signIn"` la librería deja
-      // `passwordToValidate` en `null` y no llama aquí (Password.ts:123-135).
-      // **Nunca corre al iniciar sesión.**
+      // (Con `flow: "signIn"` la librería deja `passwordToValidate` en `null` y
+      // no llama aquí, así que nunca corre al iniciar sesión — que es lo que
+      // garantiza que endurecer la política no deje fuera a quien ya tiene una
+      // contraseña que no la cumple.)
       //
-      // Sí puede correr con `flow: "reset-verification"` si un cliente lo pide,
-      // porque la librería la invoca (:130) antes de que el guard de `profile()`
-      // rechace ese flujo (:136). Da igual —la petición muere ahí de todos
-      // modos— pero conviene no afirmar que solo corre en el alta.
-      //
-      // Recibe únicamente la contraseña, sin el correo (Password.ts:88). La
-      // regla que sí necesita el correo va en `profile()`, justo debajo.
+      // Recibe únicamente la contraseña, sin el correo (Password.ts:88); de ahí
+      // que la política esté partida en convex/authz.ts.
       validatePasswordRequirements,
 
-      profile(params) {
-        // Defensa en profundidad sobre las dos ramas de recuperación de la
-        // librería (GER-53 · auditoría M2, y GER-57 · Issue 2.1). Desde GER-57
-        // este proveedor ya no configura `reset`, así que la propia librería
-        // rechaza sola ambos flujos (Password.ts:167 y :180); esto se queda
-        // porque `profile` es lo primero que corre en el `authorize` de
-        // `Password`, así que detiene la petición antes incluso de esa
-        // comprobación, y porque documenta a dónde ha ido cada flujo.
-        // El error es constante a propósito: no revela nada sobre el correo.
-        if (params.flow === "reset" || params.flow === "reset-verification") {
-          throw new Error(
-            "Usa los proveedores password-reset-request / password-reset-verify."
-          );
-        }
-        // Forma canónica del correo (GER-57 · Issue 2.2). `profile` corre en
-        // signUp y en signIn, así que este es el único sitio que hay que tocar
-        // para que ambos flujos usen el mismo identificador: `createAccount` y
-        // `retrieveAccount` reciben `profile.email` (Password.ts:137, :147,
-        // :159). Sin esto, "Ana@x.com" y "ana@x.com" son dos cuentas.
-        const email = normalizeEmail(params.email as string);
-
-        // La mitad de la política que necesita el correo (GER-59 · 3.1). Va
-        // aquí porque `profile` es el único enganche que recibe los `params`
-        // completos; `validatePasswordRequirements` solo ve la contraseña.
-        //
-        // El `flow === "signUp"` NO es decorativo: `profile` también corre al
-        // iniciar sesión, y sin esa condición alguien cuya contraseña contenga
-        // su propio correo dejaría de poder entrar el día que despleguemos esto.
-        // La política se aplica al crear y al cambiar, nunca al entrar.
-        if (params.flow === "signUp") {
-          // Este `throw` es el que cierra `password: null` (GER-59, encontrado
-          // al probar el contrato runtime que sugirió el auditor). La librería
-          // filtra con `if (passwordToValidate !== null)` (Password.ts:129), así
-          // que un `null` NO llega a `validatePasswordRequirements`: se salta la
-          // política entera. Sin esta línea, la petición sigue hasta
-          // `createAccount` con `secret: null` y solo la detiene el validador de
-          // argumentos de `auth:store` —`secret: v.optional(v.string())`—, que
-          // es una defensa de la librería, no nuestra, y dos capas más abajo.
-          //
-          // Mismo mensaje que una contraseña corta: las formas de incumplir la
-          // política no deben distinguirse por la respuesta.
-          if (typeof params.password !== "string") {
-            throw new Error(
-              `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
-            );
-          }
-          validatePasswordLocalPart(params.password, email);
-        }
-
-        return {
-          email,
-          name: (params.name as string) || "Sin nombre",
-          // role/status reales los decide callbacks.createOrUpdateUser abajo;
-          // este valor solo rellena el tipo del documento.
-          role: "vendedor" as const,
-          status: "activo" as const,
-        };
+      /**
+       * La puerta antigua, cerrada del todo (GER-54).
+       *
+       * `Password` no atiende ningún flujo: los cuatro viven en proveedores
+       * propios (ver la cabecera de este archivo). Este `throw` incondicional es
+       * lo que lo hace cierto, y es lo primero que corre en el `authorize` de
+       * `Password` salvo el validador de contraseña (Password.ts:136), así que
+       * ninguna entrada por aquí alcanza `authAccounts`: las ramas que consultan
+       * o crean cuentas están todas después (:141, :153, :166, :178, :208).
+       *
+       * Sin esto el arreglo de GER-54 sería cosmético: bastaría llamar a
+       * `signIn("password", {flow:"signIn"})` para recuperar los cuerpos
+       * distinguibles, o a `{flow:"signUp"}` para recuperar el oráculo de
+       * contraseña sin límite de intentos.
+       *
+       * Incondicional y no una lista de flujos, por dos razones: cubre también
+       * `email-verification` y los flujos desconocidos —que morían más adelante
+       * con mensajes de la librería—, y elimina la única ruta que quedaba a
+       * `normalizeEmail(params.email as string)` con `email` ausente, que
+       * reventaba con un TypeError.
+       *
+       * El mensaje es constante: no depende del correo ni de si existe.
+       */
+      profile() {
+        throw new Error(
+          "Usa los proveedores password-signin / password-signup / password-reset-request / password-reset-verify."
+        );
       },
     }),
+    // Entrar y darse de alta, en dos proveedores propios (GER-54).
+    // Ver convex/passwordLogin.ts.
+    PasswordSignIn,
+    PasswordSignUp,
     // Recuperación de contraseña por código, en dos proveedores propios.
     // Ver convex/passwordReset.ts.
     PasswordResetRequest,
@@ -209,17 +200,24 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         return match._id;
       }
 
+      // AUTORIDAD del registro cerrado: corre dentro de la transacción de
+      // `createAccount`, así que cierra la carrera entre dos altas simultáneas.
+      // `PasswordSignUp` comprueba lo mismo antes, pero eso es un cortacircuitos
+      // para que el alta no llegue a tocar `authAccounts` (ver
+      // convex/passwordLogin.ts) — no sustituye a esto.
+      //
+      // Mismo texto que allí, importado y no copiado: las dos respuestas
+      // posibles a un alta rechazada no deben distinguirse entre sí.
       const someUserExists = await ctx.db.query("users").first();
       if (someUserExists) {
-        throw new Error(
-          "El registro abierto está deshabilitado. Pide a Martha que te invite desde Gestión de usuarios."
-        );
+        throw new Error(REGISTRO_CERRADO_MESSAGE);
       }
 
       // Bootstrap: el primer usuario del sistema es siempre la dueña.
-      // El correo ya viene canonizado desde `profile()`, pero se vuelve a
-      // normalizar porque esta rama es la única que ESCRIBE en `users`: si
-      // mañana llegara por otro camino, la ficha seguiría naciendo canónica.
+      // El correo ya viene canonizado de quien llama —`PasswordSignUp` desde
+      // GER-54, no el `profile()` de `Password`, que ya no atiende nada—, pero se
+      // vuelve a normalizar porque esta rama es la única que ESCRIBE en `users`:
+      // si mañana llegara por otro camino, la ficha seguiría naciendo canónica.
       // `normalizeEmail` es idempotente, así que repetirlo no cuesta nada.
       return await ctx.db.insert("users", {
         name: (args.profile.name as string) || "Sin nombre",

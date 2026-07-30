@@ -90,11 +90,16 @@ export async function requireActiveUserId(
  * inventarse un correo para poder llamarla. De ahí las tres piezas:
  *
  * - `validatePasswordRequirements(password)` — lo que se puede comprobar sin el
- *   correo. Es la que recibe el enganche de `Password` en el alta.
+ *   correo. Es la que sigue recibiendo el enganche de `Password`.
  * - `validatePasswordLocalPart(password, email)` — solo la regla que necesita el
- *   correo. La usa `profile()` en el alta, donde sí hay `params` completos.
- * - `validatePassword(password, email)` — las dos juntas. La usa el canje del
- *   código (convex/passwordReset.ts), que tiene ambos datos de una vez.
+ *   correo. Desde GER-54 no la llama nadie directamente: el alta pasó a
+ *   `PasswordSignUp` (convex/passwordLogin.ts), que tiene los dos datos y usa la
+ *   función completa. Se conserva exportada porque es la mitad que da sentido al
+ *   reparto: si mañana vuelve a hacer falta el enganche de la librería, la
+ *   partición ya está hecha y documentada.
+ * - `validatePassword(password, email)` — las dos juntas. La usan el canje del
+ *   código (convex/passwordReset.ts) y el alta (convex/passwordLogin.ts), que
+ *   tienen ambos datos de una vez.
  *
  * IMPORTANTE (GER-59): ninguna de estas corre al INICIAR SESIÓN. Solo al crear
  * la cuenta o al cambiar la contraseña. Si corrieran al entrar, endurecer la
@@ -123,6 +128,15 @@ const OBVIOUS_PASSWORDS = new Set([
 ]);
 
 /**
+ * El texto de "contraseña demasiado corta", exportado (GER-54) porque lo
+ * comparten esta función y las guardas de tipo de `PasswordSignUp`
+ * (convex/passwordLogin.ts). No mandar la contraseña y mandarla corta tienen que
+ * responder exactamente igual, y para eso el texto tiene que ser el mismo objeto
+ * y no dos literales que alguien pueda editar por separado.
+ */
+export const MIN_PASSWORD_MESSAGE = `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+
+/**
  * Reglas que no dependen del correo. Lanza con el motivo; devolver un booleano
  * obligaría a cada sitio a inventarse el mensaje.
  *
@@ -140,9 +154,7 @@ const OBVIOUS_PASSWORDS = new Set([
  */
 export function validatePasswordRequirements(password: string): void {
   if (typeof password !== "string" || password.length < MIN_PASSWORD_LENGTH) {
-    throw new Error(
-      `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`
-    );
+    throw new Error(MIN_PASSWORD_MESSAGE);
   }
   if (OBVIOUS_PASSWORDS.has(password.toLowerCase())) {
     throw new Error("Esa contraseña es demasiado común. Elige otra.");

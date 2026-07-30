@@ -156,7 +156,22 @@ export const ResendOTP = Email({
     });
 
     if (!response.ok) {
-      // Nunca incluir `token` en este mensaje: acaba en los logs de Convex.
+      // NO se registra nada aquí, y no es un olvido (GER-54).
+      //
+      // Esta función corre DENTRO de la acción `auth:signIn`, y la respuesta de
+      // `POST /api/action` incluye un campo `logLines` con lo que la ejecución
+      // haya escrito por consola (lo consume el propio cliente HTTP de Convex,
+      // browser/http_client.js). Un `console.error` aquí saldría en el cuerpo de
+      // la respuesta SOLO cuando la cuenta existe —porque solo entonces se
+      // intenta el envío—, así que reabriría por `logLines` exactamente el canal
+      // de enumeración que GER-54 cierra. Medido: con la clave de Resend
+      // inválida, el correo existente devolvía `logLines` con dos entradas y el
+      // inexistente ninguna.
+      //
+      // El registro de la avería se hace desde una mutación programada, fuera de
+      // esta ejecución: ver `logResetSendFailure` en convex/passwordReset.ts.
+      //
+      // Nunca incluir `token` ni el destinatario en este mensaje.
       throw new Error(
         `Resend rechazó el envío del código (HTTP ${response.status}).`
       );

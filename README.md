@@ -19,6 +19,7 @@ convex/                  Backend: schema, auth y funciones por entidad
   authz.ts                Autoridad de acceso y política de contraseña — ver "Seguridad del login"
   authConstants.ts        Constantes que comparten servidor e interfaz
   email.ts                normalizeEmail: la forma canónica de un correo
+  passwordLogin.ts        Entrar y darse de alta (dos proveedores propios)
   passwordReset.ts / ResendOTP.ts      Recuperación por código (dos proveedores propios)
   authCleanup.ts / crons.ts            Barrido periódico de restos de autenticación
   migrations.ts           Migración de un solo uso de correos a forma canónica
@@ -80,7 +81,7 @@ Cada pantalla placeholder indica en pantalla qué archivo de `Design/` replicar 
 
 ## Seguridad del login
 
-Resultado de la auditoría de seguridad del login (GER-56, GER-57 y GER-59). Esta sección documenta las reglas que hay que respetar al tocar `convex/auth*`, y los riesgos que se decidieron **aceptar** — están aquí para que nadie los redescubra como si fueran hallazgos nuevos.
+Resultado de la auditoría de seguridad del login (GER-56, GER-57, GER-59 y GER-54). Esta sección documenta las reglas que hay que respetar al tocar `convex/auth*`, y los riesgos que se decidieron **aceptar** — están aquí para que nadie los redescubra como si fueran hallazgos nuevos.
 
 ### Reglas al escribir código
 
@@ -89,6 +90,18 @@ Resultado de la auditoría de seguridad del login (GER-56, GER-57 y GER-59). Est
 - **La política de contraseña se aplica al crear y al cambiar, nunca al entrar.** Si alguna vez corre en `signIn`, endurecerla deja fuera a quien ya tiene cuenta.
 - **Los correos se guardan y se buscan en forma canónica** — `normalizeEmail` (`convex/email.ts`): recorte de espacios y minúsculas, nada más. Sin quitar puntos ni cortar el `+etiqueta` de Gmail: no son universales entre proveedores y convertirían correos distintos en el mismo identificador de acceso.
 - **Constantes compartidas con la interfaz** en `convex/authConstants.ts`. No las dupliques en `src/`.
+- **Nunca escribas por consola dentro de una acción de auth**, y menos en una rama que solo se ejecuta cuando la cuenta existe. La respuesta de `POST /api/action` incluye un campo `logLines` con lo que la ejecución haya escrito, así que un `console.error` en línea vuelve a distinguir cuenta existente de inexistente por el cuerpo. Si hace falta dejar constancia, prográmalo en otra ejecución — el patrón es `logResetSendFailure` en `convex/passwordReset.ts`.
+- **Nunca pongas `AUTH_LOG_LEVEL=DEBUG` en producción.** Con ese nivel, `createVerificationCodeImpl` escribe en los logs del deployment el **código de recuperación en claro** junto al correo. Comprobado en dev: no llega a `logLines` de la respuesta —esas líneas las emite la mutación `auth:store`, otra ejecución— así que no es un canal remoto, pero sí deja secretos vivos en el registro. La variable no está definida en ningún deployment; el valor por defecto de la librería es `INFO`, que calla las líneas DEBUG.
+- **Nunca llames a `signIn("password", …)` desde la interfaz.** El proveedor `Password` de la librería no atiende ningún flujo: su `profile()` rechaza todo. Sigue registrado solo porque es el titular del identificador de cuenta `"password"` y de su `crypto` (Scrypt), que resuelven `retrieveAccount`, `createAccount` y `modifyAccountCredentials` por nombre de proveedor. El gate es enumerar las llamadas a `signIn(` en `src/`: deben ser exactamente cinco, y ninguna a `"password"` seco.
+
+### Entrar y darse de alta
+
+Dos proveedores propios en `convex/passwordLogin.ts`:
+
+- `password-signin` — entrar. Hace **dos** lecturas de la cuenta y el orden importa: la primera sin `secret`, que solo comprueba que la cuenta existe y su ficha sigue en `activo`; la segunda con `secret`, que verifica y consume el límite de intentos. Comprobar el estado *después* de verificar dejaría un oráculo por el estado del contador, porque acertar el secreto **borra** la fila de `authRateLimits` y eso se puede observar.
+- `password-signup` — el alta. Comprueba el registro cerrado **antes** de mirar `authAccounts`, así que en producción tiene una sola respuesta posible. No es la autoridad de unicidad: esa sigue siendo el guard de `callbacks.createOrUpdateUser`, que corre dentro de la transacción.
+
+Los cuatro flujos de contraseña —entrar, alta, pedir código, canjearlo— viven en proveedores propios por el mismo motivo: la librería relanza sus strings internos (`"InvalidAccountId"`, `"InvalidSecret"`, `"TooManyFailedAttempts"`, `"Account … already exists"`) al cuerpo de la respuesta HTTP, y desde ahí se enumera quién tiene cuenta.
 
 ### Política de contraseña (`convex/authz.ts`)
 
@@ -100,8 +113,8 @@ Resultado de la auditoría de seguridad del login (GER-56, GER-57 y GER-59). Est
 
 Dos proveedores propios en `convex/passwordReset.ts`, ninguno de la librería:
 
-- `password-reset-request` — pide el código. Comprueba que la cuenta existe **antes** de consumir el límite, y ese límite (5/hora, 60 s de espera entre peticiones) es la primera sentencia con efecto: sin él, pedir un código destruye el anterior y cualquiera podría dejar a un usuario sin poder recuperar su cuenta.
-- `password-reset-verify` — canjea el código. Existe porque la librería indexa el límite de intentos por el correo **tal cual lo manda el cliente**: sin canonizarlo antes, cada variante de caja estrenaría su propio cupo de 10 intentos.
+- `password-reset-request` — pide el código. Comprueba que la cuenta existe y está `activo` **antes** de consumir el límite, y ese límite (5/hora, 60 s de espera entre peticiones) es la primera sentencia con efecto: sin él, pedir un código destruye el anterior y cualquiera podría dejar a un usuario sin poder recuperar su cuenta. Si el envío falla, la excepción **se captura**: propagarla distinguía cuenta existente de inexistente cada vez que Resend tuviera una avería.
+- `password-reset-verify` — canjea el código. Existe porque la librería indexa el límite de intentos por el correo **tal cual lo manda el cliente**: sin canonizarlo antes, cada variante de caja estrenaría su propio cupo de 10 intentos. Comprueba el estado de la ficha **antes** de canjear, y ese orden es deliberado: así el código de un usuario desactivado no se gasta, y la respuesta no distingue el código correcto del incorrecto.
 
 El código es de **8 dígitos** y caduca a los 15 minutos.
 
@@ -122,7 +135,8 @@ Decisiones tomadas a conciencia. No son tareas pendientes.
 - **Registro de arranque abierto.** Si la tabla `users` queda vacía, la primera persona que use "Crear cuenta" se convierte en dueña. Se deja así porque es la única forma de arrancar el sistema desde cero.
 - **Bloqueo remoto de una cuenta.** Los límites son por correo y no hay límite por IP: quien conozca un correo puede agotarlos a propósito (10 fallos de login/hora, 10 códigos fallidos/hora, 5 solicitudes/hora) y dejar a esa persona sin entrar durante un rato. Cerrarlo exige un captcha, que se descartó para el MVP.
 - **`authVerifiers` puede crecer bajo ataque.** Cualquiera puede iniciar un consentimiento de Google y abandonarlo. El cron de `convex/authCleanup.ts` barre por índice en lotes acotados, lo que mejora la capacidad de drenaje pero no la garantiza. Vigilar sus contadores.
-- **Enumeración por temporización.** Al entrar se responde antes de calcular Scrypt si la cuenta no existe, y en recuperación solo la rama con cuenta llama a Resend. **Recomendación explícita: no arreglarlo.** Exigiría reimplementar `Password` sobre `ConvexCredentials` con un hash señuelo, y sacar el envío del correo fuera de la petición no es viable porque `signInViaProvider` depende de `ctx.auth.config`, que no existe en una acción programada.
+- **Enumeración por temporización.** Es lo que **queda abierto** después de GER-54, que cerró el canal por el **cuerpo** de la respuesta. La invariante que hoy se cumple es esta, y conviene enunciarla con precisión porque es más estrecha de lo que parece: **ante un fallo**, la respuesta no revela la existencia de la cuenta, ni si el secreto era correcto en una cuenta desactivada, ni el estado de Resend. No dice que todas las respuestas sean iguales — un secreto correcto de un usuario activo devuelve tokens, obviamente, y unos parámetros inválidos pueden devolver un error de política. Lo que el **tiempo** sigue delatando: al entrar se responde antes de calcular Scrypt si la cuenta no existe, y en recuperación solo la rama con cuenta llama a Resend. **Recomendación explícita de la auditoría: no arreglarlo.** Exigiría un hash señuelo, y sacar el envío del correo fuera de la petición no es viable porque `signInViaProvider` depende de `ctx.auth.config`, que no existe en una acción programada.
+- **Enumeración por Google.** Un correo sin usuario provisionado recibe "Esta cuenta de Google no está autorizada", que es distinguible. No sirve para sondear correos ajenos: hay que completar el consentimiento de Google con ese buzón, es decir, controlarlo.
 
 ### Deuda con issue asignada
 

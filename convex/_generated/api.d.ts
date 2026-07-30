@@ -22,6 +22,7 @@ import type * as http from "../http.js";
 import type * as interactions from "../interactions.js";
 import type * as migrations from "../migrations.js";
 import type * as opportunities from "../opportunities.js";
+import type * as passwordLogin from "../passwordLogin.js";
 import type * as passwordReset from "../passwordReset.js";
 import type * as users from "../users.js";
 
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   interactions: typeof interactions;
   migrations: typeof migrations;
   opportunities: typeof opportunities;
+  passwordLogin: typeof passwordLogin;
   passwordReset: typeof passwordReset;
   users: typeof users;
 }>;
