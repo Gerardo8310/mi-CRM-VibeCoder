@@ -114,9 +114,23 @@ function LoginPageContent() {
     setError(null);
     setLoading(true);
     const formData = new FormData(event.currentTarget);
-    formData.set("flow", mode);
     try {
-      const result = await signIn("password", formData);
+      // Dos proveedores propios desde GER-54, y ya no se manda `flow`: el
+      // proveedor ES el flujo. `"password"` no atiende ninguno — su `profile()`
+      // rechaza todo (convex/auth.ts) — porque la librería filtraba al cuerpo
+      // HTTP strings que distinguían "no existe la cuenta" de "la contraseña no
+      // es correcta", y por `flow: "signUp"` además verificaba la contraseña sin
+      // consumir el límite de intentos.
+      const result = await signIn(
+        isSignUp ? "password-signup" : "password-signin",
+        formData
+      );
+      // Con `password-signin` un fallo ya NO llega como excepción, sino como
+      // `signingIn: false` (el `authorize` devuelve `null` para cuenta
+      // inexistente, contraseña incorrecta, límite agotado y cuenta desactivada,
+      // y la acción responde `{tokens: null}`). Esta línea, que ya estaba, es la
+      // que lo convierte en el mismo `catch` de siempre: el mensaje que ve el
+      // usuario no cambia.
       if (!result.signingIn) {
         throw new Error("No se inició sesión");
       }
