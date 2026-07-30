@@ -214,9 +214,10 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       }
 
       // Bootstrap: el primer usuario del sistema es siempre la dueña.
-      // El correo ya viene canonizado desde `profile()`, pero se vuelve a
-      // normalizar porque esta rama es la única que ESCRIBE en `users`: si
-      // mañana llegara por otro camino, la ficha seguiría naciendo canónica.
+      // El correo ya viene canonizado de quien llama —`PasswordSignUp` desde
+      // GER-54, no el `profile()` de `Password`, que ya no atiende nada—, pero se
+      // vuelve a normalizar porque esta rama es la única que ESCRIBE en `users`:
+      // si mañana llegara por otro camino, la ficha seguiría naciendo canónica.
       // `normalizeEmail` es idempotente, así que repetirlo no cuesta nada.
       return await ctx.db.insert("users", {
         name: (args.profile.name as string) || "Sin nombre",
