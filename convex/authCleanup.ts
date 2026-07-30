@@ -97,6 +97,29 @@ export const pruneStaleAuthRecords = internalMutation({
       );
     }
 
+    // Observabilidad del cron (fleco de GER-54). Los contadores se devuelven,
+    // pero el retorno de una mutación programada no lo lee nadie: en los logs
+    // solo queda "Function executed in 18 ms". El README pide vigilar
+    // `chainedAnother`, y sin esto eso obliga a invocar la función a mano.
+    //
+    // Escribe SOLO cuando hay algo que contar, para que las pasadas normales
+    // —que son casi todas, una cada 5 minutos— no ensucien el registro.
+    //
+    // Aquí sí se puede usar `console.log`, a diferencia de lo que impone
+    // convex/passwordReset.ts: esto es una mutación del cron, no una acción
+    // pública, así que su salida no viaja en el campo `logLines` de ninguna
+    // respuesta HTTP.
+    if (
+      staleVerifiers.length > 0 ||
+      staleResetRequests.length > 0 ||
+      chainedAnother
+    ) {
+      console.log(
+        `limpiar restos de auth: verificadores ${staleVerifiers.length}, ` +
+          `solicitudes ${staleResetRequests.length}, encadena ${chainedAnother}`
+      );
+    }
+
     return {
       verifiersDeleted: staleVerifiers.length,
       resetRequestsDeleted: staleResetRequests.length,
