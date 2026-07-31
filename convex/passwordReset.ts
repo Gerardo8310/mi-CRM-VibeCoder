@@ -9,7 +9,7 @@ import { v } from "convex/values";
 import { internalMutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
-import { ResendOTP } from "./ResendOTP";
+import { ResendOTP, normalizeResetCode } from "./ResendOTP";
 import { normalizeEmail } from "./email";
 import { validatePassword } from "./authz";
 
@@ -264,7 +264,12 @@ export const PasswordResetVerify = ConvexCredentials<DataModel>({
     }
 
     const email = normalizeEmail(params.email);
-    const code = params.code;
+    // El código se canoniza aquí por el mismo motivo que el correo y en el mismo
+    // sitio: la librería hashea `params.code` TAL CUAL se lo demos
+    // (verifyCodeAndSignIn.js:64). Sin esta línea, el mismo código escrito en
+    // minúsculas o con los guiones con los que viaja en el correo no cuadraría
+    // con el que se generó. La autoridad es esta, no la interfaz (GER-58).
+    const code = normalizeResetCode(params.code);
     const newPassword = params.newPassword;
     if (email.length === 0) return null;
 

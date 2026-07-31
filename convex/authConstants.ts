@@ -14,13 +14,30 @@
  */
 
 /**
- * Dígitos del código de recuperación.
+ * Caracteres del código de recuperación.
  *
- * Ocho y no seis por el oráculo de canje sin proveedor que documenta GER-58:
- * existe una ruta donde el límite de intentos no se aplica, así que la longitud
- * del código es la única barrera real. Ver la cabecera de convex/ResendOTP.ts.
+ * Doce, y alfanuméricos, por el oráculo de canje sin proveedor de GER-58: hay
+ * una ruta donde el límite de intentos no se aplica, y no se puede cerrar desde
+ * nuestro código, así que **la entropía del código es la única barrera real**.
+ * Con el alfabeto de 32 símbolos de convex/ResendOTP.ts son 32¹² = 2⁶⁰ ≈ 10¹⁸
+ * candidatos: a mil intentos por segundo, la probabilidad de acertar uno
+ * durante sus 15 minutos de vigencia es de ~8×10⁻¹³.
+ *
+ * Antes eran ocho dígitos (10⁸), que a ese mismo ritmo caían en unas 28 horas.
+ *
+ * Doce es margen deliberado, no cálculo justo: con ocho caracteres del mismo
+ * alfabeto ya bastaría (2⁴⁰), pero cuatro más no le cuestan nada al usuario y
+ * quitan la discusión sobre el margen.
  */
-export const CODE_LENGTH = 8;
+export const CODE_LENGTH = 12;
+
+/**
+ * Tamaño de los grupos con los que se MUESTRA el código: `K7M4-9XQP-3JRT`.
+ *
+ * Es presentación y nada más. El token que se guarda y se compara no lleva
+ * separadores nunca — los quita `normalizeResetCode` (convex/ResendOTP.ts).
+ */
+export const CODE_GROUP_SIZE = 4;
 
 /** Longitud mínima de una contraseña. Ver la política en convex/authz.ts. */
 export const MIN_PASSWORD_LENGTH = 10;

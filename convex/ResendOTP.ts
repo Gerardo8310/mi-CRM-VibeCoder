@@ -1,13 +1,13 @@
 import { Email } from "@convex-dev/auth/providers/Email";
 import { normalizeEmail } from "./email";
-import { CODE_LENGTH } from "./authConstants";
+import { CODE_GROUP_SIZE, CODE_LENGTH } from "./authConstants";
 
 /**
  * Proveedor de correo que manda el código de recuperación (GER-53).
  *
- * Dos condiciones sostienen que un código numérico corto sea aceptable: el
- * `authorize` de abajo exige que el código venga acompañado del correo correcto,
- * y `verifyCodeAndSignIn` corta a 10 intentos fallidos por hora y por correo.
+ * Dos condiciones sostienen el flujo legítimo: el `authorize` de abajo exige que
+ * el código venga acompañado del correo correcto, y `verifyCodeAndSignIn` corta
+ * a 10 intentos fallidos por hora y por correo.
  *
  * La segunda solo se sostiene si el "por correo" es un correo canónico, y por
  * eso este proveedor no se usa nunca directamente desde el cliente: los dos
@@ -15,30 +15,33 @@ import { CODE_LENGTH } from "./authConstants";
  * normalizado. La librería indexa el límite por `params.email` tal cual se lo
  * den (mutations/verifyCodeAndSignIn.ts:42).
  *
- * POR QUÉ 8 DÍGITOS Y NO 6 (GER-57 · Issue 2.7)
+ * POR QUÉ EL CÓDIGO ES LARGO Y ALFANUMÉRICO (GER-58)
  *
  * Porque hay una rama donde ese límite de 10 intentos sencillamente no existe.
  * `auth:signIn` acepta que la llamen SIN `provider` y solo con `params.code`
- * (signIn.ts:60). Ahí `verifyCodeAndSignInImpl` calcula el identificador del
+ * (signIn.js:13-24). Ahí `verifyCodeAndSignInImpl` calcula el identificador del
  * límite como `params.email ?? params.phone` — que en esa forma de llamada es
  * `undefined`, así que no comprueba ni consume ningún cupo
- * (verifyCodeAndSignIn.ts:42-53). Reproducido contra dev el 2026-07-29: tras un
- * intento fallido por esa vía, `attemptsLeft` seguía idéntico hasta el último
- * decimal.
+ * (verifyCodeAndSignIn.js:22-36). Y el código se busca por el SHA-256 del código
+ * A SECAS, sin el correo en el índice (verifyCodeAndSignIn.js:64-68): el código
+ * es el secreto entero.
  *
- * Y las dos respuestas se distinguen: un código incorrecto devuelve
+ * Las dos respuestas se distinguen: un código incorrecto devuelve
  * `{tokens: null}`, y uno correcto lanza "Provider `resend-otp` is not
  * configured" (porque en esa rama `allowExtraProviders` es `false`) revirtiendo
- * la transacción, así que el código ni siquiera se gasta. Es decir: un anónimo
- * que conozca un correo con cuenta puede pedirle el código a la víctima —5
- * veces por hora, lo que permite el límite de solicitudes— y buscar cada uno
- * por fuerza bruta sin freno alguno.
+ * la transacción, así que el código ni siquiera se gasta y luego se canjea por la
+ * vía legítima en un solo intento.
  *
- * No se puede tapar desde aquí: `auth:signIn` es la acción pública de la
- * librería y no hay forma de envolverla sin dejar la original expuesta bajo
- * otro nombre. Lo que sí es nuestro es la entropía del código. Pasar de 6 a 8
- * dígitos lleva el espacio de 10⁶ a 10⁸: no cierra la vía, la encarece cien
- * veces. Queda declarado como riesgo residual, no como problema resuelto.
+ * ESA RAMA SIGUE AHÍ Y NO SE PUEDE CERRAR desde nuestro código: `auth:signIn` es
+ * la acción pública de la librería, envolverla dejaría la original expuesta bajo
+ * otro nombre, y registrar este proveedor como principal sería peor —permitiría
+ * pedir códigos saltándose `consumeResetSlot`—. Lo único nuestro es la entropía.
+ *
+ * Doce caracteres de 32 símbolos son 2⁶⁰ ≈ 10¹⁸ candidatos. A mil intentos por
+ * segundo, la probabilidad de acertar durante los 15 minutos de vigencia es de
+ * ~8×10⁻¹³. Antes, con ocho dígitos (10⁸), ese mismo ritmo acertaba en unas 28
+ * horas. El oráculo no desaparece: deja de ser buscable. Escrito así a propósito,
+ * para que nadie lo lea como un cierre.
  *
  * El `id` NO puede ser "resend": la librería sustituye el remitente por
  * `onboarding@resend.dev` cuando coinciden ese id y el `from` por defecto
@@ -49,31 +52,103 @@ import { CODE_LENGTH } from "./authConstants";
 // para un código corto que viaja por correo.
 const CODE_MAX_AGE_SECONDS = 15 * 60;
 
-// 250 es el mayor múltiplo de 10 que cabe en un byte.
-const LARGEST_UNBIASED_BYTE = 250;
+/**
+ * Alfabeto del código: los diez dígitos y las 26 letras MENOS `I`, `L`, `O` y
+ * `U`. Fuente única — lo usan el generador, el normalizador y el formateador.
+ *
+ * Las tres primeras se van porque se confunden con `1` y `0` al copiar el código
+ * de un correo. La `U` se va para dejar el total exacto en **32**, y eso no es
+ * cosmética: 256 es múltiplo de 32, así que `byte % 32` reparte los 256 valores
+ * posibles de un byte en exactamente 8 por símbolo. **No hay sesgo de módulo y
+ * no hace falta descartar ningún byte** — con los diez dígitos sí hacía falta,
+ * porque 256 no es múltiplo de 10.
+ */
+const CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 /**
- * Genera el código sin sesgo de módulo. Hacer `byte % 10` sobre 0..255
- * favorecería a los dígitos 0-5, porque 256 no es múltiplo de 10: descartamos
- * los bytes a partir de 250 y volvemos a pedir. `Math.random()` no vale aquí
- * por no ser criptográficamente seguro.
+ * Caracteres que el alfabeto no admite pero que alguien teclearía igual al leer
+ * el código de su correo. Mapearlos es seguro por construcción: ninguno de los
+ * cuatro está en el alfabeto, así que esta sustitución nunca puede convertir un
+ * código válido en otro código válido distinto — solo rescata entradas que si no
+ * fallarían.
+ *
+ * La `U` no se mapea a nada: se cayó del alfabeto por aritmética, no por
+ * parecerse a otro carácter, así que adivinar a qué la quiso convertir el usuario
+ * sería inventar. Se descarta como cualquier otro carácter ajeno.
  */
-function generateNumericCode(): string {
-  const buffer = new Uint8Array(1);
+const CONFUSABLES: Record<string, string> = {
+  O: "0",
+  I: "1",
+  L: "1",
+};
+
+/**
+ * Genera el código. `crypto.getRandomValues` y no `Math.random()`, que no es
+ * criptográficamente seguro.
+ *
+ * Sin bucle de rechazo: ver por qué en el comentario de `CODE_ALPHABET`.
+ */
+function generateCode(): string {
+  const bytes = new Uint8Array(CODE_LENGTH);
+  crypto.getRandomValues(bytes);
   let code = "";
-  while (code.length < CODE_LENGTH) {
-    crypto.getRandomValues(buffer);
-    if (buffer[0] >= LARGEST_UNBIASED_BYTE) continue;
-    code += (buffer[0] % 10).toString();
+  for (const byte of bytes) {
+    code += CODE_ALPHABET[byte % CODE_ALPHABET.length];
   }
   return code;
 }
 
-function plainTextBody(code: string, minutes: number) {
+/**
+ * Deja el código en la forma exacta que se comparó al generarlo: mayúsculas, sin
+ * separadores, sin espacios y sin nada que no esté en el alfabeto.
+ *
+ * Es el equivalente de `normalizeEmail` para el código, y por el mismo motivo:
+ * la librería hashea `params.code` TAL CUAL se lo demos
+ * (verifyCodeAndSignIn.js:64), así que si no lo canonizamos nosotros antes, el
+ * mismo código escrito en minúsculas o con los guiones de presentación no
+ * cuadraría.
+ *
+ * Los códigos antiguos de ocho dígitos pasan por aquí sin cambiar —los dígitos
+ * no los toca ni el paso a mayúsculas ni el filtrado—, así que los que estuvieran
+ * en vuelo al desplegar se siguen canjeando.
+ */
+export function normalizeResetCode(raw: string): string {
+  let normalized = "";
+  for (const char of raw.toUpperCase()) {
+    const mapped = CONFUSABLES[char] ?? char;
+    if (CODE_ALPHABET.includes(mapped)) normalized += mapped;
+  }
+  return normalized;
+}
+
+/**
+ * Agrupa el código para que se pueda leer y teclear: `K7M4-9XQP-3JRT`.
+ *
+ * SOLO presentación. El token que se guarda y se compara es el de
+ * `generateCode()`, sin separadores; los guiones los quita `normalizeResetCode`
+ * en cuanto vuelven.
+ */
+function formatCodeForDisplay(code: string): string {
+  const groups = [];
+  for (let i = 0; i < code.length; i += CODE_GROUP_SIZE) {
+    groups.push(code.slice(i, i + CODE_GROUP_SIZE));
+  }
+  return groups.join("-");
+}
+
+// Los dos cuerpos reciben el código YA AGRUPADO. La agrupación es de lectura:
+// quien lo escriba sin guiones entra igual, porque `normalizeResetCode` los
+// quita. Se dice en el mensaje para que nadie dude.
+const DASHES_NOTE =
+  "Los guiones son solo para leerlo mejor: puedes escribirlo sin ellos.";
+
+function plainTextBody(displayCode: string, minutes: number) {
   return [
     "Recibimos una solicitud para cambiar tu contraseña de SolarCRM.",
     "",
-    `Tu código es: ${code}`,
+    `Tu código es: ${displayCode}`,
+    "",
+    DASHES_NOTE,
     "",
     `Caduca en ${minutes} minutos y solo sirve una vez.`,
     "",
@@ -81,12 +156,16 @@ function plainTextBody(code: string, minutes: number) {
   ].join("\n");
 }
 
-function htmlBody(code: string, minutes: number) {
+// El tamaño y el interletraje bajaron con GER-58: el código pasó de 8 caracteres
+// a 14 con separadores, y con los valores anteriores se salía del ancho en el
+// cliente de correo del móvil.
+function htmlBody(displayCode: string, minutes: number) {
   return `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#1c1917;line-height:1.5">
   <p>Recibimos una solicitud para cambiar tu contraseña de <strong>SolarCRM</strong>.</p>
   <p style="margin:24px 0">
-    <span style="display:inline-block;padding:12px 20px;background:#f5f5f4;border:1px solid #e7e5e4;border-radius:6px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:28px;font-weight:600;letter-spacing:6px">${code}</span>
+    <span style="display:inline-block;padding:12px 16px;background:#f5f5f4;border:1px solid #e7e5e4;border-radius:6px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:22px;font-weight:600;letter-spacing:2px;white-space:nowrap">${displayCode}</span>
   </p>
+  <p style="color:#78716c;font-size:13px">${DASHES_NOTE}</p>
   <p>Caduca en ${minutes} minutos y solo sirve una vez.</p>
   <p style="color:#78716c;font-size:13px">Si no lo pediste, ignora este mensaje: tu contraseña no cambia hasta que alguien introduce este código.</p>
 </div>`;
@@ -98,7 +177,7 @@ export const ResendOTP = Email({
   maxAge: CODE_MAX_AGE_SECONDS,
 
   async generateVerificationToken() {
-    return generateNumericCode();
+    return generateCode();
   },
 
   /**
@@ -135,6 +214,9 @@ export const ResendOTP = Email({
     }
 
     const minutes = Math.round(CODE_MAX_AGE_SECONDS / 60);
+    // `token` es la forma canónica —la que se hasheó al crear la fila—; lo que
+    // se envía es su presentación agrupada. Nunca al revés.
+    const displayCode = formatCodeForDisplay(token);
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -150,8 +232,8 @@ export const ResendOTP = Email({
         // tuviera el móvil a la vista un momento se llevaba el código entero
         // sin tocarlo. En el cuerpo sigue estando.
         subject: "Código para recuperar tu contraseña de SolarCRM",
-        text: plainTextBody(token, minutes),
-        html: htmlBody(token, minutes),
+        text: plainTextBody(displayCode, minutes),
+        html: htmlBody(displayCode, minutes),
       }),
     });
 
