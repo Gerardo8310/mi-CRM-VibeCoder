@@ -102,7 +102,9 @@ textarea {
   font-family: inherit;
 }
 
-/* Animaciones de entrada de los paneles rápidos de "Hoy" (GER-50). */
+/* Animaciones de entrada de los paneles (GER-50, y GER-48 para el lateral y el
+   modal de confirmación). Los nombres y las duraciones son los de las maquetas
+   de Design/. */
 @keyframes fadein {
   from {
     opacity: 0;
@@ -119,6 +121,17 @@ textarea {
   }
   to {
     transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes popin {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
     opacity: 1;
   }
 }
