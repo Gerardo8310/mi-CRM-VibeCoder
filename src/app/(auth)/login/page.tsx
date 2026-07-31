@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, Suspense, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthActions } from "@convex-dev/auth/react";
 import {
@@ -17,7 +24,56 @@ import { Input, Label } from "@/components/ui/input";
 // Fuente única de estas dos reglas, compartida con el servidor (GER-59).
 // Antes estaban duplicadas aquí y en `convex/`, sincronizadas solo por un
 // comentario; el auditor lo marcó como riesgo de divergencia.
-import { CODE_LENGTH, MIN_PASSWORD_LENGTH } from "@convex/authConstants";
+import {
+  CODE_GROUP_SIZE,
+  CODE_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from "@convex/authConstants";
+
+/**
+ * Las dos mitades del campo del código (GER-58). La separación **no es estética,
+ * es un contrato**: el estado guarda la forma canónica y los guiones son una
+ * derivada que solo existe al renderizar, así que **nunca puede viajar un código
+ * con separadores en una petición**.
+ *
+ * Esa distinción se la debo a la auditoría (M1). Antes el estado guardaba la
+ * forma agrupada y era eso lo que se enviaba; durante el hueco en que el
+ * frontend nuevo convive con el Convex anterior —que toma `params.code` en
+ * crudo, sin normalizar— el canje habría fallado para todos los códigos.
+ *
+ * `canonicalCodeInput` es COMODIDAD, no validación: la autoridad sigue siendo
+ * `normalizeResetCode` (convex/ResendOTP.ts), que limpia lo que le llegue —hace
+ * falta igual, porque alguien puede pegar el código con los guiones del correo—.
+ * Y no filtra por alfabeto a propósito: si el servidor cambiara de alfabeto,
+ * esta función no tiene por qué enterarse.
+ */
+function canonicalCodeInput(raw: string): string {
+  return raw.toUpperCase().replace(/[^0-9A-Z]/g, "").slice(0, CODE_LENGTH);
+}
+
+function groupCode(code: string): string {
+  const groups = [];
+  for (let i = 0; i < code.length; i += CODE_GROUP_SIZE) {
+    groups.push(code.slice(i, i + CODE_GROUP_SIZE));
+  }
+  return groups.join("-");
+}
+
+/**
+ * Dónde cae el cursor, en la cadena YA agrupada, cuando por delante hay `utiles`
+ * caracteres del código.
+ *
+ * Existe porque reagrupar al escribir reescribe el valor entero, y el navegador
+ * manda el cursor al final. Escribiendo de corrido eso da igual —el final es
+ * justo donde debe estar—, pero al CORREGIR en medio no: se probó borrando la
+ * "0" de `NPNK-BD06-C8RZ` y escribiendo la de reemplazo, y acababa en
+ * `NPNK-BD6C-8RZ0`, es decir un código distinto, con doce caracteres y aspecto
+ * perfectamente válido. Un fallo silencioso, que es la peor clase.
+ */
+function caretInGroupedCode(utiles: number, agrupadoLength: number): number {
+  const conSeparadores = utiles + Math.floor(utiles / CODE_GROUP_SIZE);
+  return Math.min(conSeparadores, agrupadoLength);
+}
 
 /**
  * Pantalla 0 del MVP — ver Design/Login.dc.html y GER-7.
@@ -50,7 +106,7 @@ type Mode = "signIn" | "signUp" | "reset-request" | "reset-verify";
 
 // Mismo texto exista o no la cuenta: si dijéramos "ese correo no existe",
 // cualquiera podría averiguar quién tiene acceso al CRM probando correos.
-const RESET_SENT_MESSAGE = `Si ese correo tiene una cuenta, le enviamos un código de ${CODE_LENGTH} dígitos. Puede tardar un minuto en llegar.`;
+const RESET_SENT_MESSAGE = `Si ese correo tiene una cuenta, le enviamos un código de ${CODE_LENGTH} caracteres. Puede tardar un minuto en llegar.`;
 
 const RESET_FAILED_MESSAGE =
   "El código no es correcto o ya caducó. Revisa tu correo o pide uno nuevo.";
@@ -79,6 +135,29 @@ function LoginPageContent() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const codeInputRef = useRef<HTMLInputElement>(null);
+  // Cuántos caracteres útiles había por delante del cursor en el último cambio.
+  // `null` = no hay nada que restaurar (p. ej. tras limpiar el campo por código).
+  const caretUtilesRef = useRef<number | null>(null);
+
+  function handleCodeChange(event: ChangeEvent<HTMLInputElement>) {
+    const raw = event.target.value;
+    const cursor = event.target.selectionStart ?? raw.length;
+    caretUtilesRef.current = canonicalCodeInput(raw.slice(0, cursor)).length;
+    setResetCode(canonicalCodeInput(raw));
+  }
+
+  // Devuelve el cursor a donde estaba después de reagrupar. Va en un efecto
+  // porque hay que hacerlo cuando el valor nuevo ya está pintado.
+  useEffect(() => {
+    const input = codeInputRef.current;
+    const utiles = caretUtilesRef.current;
+    if (input === null || utiles === null) return;
+    caretUtilesRef.current = null;
+    const posicion = caretInGroupedCode(utiles, input.value.length);
+    input.setSelectionRange(posicion, posicion);
+  }, [resetCode]);
 
   const isSignUp = mode === "signUp";
   const isResetting = mode === "reset-request" || mode === "reset-verify";
@@ -92,6 +171,8 @@ function LoginPageContent() {
   function goTo(next: Mode) {
     setError(null);
     setInfo(null);
+    // Que un código a medio escribir no sobreviva a un cambio de pantalla.
+    setResetCode("");
     setMode(next);
   }
 
@@ -160,6 +241,9 @@ function LoginPageContent() {
       // caído—: avanzamos igual y con el mismo texto, para no filtrar nada.
     } finally {
       setResetEmail(email);
+      // Pedir un código nuevo invalida el anterior, así que el campo tiene que
+      // empezar vacío: dejar el viejo escrito solo invita a reenviarlo y fallar.
+      setResetCode("");
       setInfo(RESET_SENT_MESSAGE);
       setMode("reset-verify");
       setLoading(false);
@@ -193,7 +277,11 @@ function LoginPageContent() {
       // intentos. Ver convex/passwordReset.ts.
       const result = await signIn("password-reset-verify", {
         email: resetEmail,
-        code: String(formData.get("code") ?? "").trim(),
+        // El estado es la forma CANÓNICA, no la que se ve: en pantalla hay
+        // guiones y aquí no. Es deliberado y es lo que arregló M1 — el Convex
+        // anterior toma `params.code` en crudo, así que enviarle la forma
+        // agrupada rompería el canje mientras las dos versiones convivan.
+        code: resetCode,
         newPassword,
       });
       if (!result.signingIn) {
@@ -219,7 +307,7 @@ function LoginPageContent() {
     signIn: "Entra a tu CRM",
     signUp:
       "Esta cuenta será la dueña (Martha). Solo funciona si el sistema todavía no tiene usuarios.",
-    "reset-request": `Escribe tu correo y te enviamos un código de ${CODE_LENGTH} dígitos para elegir una contraseña nueva.`,
+    "reset-request": `Escribe tu correo y te enviamos un código de ${CODE_LENGTH} caracteres para elegir una contraseña nueva.`,
     "reset-verify": resetEmail
       ? `Escribe el código que enviamos a ${resetEmail} y elige tu contraseña nueva.`
       : "Escribe el código que te enviamos y elige tu contraseña nueva.",
@@ -400,20 +488,33 @@ function LoginPageContent() {
           {mode === "reset-verify" && (
             <form onSubmit={handleResetVerify} className="flex flex-col gap-4">
               <div>
-                <Label htmlFor="code">Código de {CODE_LENGTH} dígitos</Label>
+                <Label htmlFor="code">Código de {CODE_LENGTH} caracteres</Label>
                 <Input
                   id="code"
                   name="code"
                   type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  placeholder="12345678"
+                  inputMode="text"
+                  // `one-time-code` se quitó en GER-58: el autorrelleno del
+                  // sistema solo reconoce OTP numéricos cortos de SMS, y aquí
+                  // solo conseguía ofrecer sugerencias que no venían a cuento.
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  placeholder="K7M4-9XQP-3JRT"
                   required
                   autoFocus
-                  maxLength={CODE_LENGTH}
+                  // Controlado para que pegar el código con espacios o en
+                  // minúsculas funcione. Sin `maxLength`: lo acota
+                  // `canonicalCodeInput`, que corta a CODE_LENGTH caracteres
+                  // útiles en vez de a un número de pulsaciones.
+                  ref={codeInputRef}
+                  value={groupCode(resetCode)}
+                  onChange={handleCodeChange}
                   disabled={loading}
                   error={!!error}
-                  className="text-center font-mono text-lg tracking-[0.4em]"
+                  // Interletraje más corto que antes: con 14 caracteres y el
+                  // anterior se salía del campo en pantallas estrechas.
+                  className="text-center font-mono text-base tracking-[0.15em]"
                 />
               </div>
               <div>

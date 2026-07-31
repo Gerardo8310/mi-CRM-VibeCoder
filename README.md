@@ -119,7 +119,13 @@ Dos proveedores propios en `convex/passwordReset.ts`, ninguno de la librería:
 - `password-reset-request` — pide el código. Comprueba que la cuenta existe y está `activo` **antes** de consumir el límite, y ese límite (5/hora, 60 s de espera entre peticiones) es la primera sentencia con efecto: sin él, pedir un código destruye el anterior y cualquiera podría dejar a un usuario sin poder recuperar su cuenta. Si el envío falla, la excepción **se captura**: propagarla distinguía cuenta existente de inexistente cada vez que Resend tuviera una avería.
 - `password-reset-verify` — canjea el código. Existe porque la librería indexa el límite de intentos por el correo **tal cual lo manda el cliente**: sin canonizarlo antes, cada variante de caja estrenaría su propio cupo de 10 intentos. Comprueba el estado de la ficha **antes** de canjear, y ese orden es deliberado: así el código de un usuario desactivado no se gasta, y la respuesta no distingue el código correcto del incorrecto.
 
-El código es de **8 dígitos** y caduca a los 15 minutos.
+El código es de **12 caracteres** de un alfabeto de **32 símbolos** —los dígitos y las letras menos `I`, `L`, `O` y `U`— y caduca a los 15 minutos. Viaja agrupado en el correo (`K7M4-9XQP-3JRT`), pero los guiones son presentación: `normalizeResetCode` los quita, pasa a mayúsculas y traduce `O→0` e `I`/`L`→`1` antes de que el código llegue a la librería.
+
+Tres cosas de ese diseño **no** son negociables (GER-58):
+
+- **La longitud y el alfabeto son el control de seguridad**, no un detalle de formato. Ver la sección de riesgos aceptados: existe una ruta sin límite de intentos, y lo único que la hace impracticable son los 2⁶⁰ candidatos.
+- **32 símbolos exactos, no 31 ni 33.** 256 es múltiplo de 32, así que `byte % 32` no tiene sesgo de módulo y el generador no necesita descartar bytes. Cambiar el tamaño del alfabeto obliga a reintroducir un bucle de rechazo; si no, el código pierde entropía en silencio.
+- **La normalización es autoridad del servidor.** La interfaz formatea al escribir por comodidad, pero `password-reset-verify` vuelve a canonizar lo que le llegue. No mover esa regla al cliente.
 
 ### Duraciones
 
@@ -140,10 +146,10 @@ Decisiones tomadas a conciencia. No son tareas pendientes.
 - **`authVerifiers` puede crecer bajo ataque.** Cualquiera puede iniciar un consentimiento de Google y abandonarlo. El cron de `convex/authCleanup.ts` barre por índice en lotes acotados, lo que mejora la capacidad de drenaje pero no la garantiza. Vigilar sus contadores.
 - **Enumeración por temporización.** Es lo que **queda abierto** después de GER-54, que cerró el canal por el **cuerpo** de la respuesta. La invariante que hoy se cumple es esta, y conviene enunciarla con precisión porque es más estrecha de lo que parece: **ante un fallo**, la respuesta no revela la existencia de la cuenta, ni si el secreto era correcto en una cuenta desactivada, ni el estado de Resend. No dice que todas las respuestas sean iguales — un secreto correcto de un usuario activo devuelve tokens, obviamente, y unos parámetros inválidos pueden devolver un error de política. Lo que el **tiempo** sigue delatando: al entrar se responde antes de calcular Scrypt si la cuenta no existe, y en recuperación solo la rama con cuenta llama a Resend. **Recomendación explícita de la auditoría: no arreglarlo.** Exigiría un hash señuelo, y sacar el envío del correo fuera de la petición no es viable porque `signInViaProvider` depende de `ctx.auth.config`, que no existe en una acción programada.
 - **Enumeración por Google.** Un correo sin usuario provisionado recibe "Esta cuenta de Google no está autorizada", que es distinguible. No sirve para sondear correos ajenos: hay que completar el consentimiento de Google con ese buzón, es decir, controlarlo.
+- **El oráculo de canje sin proveedor sigue existiendo.** `auth:signIn` acepta que la llamen sin `provider` y solo con `params.code`; ahí la librería no aplica ningún límite de intentos —el identificador es `params.email ?? params.phone`, que en esa forma de llamada es `undefined`— y el código correcto se distingue del incorrecto por la forma de la respuesta. **No se puede cerrar desde nuestro código** (`auth:signIn` es la acción pública de la librería; envolverla dejaría la original expuesta, y registrar `resend-otp` como proveedor principal permitiría pedir códigos saltándose el límite de solicitudes). Lo que hizo GER-58 fue quitarle utilidad: con 2⁶⁰ candidatos, mil intentos por segundo tienen ~8×10⁻¹³ de acertar durante los 15 minutos de vigencia. **Si alguna versión futura de `@convex-dev/auth` cambia `signInImpl` o `verifyCodeAndSignInImpl`, hay que revisar esta mitigación** — y si algún día la librería acepta cerrar la rama, el arreglo de verdad está ahí, no aquí.
 
 ### Deuda con issue asignada
 
-- **GER-58 · crítico** — `auth:signIn` acepta que la llamen sin `provider` y solo con `params.code`; en esa ruta la librería no aplica ningún límite de intentos, y las respuestas de código correcto e incorrecto se distinguen. Los 8 dígitos lo encarecen cien veces pero **no lo cierran**.
 - **GER-48** — al desactivar a alguien, sus sesiones y refresh tokens no se borran físicamente. No da acceso (`requireActiveUserId` deniega), pero conviene revocarlos.
 
 ## Decisiones de alcance confirmadas (ver PRD en Notion)
