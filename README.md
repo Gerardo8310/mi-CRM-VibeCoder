@@ -41,7 +41,7 @@ src/
       usuarios/              Pantalla 7 — Gestión de usuarios (solo dueña)
       perfil/                Pantalla 8 — Perfil / cerrar sesión
   components/
-    ui/                     Componentes base del design system (Button, Input, Badge, Card, Avatar)
+    ui/                     Componentes base del design system (Button, Input, Badge, Card, Avatar, SidePanel)
     nav/                    Sidebar, TabBar, FAB y AppShell (ver Design/Navegacion.dc.html)
     providers/               ConvexClientProvider
 
@@ -148,9 +148,11 @@ Decisiones tomadas a conciencia. No son tareas pendientes.
 - **Enumeración por Google.** Un correo sin usuario provisionado recibe "Esta cuenta de Google no está autorizada", que es distinguible. No sirve para sondear correos ajenos: hay que completar el consentimiento de Google con ese buzón, es decir, controlarlo.
 - **El oráculo de canje sin proveedor sigue existiendo.** `auth:signIn` acepta que la llamen sin `provider` y solo con `params.code`; ahí la librería no aplica ningún límite de intentos —el identificador es `params.email ?? params.phone`, que en esa forma de llamada es `undefined`— y el código correcto se distingue del incorrecto por la forma de la respuesta. **No se puede cerrar desde nuestro código** (`auth:signIn` es la acción pública de la librería; envolverla dejaría la original expuesta, y registrar `resend-otp` como proveedor principal permitiría pedir códigos saltándose el límite de solicitudes). Lo que hizo GER-58 fue quitarle utilidad: con 2⁶⁰ candidatos, mil intentos por segundo tienen ~8×10⁻¹³ de acertar durante los 15 minutos de vigencia. **Si alguna versión futura de `@convex-dev/auth` cambia `signInImpl` o `verifyCodeAndSignInImpl`, hay que revisar esta mitigación** — y si algún día la librería acepta cerrar la rama, el arreglo de verdad está ahí, no aquí.
 
-### Deuda con issue asignada
+### Gestión de usuarios (GER-48)
 
-- **GER-48** — al desactivar a alguien, sus sesiones y refresh tokens no se borran físicamente. No da acceso (`requireActiveUserId` deniega), pero conviene revocarlos.
+- **La autoridad es `requireOwnerId`** (`convex/authz.ts`), no la pantalla. `users:list`, `users:updateRole` y `users:setStatus` lanzan para quien no sea dueña activa. Que la navegación esconda "Usuarios" y que la pantalla redirija son comodidades de interfaz.
+- **Nadie se edita a sí misma.** Es lo que garantiza, sin contar nada, que **nunca quede el CRM sin ninguna dueña activa**: quien ejecuta esas mutaciones ya es una dueña activa, y si no puede tocar su propia ficha lo sigue siendo al terminar. Por eso no hay ninguna comprobación de "queda al menos una dueña": sería código inalcanzable.
+- **Desactivar revoca sesiones, refresh tokens y códigos emitidos.** `users:setStatus` a `inactivo` borra las `authSessions` del usuario con todos sus `authRefreshTokens` —replicando `deleteSession` de la librería— y los `authVerificationCodes` de sus cuentas. Sin refresh token no hay renovación, así que el JWT ya emitido caduca solo en 15 minutos. **No promete revocar operaciones en vuelo**: una solicitud de código que ya hubiera pasado su comprobación de estado puede crear el código después del borrado, porque son transacciones distintas. Es inofensivo —`password-reset-verify` comprueba el estado antes de consumirlo— y caduca en 15 minutos.
 
 ## Decisiones de alcance confirmadas (ver PRD en Notion)
 

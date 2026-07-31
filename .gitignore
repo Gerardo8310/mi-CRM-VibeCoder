@@ -42,3 +42,7 @@ next-env.d.ts
 
 # editor
 .idea
+
+# Restos de las sesiones de navegador con Playwright (MCP). Se recrea cada vez
+# que se prueba algo en el navegador y no tiene por qué viajar en el repo.
+.playwright-mcp/

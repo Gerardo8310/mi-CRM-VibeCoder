@@ -75,6 +75,37 @@ export async function requireActiveUserId(
 }
 
 /**
+ * Igual que `requireActiveUserId`, pero además exige el rol `duena` (GER-48).
+ *
+ * Es la autoridad de "Gestión de usuarios": quién puede listar el equipo,
+ * cambiar roles y cortar accesos. Vive aquí y no en `convex/users.ts` por la
+ * misma razón que las otras dos: este archivo es el único sitio donde se decide
+ * quién puede hacer qué, y repartir esa decisión por los módulos de negocio es
+ * cómo se acaba con dos reglas que discrepan.
+ *
+ * El mensaje SÍ distingue "no eres dueña" de "no hay sesión", al revés que
+ * `requireActiveUserId`. No es un descuido: para llegar aquí ya hace falta una
+ * sesión válida y activa, así que quien lo lee es alguien que ya está dentro y
+ * a quien no se le revela nada que no sepa — sabe que existe una pantalla que
+ * no le corresponde porque la navegación no se la ofrece.
+ *
+ * Cuesta una lectura más de la ficha que `requireActiveUserId` ya hizo. A este
+ * volumen no significa nada, y la alternativa —duplicar aquí la lógica de
+ * `getActiveUserId` para ahorrarse un `get`— es exactamente lo que este archivo
+ * existe para evitar.
+ */
+export async function requireOwnerId(ctx: QueryCtx): Promise<Id<"users">> {
+  const userId = await requireActiveUserId(ctx);
+
+  const user = await ctx.db.get(userId);
+  if (user === null || user.role !== "duena") {
+    throw new Error("Solo la dueña puede gestionar usuarios.");
+  }
+
+  return userId;
+}
+
+/**
  * Política de contraseña (GER-57 · Issue 2.5 de la auditoría del login).
  *
  * Entra en este issue y no en el 3 por una razón concreta: quitar `reset:
