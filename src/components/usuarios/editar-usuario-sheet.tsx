@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
-import { Check, Loader2, Mail, UserCheck, UserX } from "lucide-react";
+import { useAction, useMutation } from "convex/react";
+import { Check, Loader2, Mail, Send, UserCheck, UserX } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Avatar } from "@/components/ui/avatar";
@@ -18,6 +18,12 @@ export interface UsuarioEditable {
   email: string;
   role: Role;
   status: "activo" | "inactivo";
+  /**
+   * Lo calcula el servidor (`sinContrasena`, convex/invitations.ts) y llega
+   * resuelto en `users:list`. **No lo deduzcas aquí de `invitedAt` y
+   * `passwordSetAt`**: esa regla vive en un solo sitio a propósito.
+   */
+  sinContrasena: boolean;
 }
 
 /**
@@ -46,14 +52,22 @@ export function EditarUsuarioSheet({
 }) {
   const updateRole = useMutation(api.users.updateRole);
   const setStatus = useMutation(api.users.setStatus);
+  const resendInvitation = useAction(api.invitations.resendInvitation);
 
   const [role, setRole] = useState<Role>(usuario.role);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reenviando, setReenviando] = useState(false);
+  const [reenvio, setReenvio] = useState<string | null>(null);
 
   const activo = usuario.status === "activo";
   const roleChanged = role !== usuario.role;
+  // Las dos condiciones, no una: a alguien desactivado el correo no le serviría
+  // de nada, porque `password-reset-request` no le mandaría el código. El
+  // servidor exige lo mismo (`datosParaReenviar`) y es el que manda; esto solo
+  // evita ofrecer un botón que iba a fallar.
+  const puedeReenviar = usuario.sinContrasena && activo;
 
   function close() {
     if (saving) return;
@@ -77,6 +91,24 @@ export function EditarUsuarioSheet({
       setError("No se pudo guardar el cambio de rol. Inténtalo de nuevo.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleReenviar() {
+    if (reenviando) return;
+    setReenviando(true);
+    setReenvio(null);
+    try {
+      const { correoEnviado } = await resendInvitation({ userId: usuario._id });
+      setReenvio(
+        correoEnviado
+          ? "Invitación reenviada."
+          : "No se pudo enviar el correo. Inténtalo de nuevo en un momento."
+      );
+    } catch {
+      setReenvio("No se pudo reenviar la invitación.");
+    } finally {
+      setReenviando(false);
     }
   }
 
@@ -179,6 +211,32 @@ export function EditarUsuarioSheet({
           <RoleCards value={role} onChange={setRole} disabled={saving} />
         </div>
 
+        {/* Invitación todavía sin usar */}
+        {puedeReenviar && (
+          <div className="mb-6 border border-brand-500/25 bg-brand-50 p-3.5">
+            <p className="mb-2.5 text-[13px] leading-relaxed text-brand-700">
+              Todavía no ha elegido su contraseña. Puedes volver a mandarle el
+              correo con las instrucciones para entrar.
+            </p>
+            <button
+              type="button"
+              onClick={() => void handleReenviar()}
+              disabled={reenviando}
+              className="flex h-9 items-center gap-1.75 border border-brand-500/40 bg-white px-3.5 font-mono text-xs font-medium tracking-[-0.01em] text-brand-700 transition-colors hover:bg-brand-500/8 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {reenviando ? (
+                <Loader2 className="size-3.25 animate-spin" />
+              ) : (
+                <Send className="size-3.25" />
+              )}
+              Reenviar invitación
+            </button>
+            {reenvio && (
+              <p className="mt-2 text-[11px] text-brand-700">{reenvio}</p>
+            )}
+          </div>
+        )}
+
         {/* Zona de riesgo */}
         <div className="mb-1 border-t border-neutral-100 pt-5">
           <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-neutral-400">
@@ -217,7 +275,14 @@ export function EditarUsuarioSheet({
         open={confirming}
         nombre={usuario.name}
         saving={saving}
-        onCancel={() => setConfirming(false)}
+        // La guarda de `saving` va aquí y no dentro del modal porque este es su
+        // dueño: sus botones ya se deshabilitan mientras la mutación está en
+        // vuelo, pero Escape no pasaba por ellos y hacía desaparecer el diálogo
+        // con la operación corriendo. Es el mismo criterio que `close()` arriba
+        // (auditoría N13).
+        onCancel={() => {
+          if (!saving) setConfirming(false);
+        }}
         onConfirm={() => void cambiarEstado("inactivo")}
       />
     </>

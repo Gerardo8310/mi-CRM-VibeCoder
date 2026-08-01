@@ -20,10 +20,12 @@ import type * as followUps from "../followUps.js";
 import type * as history from "../history.js";
 import type * as http from "../http.js";
 import type * as interactions from "../interactions.js";
+import type * as invitations from "../invitations.js";
 import type * as migrations from "../migrations.js";
 import type * as opportunities from "../opportunities.js";
 import type * as passwordLogin from "../passwordLogin.js";
 import type * as passwordReset from "../passwordReset.js";
+import type * as resend from "../resend.js";
 import type * as users from "../users.js";
 
 import type {
@@ -45,10 +47,12 @@ declare const fullApi: ApiFromModules<{
   history: typeof history;
   http: typeof http;
   interactions: typeof interactions;
+  invitations: typeof invitations;
   migrations: typeof migrations;
   opportunities: typeof opportunities;
   passwordLogin: typeof passwordLogin;
   passwordReset: typeof passwordReset;
+  resend: typeof resend;
   users: typeof users;
 }>;
 

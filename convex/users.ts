@@ -3,6 +3,7 @@ import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { getActiveUserId, requireOwnerId } from "./authz";
+import { sinContrasena } from "./invitations";
 
 /**
  * Usuario en sesión, incluido su rol — decide el landing (Carlos -> /hoy,
@@ -46,7 +47,15 @@ export const viewer = query({
  *    puede dispararse nunca.
  */
 
-/** Todo el equipo, para la pantalla de gestión (GER-48). */
+/**
+ * Todo el equipo, para la pantalla de gestión (GER-48).
+ *
+ * `sinContrasena` viaja YA RESUELTO y `passwordSetAt` no sale de aquí: la regla
+ * que distingue a un invitado que aún no ha entrado vive en un solo sitio
+ * (convex/invitations.ts) y el cliente no tiene por qué conocerla. Mandar los
+ * campos crudos sería tener la misma regla escrita dos veces, en dos lenguajes,
+ * con dos oportunidades de que divergan.
+ */
 export const list = query({
   args: {},
   handler: async (ctx) => {
@@ -60,6 +69,7 @@ export const list = query({
       role: u.role,
       status: u.status,
       invitedAt: u.invitedAt,
+      sinContrasena: sinContrasena(u),
     }));
   },
 });

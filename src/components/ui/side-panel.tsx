@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { useDialogDismiss } from "@/lib/use-dialog-dismiss";
 
 /**
  * Panel lateral — pantalla completa en móvil, cajón de 400 px a la derecha en
@@ -16,20 +17,37 @@ import { X } from "lucide-react";
  * Se monta solo cuando está abierto: así los formularios de dentro nacen
  * limpios en cada apertura sin tener que reiniciarlos a mano.
  */
-export function SidePanel({
-  open,
-  onClose,
-  title,
-  children,
-  footer,
-}: {
+export function SidePanel(props: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   footer: ReactNode;
 }) {
-  if (!open) return null;
+  // El contenido va en un componente aparte, y no es una manía de organización:
+  // los enganches de teclado y foco deben existir SOLO mientras el panel está
+  // abierto. Con un `if (!open) return null` por delante de ellos, React se
+  // quejaría del orden de los hooks; con ellos por delante del `if`, el panel
+  // cerrado seguiría capturando Escape.
+  if (!props.open) return null;
+  return <SidePanelContent {...props} />;
+}
+
+function SidePanelContent({
+  onClose,
+  title,
+  children,
+  footer,
+}: {
+  onClose: () => void;
+  title: string;
+  children: ReactNode;
+  footer: ReactNode;
+}) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  // Sin `capture`: este es el diálogo de abajo cuando hay uno encima (el modal
+  // de confirmar). Ver la cabecera de use-dialog-dismiss.
+  useDialogDismiss({ ref: panelRef, onClose });
 
   return (
     <>
@@ -38,10 +56,14 @@ export function SidePanel({
         className="fixed inset-0 z-100 animate-[fadein_200ms_ease] bg-[rgba(17,16,14,0.45)]"
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="fixed inset-0 z-110 flex animate-[slideup_240ms_ease] flex-col bg-white lg:inset-y-0 lg:left-auto lg:right-0 lg:w-100 lg:animate-[fadein_200ms_ease] lg:shadow-[-8px_0_32px_rgba(17,16,14,0.14)]"
+        // Para poder recibir el foco al abrir sin ser un control en sí mismo.
+        // `-1` lo deja fuera del recorrido normal del tabulador.
+        tabIndex={-1}
+        className="fixed inset-0 z-110 flex animate-[slideup_240ms_ease] flex-col bg-white outline-none lg:inset-y-0 lg:left-auto lg:right-0 lg:w-100 lg:animate-[fadein_200ms_ease] lg:shadow-[-8px_0_32px_rgba(17,16,14,0.14)]"
       >
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-neutral-200 px-5">
           <button

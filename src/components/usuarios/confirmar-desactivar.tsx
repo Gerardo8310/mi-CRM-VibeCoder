@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import { Loader2, UserX } from "lucide-react";
+import { useDialogDismiss } from "@/lib/use-dialog-dismiss";
 
 /**
  * Confirmación de desactivar (GER-48). Ver el modal de
@@ -9,20 +11,35 @@ import { Loader2, UserX } from "lucide-react";
  * Solo lo pide desactivar, no reactivar: quitarle el acceso a alguien es la
  * acción que conviene confirmar; devolvérselo, no.
  */
-export function ConfirmarDesactivar({
-  open,
-  nombre,
-  saving,
-  onCancel,
-  onConfirm,
-}: {
+export function ConfirmarDesactivar(props: {
   open: boolean;
   nombre: string;
   saving: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }) {
-  if (!open) return null;
+  // Ver la nota del mismo reparto en src/components/ui/side-panel.tsx: los
+  // enganches de teclado solo deben existir mientras el modal está abierto.
+  if (!props.open) return null;
+  return <ConfirmarDesactivarContent {...props} />;
+}
+
+function ConfirmarDesactivarContent({
+  nombre,
+  saving,
+  onCancel,
+  onConfirm,
+}: {
+  nombre: string;
+  saving: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // `capture: true` porque este modal se abre ENCIMA del panel de editar, que
+  // también escucha Escape. La fase de captura corre primero, así que una
+  // pulsación cierra el modal y no llega al panel de debajo.
+  useDialogDismiss({ ref: dialogRef, onClose: onCancel, capture: true });
 
   // El nombre de pila para el título, el nombre completo en el cuerpo — como
   // en la maqueta ("¿Desactivar a Carlos?" / "Carlos Vargas ya no podrá…").
@@ -31,9 +48,11 @@ export function ConfirmarDesactivar({
   return (
     <div className="fixed inset-0 z-200 flex items-center justify-center bg-[rgba(17,16,14,0.55)] p-6">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-100 animate-[popin_220ms_ease] border border-neutral-200 bg-white shadow-lg"
+        tabIndex={-1}
+        className="w-full max-w-100 animate-[popin_220ms_ease] border border-neutral-200 bg-white shadow-lg outline-none"
       >
         <div className="flex items-start gap-3.5 px-6 pb-5 pt-6">
           <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-error-100">
