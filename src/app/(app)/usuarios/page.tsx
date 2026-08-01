@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
-import { Pencil, Users } from "lucide-react";
+import { Pencil, UserPlus, Users } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import { PageHeader } from "@/components/nav/page-header";
 import { Avatar } from "@/components/ui/avatar";
@@ -11,6 +11,7 @@ import {
   EditarUsuarioSheet,
   type UsuarioEditable,
 } from "@/components/usuarios/editar-usuario-sheet";
+import { InvitarUsuarioSheet } from "@/components/usuarios/invitar-usuario-sheet";
 import { cn } from "@/lib/utils";
 
 /**
@@ -19,9 +20,10 @@ import { cn } from "@/lib/utils";
  *
  * EL GATE DE ROL DE AQUÍ ES INTERFAZ, NO CONTROL DE ACCESO. El control está en
  * `requireOwnerId` (convex/authz.ts), que hace fallar `users:list`, `updateRole`
- * y `setStatus` para cualquiera que no sea dueña. Esto solo evita que alguien
- * que llegue a la URL se quede mirando una pantalla de error: si no es dueña, se
- * le devuelve a su sitio, y la consulta ni siquiera se lanza (`"skip"`).
+ * y `setStatus` para cualquiera que no sea dueña — y, desde la rama 2, también
+ * `invitations:invite` y `resendInvitation`. Esto solo evita que alguien que
+ * llegue a la URL se quede mirando una pantalla de error: si no es dueña, se le
+ * devuelve a su sitio, y la consulta ni siquiera se lanza (`"skip"`).
  *
  * Ese `"skip"` no es una optimización: `users:list` **lanza** para un vendedor,
  * y sin él la pantalla intentaría la consulta durante el instante previo a la
@@ -33,6 +35,7 @@ export default function UsuariosPage() {
   const esDuena = viewer?.role === "duena";
   const usuarios = useQuery(api.users.list, esDuena ? {} : "skip");
   const [editando, setEditando] = useState<UsuarioEditable | null>(null);
+  const [invitando, setInvitando] = useState(false);
 
   useEffect(() => {
     if (viewer === undefined) return; // cargando
@@ -68,7 +71,19 @@ export default function UsuariosPage() {
 
   return (
     <>
-      <PageHeader title="Gestión de usuarios" />
+      <PageHeader
+        title="Gestión de usuarios"
+        action={
+          <button
+            type="button"
+            onClick={() => setInvitando(true)}
+            className="flex h-9 shrink-0 items-center gap-1.5 border border-brand-500 bg-brand-500 px-3.5 font-mono text-xs font-medium text-white transition-colors hover:border-brand-600 hover:bg-brand-600"
+          >
+            <UserPlus className="size-3.25" />
+            Invitar usuario
+          </button>
+        }
+      />
 
       <div className="flex-1 overflow-y-auto pb-24 lg:pb-10">
         <div className="flex items-center gap-2 px-4 pb-3 pt-4.5 lg:px-6">
@@ -92,12 +107,21 @@ export default function UsuariosPage() {
             const esYo = u._id === viewer?._id;
             const activo = u.status === "activo";
             return (
-              <div
+              // Un `<button>` de verdad y no un `div` con `onClick` (N6 de la
+              // auditoría de la rama 1): así la fila entra en el recorrido del
+              // tabulador y responde a Enter y a Espacio sin escribir nada.
+              // `disabled` en la propia fila dice lo mismo que el "—" del final.
+              <button
                 key={u._id}
-                onClick={esYo ? undefined : () => setEditando(u)}
+                type="button"
+                disabled={esYo}
+                onClick={() => setEditando(u)}
+                aria-label={`Editar a ${u.name}`}
                 className={cn(
-                  "flex h-15 items-center border-b border-neutral-200 px-4 transition-colors last:border-b-0 lg:px-6",
-                  esYo ? "cursor-default" : "cursor-pointer hover:bg-neutral-50",
+                  "flex h-15 w-full items-center border-b border-neutral-200 px-4 text-left transition-colors last:border-b-0 lg:px-6",
+                  esYo
+                    ? "cursor-default"
+                    : "cursor-pointer hover:bg-neutral-50 focus-visible:bg-neutral-50 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-500",
                   !activo && "bg-neutral-50/60"
                 )}
               >
@@ -136,23 +160,35 @@ export default function UsuariosPage() {
                   <InsigniaRol role={u.role} activo={activo} />
                 </div>
 
-                <div className="flex flex-1 items-center gap-1.25">
-                  <span
-                    className={cn(
-                      "size-1.75 shrink-0 rounded-full",
-                      activo ? "bg-success-500" : "bg-neutral-400"
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "text-xs",
-                      activo
-                        ? "font-medium text-success-700"
-                        : "text-neutral-500"
-                    )}
-                  >
-                    {activo ? "Activo" : "Inactivo"}
+                <div className="flex flex-1 flex-col justify-center gap-0.75">
+                  <span className="flex items-center gap-1.25">
+                    <span
+                      className={cn(
+                        "size-1.75 shrink-0 rounded-full",
+                        activo ? "bg-success-500" : "bg-neutral-400"
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "text-xs",
+                        activo
+                          ? "font-medium text-success-700"
+                          : "text-neutral-500"
+                      )}
+                    >
+                      {activo ? "Activo" : "Inactivo"}
+                    </span>
                   </span>
+                  {/*
+                    Lo calcula el servidor y llega resuelto (`sinContrasena`,
+                    convex/invitations.ts). Aquí no se deduce de ningún campo:
+                    la regla vive en un solo sitio.
+                  */}
+                  {u.sinContrasena && (
+                    <span className="w-fit whitespace-nowrap rounded-badge border border-brand-500/25 bg-brand-50 px-1.5 text-[10px] font-medium leading-4 text-brand-700">
+                      Sin contraseña
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex w-22.5 shrink-0 justify-end">
@@ -167,34 +203,36 @@ export default function UsuariosPage() {
                     </span>
                   )}
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
 
-        {/*
-          Estado vacío. La maqueta pone aquí "Invita a tu equipo para empezar" y
-          un botón "Invitar primer usuario"; **ese texto y ese botón llegan con
-          la rama 2**, que es la que trae `invitations.invite`. Hasta entonces
-          el texto no promete una acción que la pantalla no puede hacer: es
-          preferible a dejar un botón muerto o una llamada a la acción sin
-          destino. Al terminar la rama 2 esto vuelve a ser literalmente la
-          maqueta.
-        */}
         {soloYo && (
           <div className="flex flex-col items-center px-4 py-9 text-center">
             <div className="mb-4 flex size-13 items-center justify-center rounded-full bg-neutral-100">
               <Users className="size-6 text-neutral-400" />
             </div>
             <h3 className="mb-2 font-mono text-[15px] font-semibold tracking-[-0.01em] text-neutral-950">
-              Todavía eres la única persona en el CRM
+              Invita a tu equipo para empezar
             </h3>
-            <p className="max-w-70 text-[13px] leading-relaxed text-neutral-500">
-              Cuando haya más gente aparecerá aquí, con su rol y su estado.
+            <p className="mb-5 max-w-70 text-[13px] leading-relaxed text-neutral-500">
+              Añade a tus vendedores para que gestionen clientes, ventas y
+              seguimientos.
             </p>
+            <button
+              type="button"
+              onClick={() => setInvitando(true)}
+              className="flex h-10 items-center gap-1.75 border border-brand-500 bg-brand-500 px-4 font-mono text-[13px] font-medium text-white transition-colors hover:border-brand-600 hover:bg-brand-600"
+            >
+              <UserPlus className="size-3.5" />
+              Invitar primer usuario
+            </button>
           </div>
         )}
       </div>
+
+      {invitando && <InvitarUsuarioSheet onClose={() => setInvitando(false)} />}
 
       {editando !== null && (
         <EditarUsuarioSheet
@@ -241,7 +279,7 @@ function InsigniaRol({
   return (
     <span
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-badge border px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex h-fit items-center whitespace-nowrap rounded-badge border px-2 py-0.5 text-[11px] font-medium",
         !activo
           ? "border-neutral-300 bg-neutral-100 text-neutral-600"
           : duena

@@ -20,6 +20,14 @@ export default defineSchema({
     // Soporte del flujo de invitación por correo (GER-48) — no es una función visible.
     invitedBy: v.optional(v.id("users")),
     invitedAt: v.optional(v.number()),
+    // Cuándo eligió esta persona su contraseña (GER-48, rama 2).
+    //
+    // Su ausencia NO significa "no tiene contraseña": las fichas anteriores a
+    // este cambio —la de Martha— tampoco lo tienen y sí la tienen. Lo que
+    // distingue a un invitado que aún no ha entrado es la conjunción con
+    // `invitedAt`, y esa regla vive en un solo sitio: `sinContrasena`
+    // (convex/invitations.ts). No deducirla campo a campo en ningún otro lado.
+    passwordSetAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
   // Límite de solicitudes de recuperación de contraseña (GER-53 · auditoría M2).

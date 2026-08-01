@@ -9,9 +9,11 @@ import {
   useState,
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useConvex } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import {
   AlertCircle,
+  ArrowLeft,
   Eye,
   EyeOff,
   Lock,
@@ -19,6 +21,7 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
+import { api } from "@convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 // Fuente única de estas dos reglas, compartida con el servidor (GER-59).
@@ -78,15 +81,31 @@ function caretInGroupedCode(utiles: number, agrupadoLength: number): number {
 /**
  * Pantalla 0 del MVP — ver Design/Login.dc.html y GER-7.
  *
- * Cuatro modos: entrar, crear la primera cuenta, pedir código de recuperación
- * y canjearlo. El modo "Crear la primera cuenta" es temporal (solo para
- * arrancar el proyecto): el servidor (convex/auth.ts) rechaza el alta en
- * cuanto ya existe un usuario — a partir de ahí todo pasa por GER-48.
+ * EL LOGIN VA EN DOS PASOS DESDE GER-48 (rama 2), Y NO ES COSMÉTICO
  *
- * "Continuar con Google" (GER-51) convive con el formulario. Cuando el
- * servidor rechaza una cuenta de Google no provisionada, el rechazo ocurre
- * dentro del callback de OAuth y nunca llega como excepción a este cliente
- * (Convex Auth solo hace un redirect genérico) — por eso usamos
+ * Primero el correo, y solo después lo que corresponda: la contraseña, o un
+ * código si la persona **todavía no tiene ninguna**. Antes se pedían las dos
+ * cosas a la vez, así que alguien recién invitado no tenía más salida que pulsar
+ * "¿Olvidaste tu contraseña?" — y no la había olvidado, nunca la había tenido.
+ * El CRM le hacía decir algo falso para dejarle entrar.
+ *
+ * Quién necesita qué lo decide el servidor (`methodFor`, convex/passwordLogin.ts),
+ * nunca esta pantalla. Aquí solo se pinta la respuesta.
+ *
+ * Los cuatro modos: `identify` (el correo), `password` (la contraseña),
+ * `reset-verify` (el código + la contraseña nueva) y `signUp`, que es temporal —
+ * solo sirve para arrancar el proyecto, porque convex/auth.ts rechaza el alta en
+ * cuanto ya existe un usuario.
+ *
+ * DESAPARECIÓ EL MODO "reset-request". Pedía el correo para mandar el código, y
+ * ya no hace falta: cuando alguien pulsa "¿Olvidaste tu contraseña?" estamos en
+ * el paso 2 y su correo ya está escrito. Volver a pedírselo era trabajo suyo sin
+ * contrapartida. Los proveedores a los que se llama son exactamente los mismos.
+ *
+ * "Continuar con Google" (GER-51) convive con el formulario, en el primer paso.
+ * Cuando el servidor rechaza una cuenta de Google no provisionada, el rechazo
+ * ocurre dentro del callback de OAuth y nunca llega como excepción a este
+ * cliente (Convex Auth solo hace un redirect genérico) — por eso usamos
  * `redirectTo: "/login?g=1"` y mostramos un banner aparte al volver sin sesión
  * con esa marca, en vez de un `catch` como el de contraseña.
  *
@@ -102,10 +121,19 @@ export default function LoginPage() {
   );
 }
 
-type Mode = "signIn" | "signUp" | "reset-request" | "reset-verify";
+type Mode = "identify" | "password" | "signUp" | "reset-verify";
+
+/**
+ * Por qué se llegó a la pantalla del código. Solo cambia los textos: el
+ * formulario, el proveedor y el canje son idénticos en los dos casos.
+ */
+type CodeOrigin = "setup" | "forgot";
 
 // Mismo texto exista o no la cuenta: si dijéramos "ese correo no existe",
 // cualquiera podría averiguar quién tiene acceso al CRM probando correos.
+//
+// Se sigue usando en el camino "olvidé mi contraseña", donde el correo puede no
+// tener cuenta de contraseña (p. ej. quien entra siempre con Google).
 const RESET_SENT_MESSAGE = `Si ese correo tiene una cuenta, le enviamos un código de ${CODE_LENGTH} caracteres. Puede tardar un minuto en llegar.`;
 
 const RESET_FAILED_MESSAGE =
@@ -116,25 +144,27 @@ const RESET_FAILED_MESSAGE =
 // les llegará un código — la pantalla se lo prometía igual y se quedaban
 // esperando un correo que no iba a existir.
 //
-// Se muestra a todo el mundo, sin condicionales. Enseñarlo solo a quien no
-// tiene contraseña convertiría la pantalla en un detector de qué método usa
-// cada cuenta, que es justo lo que RESET_SENT_MESSAGE evita.
+// Solo se muestra en el camino "olvidé mi contraseña". En el de estreno sobra:
+// ahí el servidor ya confirmó que existe una cuenta de contraseña esperando.
 const GOOGLE_HINT =
   "¿Sueles entrar con Google? Entonces no tienes contraseña que recuperar: vuelve y usa “Continuar con Google”.";
 
 function LoginPageContent() {
   const { signIn } = useAuthActions();
+  const convex = useConvex();
   const router = useRouter();
   const searchParams = useSearchParams();
   const googleRejected = searchParams.get("g") === "1";
 
-  const [mode, setMode] = useState<Mode>("signIn");
+  const [mode, setMode] = useState<Mode>("identify");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
+  // El correo identificado en el paso 1. A partir de ahí no se vuelve a pedir.
+  const [email, setEmail] = useState("");
+  const [codeOrigin, setCodeOrigin] = useState<CodeOrigin>("forgot");
   const [resetCode, setResetCode] = useState("");
   const codeInputRef = useRef<HTMLInputElement>(null);
   // Cuántos caracteres útiles había por delante del cursor en el último cambio.
@@ -160,11 +190,10 @@ function LoginPageContent() {
   }, [resetCode]);
 
   const isSignUp = mode === "signUp";
-  const isResetting = mode === "reset-request" || mode === "reset-verify";
 
   const bannerMessage =
     error ??
-    (googleRejected && mode === "signIn"
+    (googleRejected && mode === "identify"
       ? "No se pudo completar el inicio de sesión con Google. Si crees que deberías tener acceso, contacta a la dueña."
       : null);
 
@@ -187,6 +216,67 @@ function LoginPageContent() {
       );
     } finally {
       setGoogleLoading(false);
+    }
+  }
+
+  /**
+   * Paso 1: identificar el correo y preguntarle al servidor qué toca.
+   *
+   * `methodFor` no distingue "no existe" de "existe y tiene contraseña": las dos
+   * responden `"password"` y las dos acaban en el mismo formulario. Quien escriba
+   * un correo inventado verá el campo de contraseña como cualquiera, y fallará al
+   * enviarlo — que es exactamente lo que pasaba antes.
+   */
+  async function handleIdentify(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+    const escrito = String(new FormData(event.currentTarget).get("email") ?? "");
+    try {
+      const method = await convex.query(api.passwordLogin.methodFor, {
+        email: escrito,
+      });
+      setEmail(escrito);
+      if (method === "setup") {
+        await pedirCodigo(escrito, "setup");
+      } else {
+        setMode("password");
+        setLoading(false);
+      }
+    } catch {
+      setError("No se pudo continuar. Revisa tu conexión e intenta de nuevo.");
+      setLoading(false);
+    }
+  }
+
+  /**
+   * Manda el código y lleva a la pantalla de canje. Sirve a los dos caminos —el
+   * estreno de contraseña y el olvido— porque el proveedor es el mismo desde que
+   * las invitaciones reutilizan la recuperación (convex/invitations.ts).
+   *
+   * Nunca informa de por qué falló: da igual que la cuenta no exista, que se
+   * haya agotado el límite o que Resend esté caído. Avanzar siempre igual es lo
+   * que impide usar esta pantalla para averiguar quién tiene cuenta.
+   */
+  async function pedirCodigo(destino: string, origen: CodeOrigin) {
+    setLoading(true);
+    try {
+      await signIn("password-reset-request", { email: destino });
+    } catch {
+      // Deliberadamente vacío: ver arriba.
+    } finally {
+      setCodeOrigin(origen);
+      // Pedir un código nuevo invalida el anterior, así que el campo tiene que
+      // empezar vacío: dejar el viejo escrito solo invita a reenviarlo y fallar.
+      setResetCode("");
+      setError(null);
+      setInfo(
+        origen === "setup"
+          ? `Te enviamos un código de ${CODE_LENGTH} caracteres a ${destino}. Puede tardar un minuto en llegar.`
+          : RESET_SENT_MESSAGE
+      );
+      setMode("reset-verify");
+      setLoading(false);
     }
   }
 
@@ -229,27 +319,6 @@ function LoginPageContent() {
     }
   }
 
-  async function handleResetRequest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
-    setLoading(true);
-    const email = String(new FormData(event.currentTarget).get("email") ?? "");
-    try {
-      await signIn("password-reset-request", { email });
-    } catch {
-      // Da igual por qué falló —cuenta inexistente, límite alcanzado o Resend
-      // caído—: avanzamos igual y con el mismo texto, para no filtrar nada.
-    } finally {
-      setResetEmail(email);
-      // Pedir un código nuevo invalida el anterior, así que el campo tiene que
-      // empezar vacío: dejar el viejo escrito solo invita a reenviarlo y fallar.
-      setResetCode("");
-      setInfo(RESET_SENT_MESSAGE);
-      setMode("reset-verify");
-      setLoading(false);
-    }
-  }
-
   async function handleResetVerify(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
@@ -276,7 +345,7 @@ function LoginPageContent() {
       // correo antes de que la librería lo use como identificador del límite de
       // intentos. Ver convex/passwordReset.ts.
       const result = await signIn("password-reset-verify", {
-        email: resetEmail,
+        email,
         // El estado es la forma CANÓNICA, no la que se ve: en pantalla hay
         // guiones y aquí no. Es deliberado y es lo que arregló M1 — el Convex
         // anterior toma `params.code` en crudo, así que enviarle la forma
@@ -287,8 +356,9 @@ function LoginPageContent() {
       if (!result.signingIn) {
         throw new Error("No se pudo canjear el código");
       }
-      // Cambiar la contraseña ya deja al usuario con sesión —y cierra las de
-      // los demás dispositivos—, así que solo falta llevarlo a su destino.
+      // Elegir la contraseña ya deja al usuario con sesión —y cierra las de los
+      // demás dispositivos—, así que solo falta llevarlo a su destino. Vale
+      // igual para quien la estrena y para quien la cambia.
       router.replace("/");
     } catch {
       setError(RESET_FAILED_MESSAGE);
@@ -296,21 +366,23 @@ function LoginPageContent() {
     }
   }
 
+  const esEstreno = codeOrigin === "setup";
+
   const heading = {
-    signIn: "Bienvenido de vuelta",
+    identify: "Bienvenido de vuelta",
+    password: "Bienvenido de vuelta",
     signUp: "Crear la primera cuenta",
-    "reset-request": "Recuperar tu contraseña",
-    "reset-verify": "Revisa tu correo",
+    "reset-verify": esEstreno ? "Elige tu contraseña" : "Revisa tu correo",
   }[mode];
 
   const subheading = {
-    signIn: "Entra a tu CRM",
+    identify: "Escribe tu correo para entrar a tu CRM.",
+    password: `Entra con la contraseña de ${email}.`,
     signUp:
       "Esta cuenta será la dueña (Martha). Solo funciona si el sistema todavía no tiene usuarios.",
-    "reset-request": `Escribe tu correo y te enviamos un código de ${CODE_LENGTH} caracteres para elegir una contraseña nueva.`,
-    "reset-verify": resetEmail
-      ? `Escribe el código que enviamos a ${resetEmail} y elige tu contraseña nueva.`
-      : "Escribe el código que te enviamos y elige tu contraseña nueva.",
+    "reset-verify": esEstreno
+      ? "Es tu primera vez, así que no tienes contraseña todavía. Escribe el código que te enviamos y elige con cuál entrarás a partir de ahora."
+      : `Escribe el código que enviamos a ${email} y elige tu contraseña nueva.`,
   }[mode];
 
   return (
@@ -373,26 +445,9 @@ function LoginPageContent() {
             </div>
           )}
 
-          {/* Entrar / crear la primera cuenta */}
-          {!isResetting && (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {isSignUp && (
-                <div>
-                  <Label htmlFor="name">Nombre completo</Label>
-                  <div className="relative">
-                    <User className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      placeholder="Martha Vargas"
-                      required
-                      disabled={loading}
-                      className="pl-8.5"
-                    />
-                  </div>
-                </div>
-              )}
+          {/* Paso 1 — solo el correo */}
+          {mode === "identify" && (
+            <form onSubmit={handleIdentify} className="flex flex-col gap-4">
               <div>
                 <Label htmlFor="email">Correo electrónico</Label>
                 <div className="relative">
@@ -401,14 +456,37 @@ function LoginPageContent() {
                     id="email"
                     name="email"
                     type="email"
+                    // Los gestores de contraseñas necesitan ver el correo
+                    // marcado como `username` para poder ofrecer la contraseña
+                    // en el paso siguiente. Con el formulario partido en dos
+                    // pantallas, sin esto muchos no rellenan nada.
+                    autoComplete="username"
                     placeholder="carlos@ejemplo.mx"
                     required
+                    autoFocus
+                    defaultValue={email}
                     disabled={loading}
                     error={!!error}
                     className="pl-8.5"
                   />
                 </div>
               </div>
+              <Button
+                type="submit"
+                size="lg"
+                loading={loading}
+                className="mt-0.5 w-full"
+              >
+                {loading ? "Un momento..." : "Continuar"}
+              </Button>
+            </form>
+          )}
+
+          {/* Paso 2 — la contraseña */}
+          {mode === "password" && (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {/* El correo ya no se escribe, pero sigue viajando en el envío. */}
+              <input type="hidden" name="email" value={email} readOnly />
               <div>
                 <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">
@@ -417,18 +495,15 @@ function LoginPageContent() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder={
-                      isSignUp
-                        ? `Mínimo ${MIN_PASSWORD_LENGTH} caracteres`
-                        : "Tu contraseña"
-                    }
+                    autoComplete="current-password"
+                    placeholder="Tu contraseña"
                     required
-                    // Solo en el alta (GER-59 · 3.1). Este mismo campo sirve
-                    // para entrar, y exigir el mínimo nuevo ahí dejaría fuera a
-                    // quien tenga una contraseña más corta de antes: no podría
-                    // ni enviar el formulario. La política se aplica al crear y
-                    // al cambiar, nunca al entrar — igual que en el servidor.
-                    minLength={isSignUp ? MIN_PASSWORD_LENGTH : undefined}
+                    autoFocus
+                    // Sin `minLength`: este campo sirve para entrar, y exigir el
+                    // mínimo nuevo aquí dejaría fuera a quien tenga una
+                    // contraseña más corta de antes — no podría ni enviar el
+                    // formulario. La política se aplica al crear y al cambiar,
+                    // nunca al entrar (GER-59 · 3.1), igual que en el servidor.
                     disabled={loading}
                     error={!!error}
                     className="pl-8.5 pr-10.5"
@@ -448,43 +523,96 @@ function LoginPageContent() {
                   </button>
                 </div>
               </div>
-              <Button type="submit" size="lg" loading={loading} className="mt-0.5 w-full">
-                {loading
-                  ? "Verificando..."
-                  : isSignUp
-                    ? "Crear cuenta"
-                    : "Entrar"}
+              <Button
+                type="submit"
+                size="lg"
+                loading={loading}
+                className="mt-0.5 w-full"
+              >
+                {loading ? "Verificando..." : "Entrar"}
               </Button>
             </form>
           )}
 
-          {/* Pedir el código */}
-          {mode === "reset-request" && (
-            <form onSubmit={handleResetRequest} className="flex flex-col gap-4">
+          {/* Crear la primera cuenta (bootstrap) */}
+          {isSignUp && (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div>
-                <Label htmlFor="reset-email">Correo electrónico</Label>
+                <Label htmlFor="name">Nombre completo</Label>
                 <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
+                  <User className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
                   <Input
-                    id="reset-email"
-                    name="email"
-                    type="email"
-                    placeholder="carlos@ejemplo.mx"
+                    id="name"
+                    name="name"
+                    type="text"
+                    placeholder="Martha Vargas"
                     required
-                    autoFocus
-                    defaultValue={resetEmail}
                     disabled={loading}
                     className="pl-8.5"
                   />
                 </div>
               </div>
-              <Button type="submit" size="lg" loading={loading} className="mt-0.5 w-full">
-                {loading ? "Enviando..." : "Enviarme el código"}
+              <div>
+                <Label htmlFor="signup-email">Correo electrónico</Label>
+                <div className="relative">
+                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
+                  <Input
+                    id="signup-email"
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    placeholder="carlos@ejemplo.mx"
+                    required
+                    defaultValue={email}
+                    disabled={loading}
+                    error={!!error}
+                    className="pl-8.5"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="signup-password">Contraseña</Label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
+                  <Input
+                    id="signup-password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
+                    required
+                    minLength={MIN_PASSWORD_LENGTH}
+                    disabled={loading}
+                    error={!!error}
+                    className="pl-8.5 pr-10.5"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    aria-label="Mostrar u ocultar contraseña"
+                    className="absolute right-0 top-0 flex h-full w-10.5 items-center justify-center text-neutral-400"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-3.5" />
+                    ) : (
+                      <Eye className="size-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <Button
+                type="submit"
+                size="lg"
+                loading={loading}
+                className="mt-0.5 w-full"
+              >
+                {loading ? "Verificando..." : "Crear cuenta"}
               </Button>
             </form>
           )}
 
-          {/* Canjear el código y elegir contraseña nueva */}
+          {/* Canjear el código y elegir contraseña */}
           {mode === "reset-verify" && (
             <form onSubmit={handleResetVerify} className="flex flex-col gap-4">
               <div>
@@ -518,13 +646,16 @@ function LoginPageContent() {
                 />
               </div>
               <div>
-                <Label htmlFor="newPassword">Contraseña nueva</Label>
+                <Label htmlFor="newPassword">
+                  {esEstreno ? "Tu contraseña" : "Contraseña nueva"}
+                </Label>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 size-3.5 -translate-y-1/2 text-neutral-400" />
                   <Input
                     id="newPassword"
                     name="newPassword"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
                     required
                     minLength={MIN_PASSWORD_LENGTH}
@@ -555,6 +686,7 @@ function LoginPageContent() {
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
                     placeholder="La misma de arriba"
                     required
                     minLength={MIN_PASSWORD_LENGTH}
@@ -564,13 +696,22 @@ function LoginPageContent() {
                   />
                 </div>
               </div>
-              <Button type="submit" size="lg" loading={loading} className="mt-0.5 w-full">
-                {loading ? "Cambiando..." : "Cambiar mi contraseña"}
+              <Button
+                type="submit"
+                size="lg"
+                loading={loading}
+                className="mt-0.5 w-full"
+              >
+                {loading
+                  ? "Guardando..."
+                  : esEstreno
+                    ? "Entrar al CRM"
+                    : "Cambiar mi contraseña"}
               </Button>
             </form>
           )}
 
-          {mode === "signIn" && (
+          {mode === "identify" && (
             <>
               <div className="my-4 flex items-center gap-3">
                 <div className="h-px flex-1 bg-neutral-200" />
@@ -612,64 +753,67 @@ function LoginPageContent() {
             </>
           )}
 
-          {isResetting && (
+          {mode === "reset-verify" && !esEstreno && (
             <p className="mt-4 text-[13px] leading-snug text-neutral-500">
               {GOOGLE_HINT}
             </p>
           )}
 
-          <div className="mt-4 flex items-center justify-between">
-            {mode === "signIn" && (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            {mode === "identify" && (
+              <button
+                type="button"
+                onClick={() => goTo("signUp")}
+                className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
+              >
+                ¿Primera vez? Crear cuenta
+              </button>
+            )}
+            {mode === "password" && (
               <>
                 <button
                   type="button"
-                  onClick={() => goTo("reset-request")}
-                  className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
+                  onClick={() => void pedirCodigo(email, "forgot")}
+                  disabled={loading}
+                  className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline disabled:opacity-50"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
                 <button
                   type="button"
-                  onClick={() => goTo("signUp")}
-                  className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
+                  onClick={() => goTo("identify")}
+                  className="flex items-center gap-1 text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
                 >
-                  ¿Primera vez? Crear cuenta
+                  <ArrowLeft className="size-3" />
+                  Otro correo
                 </button>
               </>
             )}
-            {mode === "signUp" && (
+            {isSignUp && (
               <button
                 type="button"
-                onClick={() => goTo("signIn")}
+                onClick={() => goTo("identify")}
                 className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
               >
                 Ya tengo cuenta
-              </button>
-            )}
-            {mode === "reset-request" && (
-              <button
-                type="button"
-                onClick={() => goTo("signIn")}
-                className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
-              >
-                Volver al inicio de sesión
               </button>
             )}
             {mode === "reset-verify" && (
               <>
                 <button
                   type="button"
-                  onClick={() => goTo("reset-request")}
-                  className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
+                  onClick={() => void pedirCodigo(email, codeOrigin)}
+                  disabled={loading}
+                  className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline disabled:opacity-50"
                 >
                   Pedir otro código
                 </button>
                 <button
                   type="button"
-                  onClick={() => goTo("signIn")}
+                  onClick={() => goTo("identify")}
                   className="text-[13px] text-neutral-500 underline-offset-2 hover:text-brand-600 hover:underline"
                 >
-                  Volver al inicio de sesión
+                  Volver al inicio
                 </button>
               </>
             )}

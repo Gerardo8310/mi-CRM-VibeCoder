@@ -1,10 +1,12 @@
 import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
 import { createAccount, retrieveAccount } from "@convex-dev/auth/server";
-import { internalQuery } from "./_generated/server";
+import { v } from "convex/values";
+import { internalQuery, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import { normalizeEmail } from "./email";
 import { MIN_PASSWORD_MESSAGE, validatePassword } from "./authz";
+import { sinContrasena } from "./invitations";
 
 /**
  * Entrar y darse de alta con contraseña, en dos proveedores propios (GER-54).
@@ -96,6 +98,51 @@ export const anyUserExists = internalQuery({
   args: {},
   handler: async (ctx) => {
     return (await ctx.db.query("users").first()) !== null;
+  },
+});
+
+/**
+ * Qué pedirle a este correo en el segundo paso del login (GER-48, rama 2).
+ *
+ * `"setup"` significa "esta persona fue invitada y todavía no ha elegido
+ * contraseña": hay que mandarle un código, no pedirle algo que no tiene.
+ * `"password"` es todo lo demás.
+ *
+ * POR QUÉ EXISTE: hasta ahora la pantalla pedía correo y contraseña a la vez, así
+ * que a un invitado no le quedaba más remedio que pulsar "¿Olvidaste tu
+ * contraseña?". No la olvidó — nunca la tuvo, y el CRM le hacía decir lo
+ * contrario.
+ *
+ * EL VALOR POR DEFECTO ES EL QUE NO DICE NADA. Un correo que no existe responde
+ * `"password"`, igual que una cuenta normal, igual que una desactivada, igual
+ * que una que entra solo con Google. La única clase que esta función distingue
+ * es "invitado que aún no ha entrado".
+ *
+ * ESA FUGA ES REAL Y ESTÁ ACEPTADA. Cualquiera puede preguntar por cualquier
+ * correo, y de uno recién invitado sabrá que lo está. Se eligió a sabiendas
+ * frente a la alternativa —no delatar a nadie a cambio de mantener el "olvidé mi
+ * contraseña" postizo—, y la ventana se cierra sola en cuanto la persona entra:
+ * a partir de ahí su ficha responde como las demás. Lo que NO se puede hacer es
+ * ampliarla: cualquier respuesta nueva aquí es un canal nuevo.
+ */
+export const methodFor = query({
+  args: { email: v.string() },
+  returns: v.union(v.literal("password"), v.literal("setup")),
+  handler: async (ctx, { email }) => {
+    const normalized = normalizeEmail(email);
+    if (normalized.length === 0) return "password";
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", normalized))
+      .unique();
+
+    // Una ficha desactivada responde como cualquier otra: `password-reset-request`
+    // no le mandaría el código de todos modos (GER-54), así que ofrecerle el
+    // camino del código sería prometerle algo que no ocurre.
+    if (user === null || user.status !== "activo") return "password";
+
+    return sinContrasena(user) ? "setup" : "password";
   },
 });
 

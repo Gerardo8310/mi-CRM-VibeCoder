@@ -130,6 +130,23 @@ export const logResetSendFailure = internalMutation({
   },
 });
 
+/**
+ * Deja constancia de que esta persona ya eligió una contraseña (GER-48, rama 2).
+ *
+ * Es lo que convierte a un invitado en un usuario normal a ojos de `methodFor`
+ * (convex/passwordLogin.ts): a partir de aquí el login le pide su contraseña en
+ * vez de mandarle un código.
+ *
+ * **VA LA ÚLTIMA DE LAS TRES ESCRITURAS DEL CANJE, Y ESO ES SEGURIDAD, NO
+ * ORDEN ARBITRARIO.** Ver el comentario en `PasswordResetVerify`.
+ */
+export const markPasswordSet = internalMutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, { userId }) => {
+    await ctx.db.patch(userId, { passwordSetAt: Date.now() });
+  },
+});
+
 export const PasswordResetRequest = ConvexCredentials<DataModel>({
   id: "password-reset-request",
   // Necesario desde que `Password` ya no declara `reset: ResendOTP`: los
@@ -342,6 +359,23 @@ export const PasswordResetVerify = ConvexCredentials<DataModel>({
     // El código pertenece a otra cuenta: no cambiamos ninguna contraseña.
     if (account.userId !== result.userId) return null;
 
+    // LAS TRES ESCRITURAS VAN EN ESTE ORDEN Y NO EN OTRO (GER-48, auditoría M4).
+    //
+    // Son tres transacciones distintas, así que cualquiera puede fallar dejando
+    // hechas las anteriores. Eso obliga a ordenarlas por lo que cuesta perderlas:
+    //
+    //   1. La contraseña nueva.
+    //   2. El cierre de las demás sesiones — la razón de ser de cambiarla.
+    //   3. La marca de "ya tiene contraseña", que es solo clasificación.
+    //
+    // Poner (3) en medio —como estuvo en el primer borrador de este cambio—
+    // significaba que un fallo del marcado impedía llegar a (2): la contraseña
+    // quedaba cambiada y las sesiones de los demás dispositivos, vivas. Eso es
+    // perder la garantía entera del cambio de contraseña.
+    //
+    // Al final, en cambio, lo peor que puede pasar es que la persona siga
+    // clasificada como "sin contraseña" teniéndola: se le pedirá un código de más
+    // la próxima vez, y ese código vuelve a pasar por aquí y lo arregla.
     const { userId, sessionId } = result;
     await modifyAccountCredentials(ctx, {
       provider: "password",
@@ -350,6 +384,9 @@ export const PasswordResetVerify = ConvexCredentials<DataModel>({
     // Cambiar la contraseña cierra la sesión de los demás dispositivos, pero no
     // la que acaba de crear el canje.
     await invalidateSessions(ctx, { userId, except: [sessionId] });
+    // Y solo entonces, la clasificación. Sirve para el canje de siempre y para
+    // el estreno de un invitado: los dos pasan por esta misma línea.
+    await ctx.runMutation(internal.passwordReset.markPasswordSet, { userId });
 
     return { userId, sessionId };
   },

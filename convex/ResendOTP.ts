@@ -1,6 +1,7 @@
 import { Email } from "@convex-dev/auth/providers/Email";
 import { normalizeEmail } from "./email";
 import { CODE_GROUP_SIZE, CODE_LENGTH } from "./authConstants";
+import { EMAIL_FROM, sendEmail } from "./resend";
 
 /**
  * Proveedor de correo que manda el código de recuperación (GER-53).
@@ -142,9 +143,25 @@ function formatCodeForDisplay(code: string): string {
 const DASHES_NOTE =
   "Los guiones son solo para leerlo mejor: puedes escribirlo sin ellos.";
 
+/**
+ * LA REDACCIÓN ES NEUTRA A PROPÓSITO (GER-48, rama 2).
+ *
+ * Este mismo correo lo recibe quien está CAMBIANDO su contraseña y quien está
+ * ELIGIENDO LA PRIMERA, porque desde las invitaciones los dos casos recorren el
+ * mismo par de proveedores (convex/passwordReset.ts). Decía antes "recibimos una
+ * solicitud para cambiar tu contraseña", que a un invitado le miente: él no
+ * cambia nada, la estrena.
+ *
+ * No caben dos versiones sin duplicar media infraestructura:
+ * `sendVerificationRequest` recibe solo `{identifier, url, token, expires,
+ * provider, request, theme}` (server/implementation/signIn.ts), así que ningún
+ * parámetro nuestro llega hasta aquí. Distinguir los dos correos exigiría un
+ * SEGUNDO proveedor Email y un segundo par pedir/canjear, es decir duplicar la
+ * superficie auditada de GER-53/57/58 para cambiar una frase.
+ */
 function plainTextBody(displayCode: string, minutes: number) {
   return [
-    "Recibimos una solicitud para cambiar tu contraseña de SolarCRM.",
+    "Usa este código para elegir tu contraseña de SolarCRM.",
     "",
     `Tu código es: ${displayCode}`,
     "",
@@ -161,7 +178,7 @@ function plainTextBody(displayCode: string, minutes: number) {
 // cliente de correo del móvil.
 function htmlBody(displayCode: string, minutes: number) {
   return `<div style="font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#1c1917;line-height:1.5">
-  <p>Recibimos una solicitud para cambiar tu contraseña de <strong>SolarCRM</strong>.</p>
+  <p>Usa este código para elegir tu contraseña de <strong>SolarCRM</strong>.</p>
   <p style="margin:24px 0">
     <span style="display:inline-block;padding:12px 16px;background:#f5f5f4;border:1px solid #e7e5e4;border-radius:6px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:22px;font-weight:600;letter-spacing:2px;white-space:nowrap">${displayCode}</span>
   </p>
@@ -173,7 +190,7 @@ function htmlBody(displayCode: string, minutes: number) {
 
 export const ResendOTP = Email({
   id: "resend-otp",
-  from: "SolarCRM <no-reply@geo-pv.com>",
+  from: EMAIL_FROM,
   maxAge: CODE_MAX_AGE_SECONDS,
 
   async generateVerificationToken() {
@@ -207,56 +224,31 @@ export const ResendOTP = Email({
     }
   },
 
-  async sendVerificationRequest({ identifier: email, token, provider }) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error("Falta RESEND_API_KEY en el entorno de Convex.");
-    }
-
+  /**
+   * El `fetch` vive desde GER-48 en convex/resend.ts, con el contrato completo
+   * documentado allí: **no registra nada**, comprueba `response.ok` y su error
+   * no lleva ni el destinatario ni el token. Esas tres cosas no son estilo, son
+   * el cierre de GER-54 — leer la cabecera de aquel archivo antes de tocarlo.
+   *
+   * Aquí ya no se usa `provider.from`: el remitente es la constante compartida
+   * `EMAIL_FROM`, que es la misma que este proveedor declara arriba.
+   */
+  async sendVerificationRequest({ identifier: email, token }) {
     const minutes = Math.round(CODE_MAX_AGE_SECONDS / 60);
     // `token` es la forma canónica —la que se hasheó al crear la fila—; lo que
     // se envía es su presentación agrupada. Nunca al revés.
     const displayCode = formatCodeForDisplay(token);
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: provider.from,
-        to: [email],
-        // Sin el código (GER-59 · 3.3). Antes iba en el asunto, que es
-        // justo lo que se lee sin desbloquear el teléfono: en la
-        // previsualización de la bandeja y en la pantalla de bloqueo. Quien
-        // tuviera el móvil a la vista un momento se llevaba el código entero
-        // sin tocarlo. En el cuerpo sigue estando.
-        subject: "Código para recuperar tu contraseña de SolarCRM",
-        text: plainTextBody(displayCode, minutes),
-        html: htmlBody(displayCode, minutes),
-      }),
-    });
 
-    if (!response.ok) {
-      // NO se registra nada aquí, y no es un olvido (GER-54).
-      //
-      // Esta función corre DENTRO de la acción `auth:signIn`, y la respuesta de
-      // `POST /api/action` incluye un campo `logLines` con lo que la ejecución
-      // haya escrito por consola (lo consume el propio cliente HTTP de Convex,
-      // browser/http_client.js). Un `console.error` aquí saldría en el cuerpo de
-      // la respuesta SOLO cuando la cuenta existe —porque solo entonces se
-      // intenta el envío—, así que reabriría por `logLines` exactamente el canal
-      // de enumeración que GER-54 cierra. Medido: con la clave de Resend
-      // inválida, el correo existente devolvía `logLines` con dos entradas y el
-      // inexistente ninguna.
-      //
-      // El registro de la avería se hace desde una mutación programada, fuera de
-      // esta ejecución: ver `logResetSendFailure` en convex/passwordReset.ts.
-      //
-      // Nunca incluir `token` ni el destinatario en este mensaje.
-      throw new Error(
-        `Resend rechazó el envío del código (HTTP ${response.status}).`
-      );
-    }
+    await sendEmail({
+      to: email,
+      // Sin el código (GER-59 · 3.3). Antes iba en el asunto, que es justo lo
+      // que se lee sin desbloquear el teléfono: en la previsualización de la
+      // bandeja y en la pantalla de bloqueo. Quien tuviera el móvil a la vista
+      // un momento se llevaba el código entero sin tocarlo. En el cuerpo sigue
+      // estando.
+      subject: "Tu código para elegir tu contraseña de SolarCRM",
+      text: plainTextBody(displayCode, minutes),
+      html: htmlBody(displayCode, minutes),
+    });
   },
 });
