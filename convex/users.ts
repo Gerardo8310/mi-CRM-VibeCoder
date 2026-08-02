@@ -2,8 +2,9 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
-import { getActiveUserId, requireOwnerId } from "./authz";
+import { getActiveUserId, requireActiveUserId, requireOwnerId } from "./authz";
 import { sinContrasena } from "./invitations";
+import { MAX_NAME_LENGTH } from "./userConstants";
 
 /**
  * Usuario en sesión, incluido su rol — decide el landing (Carlos -> /hoy,
@@ -175,4 +176,43 @@ async function revokeAccess(ctx: MutationCtx, userId: Id<"users">) {
   }
 }
 
-// TODO(GER-49): updateName / changePassword.
+/**
+ * El nombre propio, desde "Mi cuenta" (GER-49).
+ *
+ * ES LA PRIMERA MUTACIÓN DE ESTE ARCHIVO QUE NO AUTORIZA `requireOwnerId`, y es
+ * deliberado: escribir bien tu propio nombre no es gestionar el equipo. Las dos
+ * reglas de la cabecera de arriba —solo la dueña, y nadie se edita a sí misma—
+ * gobiernan la pantalla de gestión, no esta.
+ *
+ * **NO RECIBE `userId`.** Sale de la sesión y solo de ahí. Con un argumento,
+ * esto sería una mutación para renombrar a cualquiera del equipo, disponible
+ * para cualquier usuario activo — el correo y el rol siguen siendo intocables,
+ * pero el nombre es lo que se ve en cada interacción y en cada seguimiento.
+ *
+ * El recorte va antes de validar por el mismo motivo que en `createInvitedUser`:
+ * una cadena de espacios pasa la regla de "no vacío" y deja una ficha sin nombre
+ * legible.
+ */
+export const updateName = mutation({
+  args: { name: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await requireActiveUserId(ctx);
+
+    const name = args.name.trim();
+    if (name.length === 0) {
+      throw new Error("El nombre no puede quedar vacío.");
+    }
+    // Tope defensivo, no una regla de negocio: sin él, una pegada accidental
+    // deja un nombre que rompe la maqueta en cada pantalla donde aparece. El
+    // modelo no exige unicidad y aquí tampoco se inventa.
+    if (name.length > MAX_NAME_LENGTH) {
+      throw new Error(
+        `El nombre no puede pasar de ${MAX_NAME_LENGTH} caracteres.`
+      );
+    }
+
+    await ctx.db.patch(userId, { name });
+    return null;
+  },
+});
