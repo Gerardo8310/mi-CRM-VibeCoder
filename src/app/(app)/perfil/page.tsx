@@ -22,7 +22,15 @@ import { SesionCard } from "@/components/perfil/sesion-card";
  */
 export default function PerfilPage() {
   const viewer = useQuery(api.users.viewer);
-  const [exito, setExito] = useState(false);
+  /**
+   * `null` = no hay nada que celebrar. Con objeto = la contraseña cambió, y
+   * `sesionesCerradas` dice si además se cerraron las demás sesiones. Se
+   * distinguen porque **cambiar la contraseña y cerrar las otras sesiones son
+   * dos transacciones**: la primera puede salir bien y la segunda no, y en ese
+   * caso decir solo "actualizada correctamente" ocultaría lo único que a esas
+   * alturas importa.
+   */
+  const [exito, setExito] = useState<{ sesionesCerradas: boolean } | null>(null);
 
   if (viewer === undefined) {
     return (
@@ -41,12 +49,27 @@ export default function PerfilPage() {
       <PageHeader title="Mi cuenta" />
       <div className="mx-auto w-full max-w-150 px-4 pb-24 pt-6 lg:px-6 lg:pb-15 lg:pt-8">
         {exito && (
-          <div className="mb-4 flex animate-[fadein_250ms_ease] items-center gap-2.5 border border-success-500/25 bg-success-100 px-4 py-3">
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success-500">
+          // `role="status"` y no `alert`: es una confirmación, no una alarma, y
+          // se anuncia sin interrumpir lo que la persona esté haciendo.
+          <div
+            role="status"
+            className="mb-4 flex animate-[fadein_250ms_ease] items-start gap-2.5 border border-success-500/25 bg-success-100 px-4 py-3"
+          >
+            <span className="mt-px flex size-6 shrink-0 items-center justify-center rounded-full bg-success-500">
               <Check className="size-3.25 text-white" />
             </span>
             <span className="text-[13px] font-medium text-success-700">
               Contraseña actualizada correctamente.
+              {!exito.sesionesCerradas && (
+                <>
+                  {" "}
+                  <span className="font-normal text-neutral-600">
+                    Eso sí: no pudimos cerrar tu sesión en los demás
+                    dispositivos. Si sospechas que alguien más tenía acceso,
+                    vuelve a cambiarla en un momento.
+                  </span>
+                </>
+              )}
             </span>
           </div>
         )}

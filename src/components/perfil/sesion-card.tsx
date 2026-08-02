@@ -39,6 +39,11 @@ export function SesionCard({
     setSaliendo(true);
     try {
       await signOut();
+    } catch {
+      // Se traga a propósito, y hace falta: con solo `try`/`finally`, el
+      // rechazo se relanza DESPUÉS del `finally`, y como quien llama lo hace con
+      // `void salir()` acabaría en una promesa rechazada sin manejar. El destino
+      // ya está cubierto por el `finally`: se va al login pase lo que pase.
     } finally {
       // Se navega pase lo que pase: si `signOut` falla, dejar a la persona en
       // una pantalla que cree cerrada es peor que mandarla al login, donde el

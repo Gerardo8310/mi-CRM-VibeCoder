@@ -76,8 +76,15 @@ function CampoContrasena({
           // contraseña— es justo lo que alguien que no usa ratón necesita poder
           // decidir. Dejarlo fuera lo volvía inalcanzable para quien más lo
           // necesita, a cambio de ahorrar una pulsación a quien no lo usa.
-          aria-label="Mostrar u ocultar contraseña"
-          className="absolute right-0 top-0 flex h-full w-10.5 items-center justify-center text-neutral-400 transition-colors hover:text-neutral-600"
+          //
+          // Y hacerlo alcanzable obliga a lo otro dos: `aria-pressed` y una
+          // etiqueta que cambie —con una fija, un lector de pantalla no puede
+          // saber si la contraseña está a la vista— y un estilo de foco visible,
+          // porque antes solo había `hover`, que no le sirve a quien navega con
+          // teclado. Tabulable sin foco visible es media corrección.
+          aria-pressed={visible}
+          aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+          className="absolute right-0 top-0 flex h-full w-10.5 items-center justify-center text-neutral-400 transition-colors hover:text-neutral-600 focus-visible:text-neutral-950 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand-500"
         >
           {visible ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
         </button>
@@ -89,14 +96,17 @@ function CampoContrasena({
 
 export function ContrasenaCard({
   /**
-   * Recibe `true` al cambiarla y `false` en cuanto se vuelve a intentar. Los dos
-   * sentidos hacen falta: si solo avisara del éxito, el aviso verde seguiría
-   * puesto mientras se teclea otra contraseña, dando por guardado algo que aún
-   * no se ha enviado.
+   * Recibe el resultado al cambiarla y `null` en cuanto se vuelve a intentar.
+   * Los dos sentidos hacen falta: si solo avisara del éxito, el aviso verde
+   * seguiría puesto mientras se teclea otra contraseña, dando por guardado algo
+   * que aún no se ha enviado.
+   *
+   * `sesionesCerradas: false` NO es un fallo del cambio: la contraseña cambió,
+   * pero las otras sesiones pueden seguir abiertas. Lo decide el servidor.
    */
   onExito,
 }: {
-  onExito: (exito: boolean) => void;
+  onExito: (resultado: { sesionesCerradas: boolean } | null) => void;
 }) {
   const changePassword = useAction(api.passwordChange.changePassword);
   /**
@@ -131,7 +141,7 @@ export function ContrasenaCard({
   async function cambiar() {
     if (enviando || !completo) return;
     // Se retira el aviso verde del intento anterior antes de nada.
-    onExito(false);
+    onExito(null);
 
     // Esta comprobación es solo del cliente y no tiene contraparte en el
     // servidor a propósito: "confirmar" no es un dato que el servidor necesite,
@@ -157,7 +167,7 @@ export function ContrasenaCard({
         setActual("");
         setNueva("");
         setConfirmar("");
-        onExito(true);
+        onExito({ sesionesCerradas: r.sesionesCerradas });
         return;
       }
 
@@ -223,65 +233,85 @@ export function ContrasenaCard({
   return (
     <PerfilCard titulo="Contraseña" subtitulo="Actualiza tu contraseña periódicamente">
       {error && (
-        <div className="mb-3.5 flex items-center gap-2 border border-error-500/25 bg-error-100 px-3.5 py-2.5">
+        // `role="alert"` porque este banner APARECE tras enviar. Sin región
+        // viva, quien usa lector de pantalla no se entera de que ha fallado
+        // nada: el foco sigue donde estaba y nada se anuncia.
+        <div
+          role="alert"
+          className="mb-3.5 flex items-center gap-2 border border-error-500/25 bg-error-100 px-3.5 py-2.5"
+        >
           <AlertCircle className="size-3.5 shrink-0 text-error-500" />
           <span className="text-[13px] text-error-700">{error}</span>
         </div>
       )}
 
-      <CampoContrasena
-        id="perfil-actual"
-        label="Contraseña actual"
-        value={actual}
-        onChange={setActual}
-        placeholder="Tu contraseña actual"
-        autoComplete="current-password"
-        disabled={enviando}
-        error={falloEnActual}
+      {/*
+        Es un <form> de verdad, y no tres campos sueltos con un botón, por dos
+        cosas que se pierden sin él: Enter no envía —en un formulario de
+        contraseñas es lo que todo el mundo hace— y los gestores de contraseñas
+        se apoyan en la semántica de formulario para ofrecer guardar la nueva.
+        Los `autoComplete` de los campos ya declaran esa intención; sin el
+        <form> quedaban a medias.
+      */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void cambiar();
+        }}
       >
-        {falloEnActual && (
-          <p className="mt-1 flex items-center gap-1 text-xs text-error-500">
-            <AlertCircle className="size-2.75" />
-            Contraseña incorrecta
-          </p>
-        )}
-      </CampoContrasena>
+        <CampoContrasena
+          id="perfil-actual"
+          label="Contraseña actual"
+          value={actual}
+          onChange={setActual}
+          placeholder="Tu contraseña actual"
+          autoComplete="current-password"
+          disabled={enviando}
+          error={falloEnActual}
+        >
+          {falloEnActual && (
+            <p className="mt-1 flex items-center gap-1 text-xs text-error-500">
+              <AlertCircle className="size-2.75" />
+              Contraseña incorrecta
+            </p>
+          )}
+        </CampoContrasena>
 
-      <CampoContrasena
-        id="perfil-nueva"
-        label="Nueva contraseña"
-        value={nueva}
-        onChange={setNueva}
-        // El número sale de la constante que aplica el servidor, no de la
-        // maqueta, que se quedó en 8 cuando la política subió a 10.
-        placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
-        autoComplete="new-password"
-        disabled={enviando}
-      >
-        <MedidorFortaleza password={nueva} />
-      </CampoContrasena>
+        <CampoContrasena
+          id="perfil-nueva"
+          label="Nueva contraseña"
+          value={nueva}
+          onChange={setNueva}
+          // El número sale de la constante que aplica el servidor, no de la
+          // maqueta, que se quedó en 8 cuando la política subió a 10.
+          placeholder={`Mínimo ${MIN_PASSWORD_LENGTH} caracteres`}
+          autoComplete="new-password"
+          disabled={enviando}
+        >
+          <MedidorFortaleza password={nueva} />
+        </CampoContrasena>
 
-      <CampoContrasena
-        id="perfil-confirmar"
-        label="Confirmar nueva contraseña"
-        value={confirmar}
-        onChange={setConfirmar}
-        placeholder="Repite la nueva contraseña"
-        autoComplete="new-password"
-        disabled={enviando}
-      />
+        <CampoContrasena
+          id="perfil-confirmar"
+          label="Confirmar nueva contraseña"
+          value={confirmar}
+          onChange={setConfirmar}
+          placeholder="Repite la nueva contraseña"
+          autoComplete="new-password"
+          disabled={enviando}
+        />
 
-      <Button
-        type="button"
-        size="lg"
-        onClick={() => void cambiar()}
-        disabled={!completo}
-        loading={enviando}
-        className="mt-1 w-full"
-      >
-        {!enviando && <ShieldCheck className="size-3.5" />}
-        Cambiar contraseña
-      </Button>
+        <Button
+          type="submit"
+          size="lg"
+          disabled={!completo}
+          loading={enviando}
+          className="mt-1 w-full"
+        >
+          {!enviando && <ShieldCheck className="size-3.5" />}
+          Cambiar contraseña
+        </Button>
+      </form>
       <p className="mt-2 text-[11px] leading-normal text-neutral-400">
         Al cambiarla se cierra tu sesión en los demás dispositivos. El acceso
         puede tardar hasta 15 minutos en cortarse del todo.

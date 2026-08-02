@@ -151,7 +151,10 @@ export const datosParaCambiar = internalQuery({
  * `throw` para lo que de verdad es una avería.
  */
 const resultado = v.union(
-  v.object({ ok: v.literal(true) }),
+  // `sesionesCerradas: false` significa "la contraseña SÍ cambió, pero las otras
+  // sesiones pueden seguir abiertas". No es un fallo del cambio, y por eso viaja
+  // dentro del caso `ok` y no como un motivo de error.
+  v.object({ ok: v.literal(true), sesionesCerradas: v.boolean() }),
   v.object({
     ok: v.literal(false),
     motivo: v.union(
@@ -285,12 +288,33 @@ export const changePassword = action({
     // expulsión inmediata sería mentir. Es la misma ventana que ya tiene
     // desactivar a una persona (GER-48), y se aceptó para no meter una lectura
     // más en cada función protegida del CRM.
-    await invalidateSessions(ctx, { userId, except: [sessionId] });
+    //
+    // A PARTIR DE AQUÍ LA CONTRASEÑA YA ESTÁ CAMBIADA, Y ESO MANDA SOBRE LO QUE
+    // SE LE CUENTA A LA PERSONA.
+    //
+    // Antes esta llamada iba suelta: si fallaba, la excepción salía de la acción
+    // y la pantalla decía "No se pudo cambiar la contraseña. Inténtalo de
+    // nuevo." **Era mentira**, y de las caras: la contraseña nueva ya estaba
+    // guardada, así que quien reintentara con la vieja fallaría sin entender por
+    // qué. El orden de las tres escrituras era correcto; lo que faltaba era
+    // informar del estado real cuando se rompe por la mitad.
+    let sesionesCerradas = true;
+    try {
+      await invalidateSessions(ctx, { userId, except: [sessionId] });
+    } catch {
+      sesionesCerradas = false;
+    }
 
-    // Y solo entonces la clasificación. Se reutiliza la mutación del canje del
-    // código en vez de escribir otra igual.
-    await ctx.runMutation(internal.passwordReset.markPasswordSet, { userId });
+    // La clasificación va aparte y su fallo NO se le cuenta a nadie: es lo único
+    // de las tres que no cambia lo que la persona puede hacer, y el siguiente
+    // canje de código lo repone. Con un solo `try` para las dos, un fallo del
+    // marcado se habría presentado como sesiones sin cerrar, que es otra cosa.
+    try {
+      await ctx.runMutation(internal.passwordReset.markPasswordSet, { userId });
+    } catch {
+      // Deliberadamente vacío. Ver arriba.
+    }
 
-    return { ok: true as const };
+    return { ok: true as const, sesionesCerradas };
   },
 });
