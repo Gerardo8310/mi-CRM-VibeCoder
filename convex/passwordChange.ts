@@ -298,21 +298,48 @@ export const changePassword = action({
     // guardada, así que quien reintentara con la vieja fallaría sin entender por
     // qué. El orden de las tres escrituras era correcto; lo que faltaba era
     // informar del estado real cuando se rompe por la mitad.
+    //
+    // POR QUÉ AQUÍ SÍ SE REGISTRA, HABIENDO OTRO SITIO DONDE NO (GER-54)
+    //
+    // En `password-reset-request` un `console.error` en línea era un agujero:
+    // los logs de una acción viajan al cliente en el campo `logLines` de la
+    // respuesta, y como allí solo se intentaba enviar cuando la cuenta existía,
+    // el log distinguía cuenta existente de inexistente para un anónimo. Por eso
+    // aquel aviso sale por una mutación programada.
+    //
+    // Aquí no aplica: para llegar a esta línea hay que estar autenticado y haber
+    // acertado la contraseña actual, y lo que se registra habla **de la cuenta de
+    // quien llama**. No hay nada que pueda deducir que no supiera ya, así que no
+    // se abre ningún canal.
+    //
+    // Y hace falta: este es el único camino del código que no se puede ejercitar
+    // sin romper algo a propósito. Si un día falla en producción, este log es la
+    // única evidencia que quedará.
     let sesionesCerradas = true;
     try {
       await invalidateSessions(ctx, { userId, except: [sessionId] });
     } catch {
       sesionesCerradas = false;
+      console.error(
+        "changePassword: la contraseña se cambió pero no se pudieron cerrar las demás sesiones.",
+        { userId }
+      );
     }
 
     // La clasificación va aparte y su fallo NO se le cuenta a nadie: es lo único
     // de las tres que no cambia lo que la persona puede hacer, y el siguiente
     // canje de código lo repone. Con un solo `try` para las dos, un fallo del
     // marcado se habría presentado como sesiones sin cerrar, que es otra cosa.
+    //
+    // Silencioso para la persona, pero NO para el registro: que sea inofensivo
+    // no significa que sea normal.
     try {
       await ctx.runMutation(internal.passwordReset.markPasswordSet, { userId });
     } catch {
-      // Deliberadamente vacío. Ver arriba.
+      console.error(
+        "changePassword: no se pudo marcar `passwordSetAt` tras cambiar la contraseña.",
+        { userId }
+      );
     }
 
     return { ok: true as const, sesionesCerradas };
