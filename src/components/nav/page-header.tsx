@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { ProfileAvatarButton } from "@/components/nav/profile-avatar-button";
 
 export function PageHeader({
   title,
@@ -18,7 +19,18 @@ export function PageHeader({
         </h1>
         {meta}
       </div>
-      {action}
+      <div className="flex shrink-0 items-center gap-2.5">
+        {action}
+        {/*
+          El acceso a "Mi cuenta" en móvil (GER-49). Va aquí, en la cabecera
+          compartida, y no en cada pantalla, porque hasta ahora no había NINGUNA
+          puerta al perfil por debajo de 1024 px — ver la cabecera de
+          `profile-avatar-button.tsx`. Se coloca después de `action` para que el
+          botón principal de cada pantalla ("Nuevo cliente", "Invitar usuario")
+          siga siendo lo primero que se encuentra desde el título.
+        */}
+        <ProfileAvatarButton />
+      </div>
     </header>
   );
 }

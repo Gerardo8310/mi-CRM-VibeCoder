@@ -23,9 +23,11 @@ import type * as interactions from "../interactions.js";
 import type * as invitations from "../invitations.js";
 import type * as migrations from "../migrations.js";
 import type * as opportunities from "../opportunities.js";
+import type * as passwordChange from "../passwordChange.js";
 import type * as passwordLogin from "../passwordLogin.js";
 import type * as passwordReset from "../passwordReset.js";
 import type * as resend from "../resend.js";
+import type * as userConstants from "../userConstants.js";
 import type * as users from "../users.js";
 
 import type {
@@ -50,9 +52,11 @@ declare const fullApi: ApiFromModules<{
   invitations: typeof invitations;
   migrations: typeof migrations;
   opportunities: typeof opportunities;
+  passwordChange: typeof passwordChange;
   passwordLogin: typeof passwordLogin;
   passwordReset: typeof passwordReset;
   resend: typeof resend;
+  userConstants: typeof userConstants;
   users: typeof users;
 }>;
 

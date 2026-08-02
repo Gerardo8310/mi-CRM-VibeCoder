@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { LogOut, Settings, Shield } from "lucide-react";
+import { LogOut, Shield, UserCircle } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import { cn } from "@/lib/utils";
 import { useEndOfToday } from "@/lib/use-end-of-today";
@@ -86,12 +86,23 @@ export function Sidebar() {
           </div>
         )}
 
+        {/*
+          "Mi perfil", con el mismo tratamiento de activo que "Usuarios"
+          (GER-49). Antes decía "Perfil" con el ícono de ajustes y no se
+          resaltaba al estar dentro: la maqueta lo dibuja como un acceso de
+          navegación más — Design/PerfilUsuario.dc.html, `.nav-item.active`— y
+          sin resalte no había forma de saber en qué pantalla estabas.
+        */}
         <Link
           href="/perfil"
-          className="flex h-9 items-center gap-2.5 px-4.5 font-sans text-xs text-dark-text-secondary hover:text-brand-200"
+          className={cn(
+            "flex h-10.5 items-center gap-2.5 border-l-2 border-transparent px-4.5 font-sans text-[13px] text-dark-text-secondary transition-colors hover:text-brand-200",
+            pathname.startsWith("/perfil") &&
+              "border-brand-500 bg-brand-500/10 font-medium text-brand-500"
+          )}
         >
-          <Settings className="size-3.5 shrink-0" />
-          Perfil
+          <UserCircle className="size-3.75 shrink-0" />
+          Mi perfil
         </Link>
         <button
           onClick={() => void signOut()}
