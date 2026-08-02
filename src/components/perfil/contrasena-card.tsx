@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { AlertCircle, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { api } from "@convex/_generated/api";
 import { MIN_PASSWORD_LENGTH } from "@convex/authConstants";
@@ -71,9 +71,11 @@ function CampoContrasena({
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          // Fuera del recorrido del tabulador: es una ayuda visual, y colarse
-          // entre dos campos de un formulario corto estorba más de lo que aporta.
-          tabIndex={-1}
+          // SÍ entra en el recorrido del tabulador. Lo tuvo excluido y era un
+          // error: es un botón de verdad, y lo que hace —enseñar en claro una
+          // contraseña— es justo lo que alguien que no usa ratón necesita poder
+          // decidir. Dejarlo fuera lo volvía inalcanzable para quien más lo
+          // necesita, a cambio de ahorrar una pulsación a quien no lo usa.
           aria-label="Mostrar u ocultar contraseña"
           className="absolute right-0 top-0 flex h-full w-10.5 items-center justify-center text-neutral-400 transition-colors hover:text-neutral-600"
         >
@@ -97,6 +99,15 @@ export function ContrasenaCard({
   onExito: (exito: boolean) => void;
 }) {
   const changePassword = useAction(api.passwordChange.changePassword);
+  /**
+   * El estado llega del servidor ANTES de pintar nada (cierre del hallazgo M2).
+   *
+   * `undefined` = cargando · `null` = sin sesión utilizable · `false` = no tiene
+   * contraseña que cambiar · `true` = sí la tiene. La regla no se calcula aquí:
+   * la resuelve `tieneContrasenaElegida` en convex/passwordChange.ts, que es su
+   * único dueño.
+   */
+  const estado = useQuery(api.passwordChange.estadoContrasena);
 
   const [actual, setActual] = useState("");
   const [nueva, setNueva] = useState("");
@@ -106,7 +117,13 @@ export function ContrasenaCard({
   // Se distingue del resto porque la maqueta marca en rojo el campo de la
   // contraseña actual, no los otros dos.
   const [falloEnActual, setFalloEnActual] = useState(false);
-  const [sinContrasena, setSinContrasena] = useState(false);
+  /**
+   * La acción respondió `sin-contrasena`. **No es redundante con `estado`**: son
+   * dos transacciones distintas, así que esto cubre la carrera —alguien elige su
+   * contraseña en otra pestaña mientras esta sigue abierta— y deja constancia
+   * visible si alguien llamara a la acción saltándose la pantalla.
+   */
+  const [falloSinContrasena, setFalloSinContrasena] = useState(false);
 
   const completo =
     actual.length > 0 && nueva.length > 0 && confirmar.length > 0;
@@ -161,7 +178,7 @@ export function ContrasenaCard({
           setError("La contraseña nueva tiene que ser distinta de la actual.");
           break;
         case "sin-contrasena":
-          setSinContrasena(true);
+          setFalloSinContrasena(true);
           break;
         case "politica":
           // El texto viene del servidor, que es quien tiene la política.
@@ -175,7 +192,23 @@ export function ContrasenaCard({
     }
   }
 
-  if (sinContrasena) {
+  // Sin sesión utilizable no hay nada que ofrecer; `SessionGuard` ya está
+  // llevando a /login. Se distingue de `false` a propósito: confundirlos haría
+  // parpadear "no tienes contraseña" justo al cerrar sesión.
+  if (estado === null) return null;
+
+  // Mientras el servidor responde NO se pinta el formulario. Enseñarlo y
+  // sustituirlo después por la explicación sería pedirle a alguien que empiece a
+  // escribir algo que no puede hacer.
+  if (estado === undefined) {
+    return (
+      <PerfilCard titulo="Contraseña" subtitulo="Actualiza tu contraseña periódicamente">
+        <div className="h-40 animate-pulse bg-neutral-100" />
+      </PerfilCard>
+    );
+  }
+
+  if (!estado || falloSinContrasena) {
     return (
       <PerfilCard titulo="Contraseña" subtitulo="Actualiza tu contraseña periódicamente">
         <p className="text-[13px] leading-relaxed text-neutral-600">

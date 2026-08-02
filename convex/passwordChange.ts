@@ -5,10 +5,15 @@ import {
   modifyAccountCredentials,
   retrieveAccount,
 } from "@convex-dev/auth/server";
-import { action, internalQuery } from "./_generated/server";
+import { action, internalQuery, query } from "./_generated/server";
+import type { QueryCtx } from "./_generated/server";
 import { internal } from "./_generated/api";
-import type { DataModel } from "./_generated/dataModel";
-import { requireActiveUserId, validatePassword } from "./authz";
+import type { DataModel, Id } from "./_generated/dataModel";
+import {
+  getActiveUserId,
+  requireActiveUserId,
+  validatePassword,
+} from "./authz";
 import { sinContrasena } from "./invitations";
 
 /**
@@ -40,6 +45,67 @@ import { sinContrasena } from "./invitations";
  */
 
 /**
+ * ¿Esta persona tiene una contraseña que se pueda verificar?
+ *
+ * **ES LA ÚNICA IMPLEMENTACIÓN DE ESTA REGLA.** La usan la consulta pública
+ * `estadoContrasena` —que decide qué pinta la pantalla— y la query interna
+ * `datosParaCambiar` —que decide si la acción sigue adelante—. Tenerla dos veces
+ * sería tener dos respuestas posibles a la misma pregunta.
+ *
+ * Dos condiciones, y las dos hacen falta:
+ *
+ * 1. Que exista la fila de `authAccounts` del proveedor "password". Si no
+ *    existe, `retrieveAccount` lanzaría `InvalidAccountId` y acabaríamos
+ *    diciendo "contraseña incorrecta" a quien no tiene ninguna.
+ * 2. Que la persona haya ELEGIDO su contraseña. Un invitado que aún no ha
+ *    entrado tiene fila, pero con el literal sin dos puntos de
+ *    `convex/invitations.ts`, que Scrypt no puede verificar nunca.
+ */
+async function tieneContrasenaElegida(
+  ctx: QueryCtx,
+  userId: Id<"users">
+): Promise<boolean> {
+  const user = await ctx.db.get(userId);
+  if (user === null) return false;
+
+  const account = await ctx.db
+    .query("authAccounts")
+    .withIndex("userIdAndProvider", (q) =>
+      q.eq("userId", userId).eq("provider", "password")
+    )
+    .unique();
+
+  return account !== null && !sinContrasena(user);
+}
+
+/**
+ * Lo que la pantalla necesita saber ANTES de pintar la tarjeta (GER-49, cierre
+ * del hallazgo M2).
+ *
+ * Sin esto, quien entró con Google sin haber elegido contraseña veía los tres
+ * campos y solo descubría que no tiene ninguna **después de inventarse una
+ * contraseña actual y enviar el formulario**. Se le pedía una credencial que
+ * nunca tuvo.
+ *
+ * Devuelve `null` —y no `false`— cuando no hay sesión utilizable, por el mismo
+ * motivo que `users.viewer`: "no tienes contraseña" y "no deberías estar aquí"
+ * son cosas distintas, y confundirlas haría parpadear la explicación mientras se
+ * cierra la sesión. De `null` ya se ocupa `SessionGuard`.
+ *
+ * NO revela nada de nadie: solo habla de la cuenta de quien pregunta, y la
+ * identidad sale de la sesión, no de un argumento.
+ */
+export const estadoContrasena = query({
+  args: {},
+  returns: v.union(v.boolean(), v.null()),
+  handler: async (ctx) => {
+    const userId = await getActiveUserId(ctx);
+    if (userId === null) return null;
+    return await tieneContrasenaElegida(ctx, userId);
+  },
+});
+
+/**
  * Identidad y estado de quien llama, leídos del servidor.
  *
  * Existe porque **una acción no tiene `ctx.db` y por tanto no puede autorizar**
@@ -62,25 +128,12 @@ export const datosParaCambiar = internalQuery({
     const user = await ctx.db.get(userId);
     if (user === null) throw new Error("Necesitas iniciar sesión.");
 
-    // Dos condiciones, y las dos hacen falta:
-    //
-    // 1. Que exista la fila de `authAccounts` del proveedor "password". Si no
-    //    existe, `retrieveAccount` lanzaría `InvalidAccountId` y acabaríamos
-    //    diciendo "contraseña incorrecta" a quien no tiene ninguna.
-    // 2. Que la persona haya ELEGIDO su contraseña. Un invitado que aún no ha
-    //    entrado tiene fila, pero con el literal sin dos puntos de
-    //    `convex/invitations.ts`, que Scrypt no puede verificar nunca.
-    const account = await ctx.db
-      .query("authAccounts")
-      .withIndex("userIdAndProvider", (q) =>
-        q.eq("userId", userId).eq("provider", "password")
-      )
-      .unique();
-
     return {
       userId,
       email: user.email,
-      tieneContrasena: account !== null && !sinContrasena(user),
+      // La misma función que responde a la pantalla, para que no puedan
+      // discrepar: ver `tieneContrasenaElegida` arriba.
+      tieneContrasena: await tieneContrasenaElegida(ctx, userId),
     };
   },
 });
