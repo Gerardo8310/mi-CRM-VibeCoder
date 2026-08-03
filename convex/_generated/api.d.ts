@@ -15,6 +15,7 @@ import type * as authConstants from "../authConstants.js";
 import type * as authz from "../authz.js";
 import type * as clients from "../clients.js";
 import type * as crons from "../crons.js";
+import type * as dashboard from "../dashboard.js";
 import type * as email from "../email.js";
 import type * as followUps from "../followUps.js";
 import type * as history from "../history.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   authz: typeof authz;
   clients: typeof clients;
   crons: typeof crons;
+  dashboard: typeof dashboard;
   email: typeof email;
   followUps: typeof followUps;
   history: typeof history;

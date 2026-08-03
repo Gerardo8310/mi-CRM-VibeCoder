@@ -36,6 +36,58 @@ export function msUntilNextMidnight(): number {
 }
 
 /**
+ * Fronteras de calendario para el resumen de "Inicio" (GER-18).
+ *
+ * SE CONSTRUYEN CON OPERACIONES DE CALENDARIO, no restando milisegundos, y esa
+ * es toda su razón de ser. `new Date(año, mes, día)` normaliza solo: un día 0 es
+ * el último del mes anterior, y un mes 12 es enero del siguiente. Restar
+ * `30 * DAY_MS` no sabe cuántos días tiene febrero, y restar `7 * DAY_MS`
+ * desplaza la frontera una hora al cruzar un cambio de horario — suficiente para
+ * meter o sacar un día entero de un recuento cuyas fechas son medianoches
+ * locales.
+ *
+ * Ojo con `endOfToday()` de arriba, que sí suma `DAY_MS` fijo: en un día local
+ * de 23 o 25 horas no cae en la próxima medianoche. Es deuda conocida y NO se
+ * corrige aquí porque cambiaría "Hoy" y la insignia de navegación, que este
+ * issue no abre; la zona del negocio (America/Mexico_City) no cambia de horario
+ * desde 2022, así que hoy el efecto es cero.
+ */
+
+/** Medianoche local del día 1 del mes que contiene `ts`. */
+export function startOfMonth(ts: number = Date.now()): number {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+}
+
+/** Medianoche local del día 1 del mes anterior al que contiene `ts`. */
+export function startOfPreviousMonth(ts: number = Date.now()): number {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth() - 1, 1).getTime();
+}
+
+/** Medianoche local de hace `days` días (0 = hoy). */
+export function startOfDaysAgo(days: number, ts: number = Date.now()): number {
+  const d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() - days).getTime();
+}
+
+const GREETINGS = [
+  { hasta: 12, texto: "Buenos días" },
+  { hasta: 19, texto: "Buenas tardes" },
+] as const;
+
+/**
+ * El saludo de la cabecera de "Inicio" según la hora local. Se calcula ya
+ * montado (ver `inicio-header.tsx`): el servidor corre en UTC y el navegador en
+ * hora de México, así que renderizarlo en ambos lados desajusta la hidratación
+ * varias horas al día.
+ */
+export function greeting(ts: number = Date.now()): string {
+  const hour = new Date(ts).getHours();
+  return GREETINGS.find((g) => hour < g.hasta)?.texto ?? "Buenas noches";
+}
+
+/**
  * Convierte el valor de un <input type="date"> (YYYY-MM-DD) a la medianoche
  * **local** de ese día. Ojo: `new Date("YYYY-MM-DD")` lo interpretaría como
  * medianoche UTC y, en husos negativos (México), guardaría el día anterior.

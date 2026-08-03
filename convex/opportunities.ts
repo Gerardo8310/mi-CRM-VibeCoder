@@ -129,4 +129,7 @@ export const updateStage = mutation({
   },
 });
 
-// TODO(GER-18): monthlyClosedTotal / openPipelineByStage (para "Inicio").
+// Las cifras de ventas y de pipeline que consume "Inicio" (GER-18) NO viven
+// aquí: están en convex/dashboard.ts, junto a las de clientes, seguimientos e
+// interacciones. El resumen cruza cuatro tablas y repartirlo por módulos de
+// negocio dejaría la definición de "este mes" escrita en cuatro sitios.
