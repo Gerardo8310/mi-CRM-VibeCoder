@@ -8,14 +8,23 @@ import { PageHeader } from "@/components/nav/page-header";
 import { MiPerfilCard } from "@/components/perfil/mi-perfil-card";
 import { ContrasenaCard } from "@/components/perfil/contrasena-card";
 import { SesionCard } from "@/components/perfil/sesion-card";
+import { GestionUsuariosLink } from "@/components/perfil/gestion-usuarios-link";
 
 /**
  * Pantalla 8 — "Mi cuenta" (GER-49). Ver Design/PerfilUsuario.dc.html.
  *
- * Es la única pantalla del CRM que no distingue roles: la ve igual un vendedor
- * que la dueña, porque todo lo que hay dentro es de quien la mira. El control de
- * acceso lo lleva cada función de `convex/`, que trabaja siempre sobre el
- * usuario de la sesión y nunca sobre un identificador que llegue del navegador.
+ * **Las tres tarjetas son iguales para todo el mundo**, y ahí no hay roles que
+ * valgan: todo lo que contienen es de quien las mira. El control de acceso lo
+ * lleva cada función de `convex/`, que trabaja siempre sobre el usuario de la
+ * sesión y nunca sobre un identificador que llegue del navegador.
+ *
+ * Desde GER-60 hay **una cuarta pieza que sí depende del rol**: el acceso a
+ * "Gestión de usuarios", que solo se ofrece a la dueña y solo en móvil. Es
+ * **navegación, no autorización** — la diferencia importa, porque quitar esa
+ * condición no abriría nada: `/usuarios` rebota a quien no es dueña y
+ * `requireOwnerId` autoriza sus funciones en el servidor. Antes esta cabecera
+ * decía que la pantalla "no distingue roles"; dejó de ser cierto y por eso se
+ * reescribió.
  *
  * El aviso de éxito vive aquí y no dentro de la tarjeta de contraseña porque la
  * maqueta lo pone arriba del todo, por encima de las tres tarjetas.
@@ -82,6 +91,17 @@ export default function PerfilPage() {
           />
           <ContrasenaCard onExito={setExito} />
           <SesionCard nombre={viewer.name} correo={viewer.email} />
+          {/*
+            La condición vive aquí y no dentro del componente, siguiendo el
+            patrón de `nav/sidebar.tsx`: así se lee de un vistazo en el sitio
+            donde se compone la pantalla, en vez de esconderla tras un
+            componente que se auto-oculta devolviendo `null`.
+
+            Es seguro leer `viewer.role` sin defensa: arriba ya se cortó con
+            `undefined` (esqueleto) y con `null` (solo cabecera), así que aquí
+            `viewer` es un objeto real y la fila no puede parpadear.
+          */}
+          {viewer.role === "duena" && <GestionUsuariosLink />}
         </div>
       </div>
     </>
