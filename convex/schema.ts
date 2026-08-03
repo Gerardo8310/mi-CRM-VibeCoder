@@ -66,7 +66,16 @@ export default defineSchema({
       v.union(v.literal("llamada"), v.literal("mensaje"), v.literal("visita"))
     ),
     createdBy: v.id("users"),
-  }).index("by_client", ["clientId"]),
+  })
+    .index("by_client", ["clientId"])
+    // "Actividad reciente" de Inicio (GER-18): las últimas interacciones de
+    // TODOS los clientes. `by_client` no sirve para eso y sin índice habría que
+    // recorrer la tabla entera en la pantalla de aterrizaje de la dueña.
+    //
+    // Va sobre `date` y no sobre el índice de sistema `by_creation_time` porque
+    // no son lo mismo: `date` es opcional en el alta y sirve para registrar una
+    // llamada de ayer. Se ordena por cuándo ocurrió, no por cuándo se tecleó.
+    .index("by_date", ["date"]),
 
   // Oportunidad (venta) — interesado / cotizado / cerrado. Ver GER-14, GER-15.
   opportunities: defineTable({
@@ -85,7 +94,25 @@ export default defineSchema({
     createdBy: v.id("users"),
   })
     .index("by_client", ["clientId"])
-    .index("by_stage", ["stage"]),
+    /**
+     * Etapa + fecha de cierre (GER-18). Sustituye al antiguo `by_stage`, que era
+     * solo `["stage"]` y no tenía ningún consumidor.
+     *
+     * El segundo campo es lo que hace falta: "ventas de este mes" con `by_stage`
+     * recorría TODAS las oportunidades cerradas de la historia del negocio y
+     * descartaba en memoria las de otros meses, así que el coste de abrir
+     * "Inicio" crecía para siempre. Con el compuesto, la consulta acota
+     * `gte("closedAt", inicioMesAnterior)` y lee dos meses.
+     *
+     * Sigue sirviendo para consultar solo por etapa —el prefijo de un índice
+     * compuesto es un índice—, que es lo que necesita el pipeline abierto.
+     *
+     * `closedAt` es opcional, y eso juega a favor: un campo ausente ordena antes
+     * que cualquier valor, así que una oportunidad "cerrado" sin fecha de cierre
+     * queda fuera del rango por construcción, que es justo lo que se quiere
+     * (no se le puede atribuir ningún mes).
+     */
+    .index("by_stage_closedAt", ["stage", "closedAt"]),
 
   // Seguimiento (recordatorio) — el corazón del "no perder ventas". Ver GER-16, GER-17.
   followUps: defineTable({
