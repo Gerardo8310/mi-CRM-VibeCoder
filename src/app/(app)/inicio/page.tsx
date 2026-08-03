@@ -57,6 +57,7 @@ export default function InicioPage() {
             valor={clientesNuevos.valor === 0 ? null : String(clientesNuevos.valor)}
             etiqueta="Clientes nuevos este mes"
             tendencia={tendencia(
+              crmVacio,
               clientesNuevos.valor,
               clientesNuevos.anterior,
               "el mes pasado"
@@ -70,13 +71,21 @@ export default function InicioPage() {
             // El número grande es el monto, como en la maqueta; la cantidad —que
             // el issue también pide— va en la etiqueta, donde cabe sin competir
             // con la cifra.
-            valor={ventas.monto === 0 ? null : formatMoney(ventas.monto)}
+            //
+            // Las dos se deciden con `cantidad`, no una con el monto y otra con
+            // la cantidad: son la misma pregunta —"¿hubo ventas este mes?"— y
+            // separarlas dejaba la puerta a un "—" enorme junto a "1 venta
+            // cerrada este mes". Hoy no puede pasar porque `opportunities.create`
+            // exige importe mayor que cero, pero eso es una guarda de otro
+            // archivo y aquí no se ve.
+            valor={ventas.cantidad === 0 ? null : formatMoney(ventas.monto)}
             etiqueta={
               ventas.cantidad === 0
                 ? "Ventas cerradas este mes"
                 : `${ventas.cantidad} venta${ventas.cantidad !== 1 ? "s" : ""} cerrada${ventas.cantidad !== 1 ? "s" : ""} este mes`
             }
             tendencia={tendencia(
+              crmVacio,
               ventas.monto,
               ventas.montoAnterior,
               "el mes pasado",
@@ -94,6 +103,7 @@ export default function InicioPage() {
             // periodo—, no cuántos estaban pendientes: ese histórico no existe.
             // Ver convex/dashboard.ts.
             tendencia={tendencia(
+              crmVacio,
               pendientes.cargaActual,
               pendientes.cargaAnterior,
               "la semana pasada"
@@ -103,9 +113,9 @@ export default function InicioPage() {
         </div>
 
         {/*
-          Con el CRM vacío los tres números ya salen en "—" y sin tendencia por
-          sí solos: todo está a cero y `tendencia()` devuelve "sin datos". Lo
-          único que hace falta decidir aquí es qué va debajo.
+          Con el CRM vacío los tres números ya salen en "—" por sí solos —todo
+          está a cero— y `tendencia()` calla la comparación con esta misma
+          bandera. Lo único que queda por decidir aquí es qué va debajo.
         */}
         {crmVacio ? (
           <ResumenVacio />
@@ -123,17 +133,25 @@ export default function InicioPage() {
 /**
  * Redacta una comparación entre dos periodos.
  *
- * `anterior === 0` es "sin datos anteriores" y no "subió todo": sin nada con lo
- * que comparar, cualquier porcentaje o diferencia sería un dato inventado. Es
- * también lo que pide el issue para el estado sin historia.
+ * "SIN DATOS ANTERIORES" ES EL CRM VACÍO, NO UN PERIODO A CERO. Una versión
+ * anterior devolvía "sin datos" en cuanto `anterior === 0`, y estaba mal: un cero
+ * del mes pasado es un dato, no su ausencia. Con esa regla, un negocio que pasa
+ * de 0 clientes a 3 leía "Sin datos anteriores" — justo la subida que esta
+ * pantalla existe para enseñar quedaba escondida, y en un negocio pequeño un mes
+ * a cero es de lo más normal.
+ *
+ * Ahora la comparación se calla solo cuando no hay CRM que comparar, que es
+ * además lo que pide el issue al describir el estado vacío. La bandera la decide
+ * `dashboard.summary`, no un cero interpretado aquí.
  */
 function tendencia(
+  crmVacio: boolean,
   actual: number,
   anterior: number,
   periodo: string,
   formatea: (n: number) => string = String
 ): Tendencia {
-  if (anterior === 0) return { tipo: "sin-datos" };
+  if (crmVacio) return { tipo: "sin-datos" };
 
   const diferencia = actual - anterior;
   if (diferencia === 0) {
