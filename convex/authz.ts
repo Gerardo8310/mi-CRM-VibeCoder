@@ -75,6 +75,30 @@ export async function requireActiveUserId(
 }
 
 /**
+ * ¿Esta persona es dueña? (GER-61)
+ *
+ * **Es un predicado, no una guarda: no lanza.** Por eso no puede sustituirse por
+ * `requireOwnerId`, que sí lanza — `followUps.markDone` necesita preguntar el rol
+ * sin abortar, porque no ser dueña es una respuesta válida cuando el seguimiento
+ * sí es tuyo.
+ *
+ * Vive aquí y no en `convex/followUps.ts` por la regla declarada en la cabecera
+ * de este archivo y en el README: la comparación de rol se escribe **una sola vez
+ * en todo `convex/`**. El gate es `rg -n 'role\s*(===|!==)\s*"duena"' convex/`,
+ * que debe devolver exactamente esta línea. No la dupliques en un módulo de
+ * negocio para ahorrarte un import.
+ *
+ * No comprueba `status`: quien llama ya ha pasado por `requireActiveUserId`.
+ */
+export async function isOwnerRole(
+  ctx: QueryCtx,
+  userId: Id<"users">
+): Promise<boolean> {
+  const user = await ctx.db.get(userId);
+  return user !== null && user.role === "duena";
+}
+
+/**
  * Igual que `requireActiveUserId`, pero además exige el rol `duena` (GER-48).
  *
  * Es la autoridad de "Gestión de usuarios": quién puede listar el equipo,
@@ -97,8 +121,10 @@ export async function requireActiveUserId(
 export async function requireOwnerId(ctx: QueryCtx): Promise<Id<"users">> {
   const userId = await requireActiveUserId(ctx);
 
-  const user = await ctx.db.get(userId);
-  if (user === null || user.role !== "duena") {
+  // Delega en `isOwnerRole` (GER-61) en vez de repetir la comparación: así el
+  // literal `"duena"` se compara en un solo sitio de todo `convex/` y el gate
+  // del README tiene una salida esperada inequívoca.
+  if (!(await isOwnerRole(ctx, userId))) {
     throw new Error("Solo la dueña puede gestionar usuarios.");
   }
 

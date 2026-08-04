@@ -1,6 +1,6 @@
 import { query, mutation, type QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
-import { getActiveUserId, requireActiveUserId } from "./authz";
+import { getActiveUserId, isOwnerRole, requireActiveUserId } from "./authz";
 import type { Doc, Id } from "./_generated/dataModel";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -106,15 +106,35 @@ export const listForViewer = query({
 });
 
 /**
- * Marca un seguimiento como hecho (botón "Hecho" en "Hoy", GER-17). Solo el
- * dueño del seguimiento puede completarlo.
+ * Marca un seguimiento como hecho (botón "Hecho" en "Hoy", GER-17). Puede
+ * cerrarlo **su dueño o una dueña activa** (GER-61).
+ *
+ * La dueña entra aquí porque sin ella los pendientes de una persona desactivada
+ * no los podía cerrar nadie: "Hoy" filtra por `ownerId`, así que desaparecían de
+ * la lista de todo el mundo pero seguían vivos en la ficha del cliente.
+ *
+ * EL ORDEN DE LAS COMPROBACIONES ES DELIBERADO. `isOwnerRole` solo se consulta
+ * cuando el seguimiento **no** es tuyo, así que el camino habitual —cerrar lo
+ * tuyo desde "Hoy"— no paga ninguna lectura extra. El coste cae entero en el
+ * caso nuevo, que antes ni siquiera funcionaba.
+ *
+ * NO TRANSFIERE LA PROPIEDAD: el `patch` sigue tocando solo `status`. Un
+ * seguimiento de Carlos que cierre la dueña se queda con `ownerId` de Carlos,
+ * porque `ownerId` dice de quién era la tarea, no quién pulsó el botón. Es lo
+ * que mantiene el historial estable frente a los cambios de plantilla.
+ *
+ * El mensaje es el mismo para "no existe" y para "no te pertenece", como ya lo
+ * era antes de GER-61.
  */
 export const markDone = mutation({
   args: { id: v.id("followUps") },
   handler: async (ctx, { id }) => {
     const userId = await requireActiveUserId(ctx);
     const followUp = await ctx.db.get(id);
-    if (!followUp || followUp.ownerId !== userId) {
+    if (!followUp) {
+      throw new Error("No encontramos ese seguimiento o no te pertenece.");
+    }
+    if (followUp.ownerId !== userId && !(await isOwnerRole(ctx, userId))) {
       throw new Error("No encontramos ese seguimiento o no te pertenece.");
     }
     await ctx.db.patch(id, { status: "hecho" });
@@ -170,6 +190,28 @@ export const create = mutation({
  * (`history.forClient`, GER-13). Recibe el id como string (viene de la ficha) y
  * lo normaliza: id inválido / sin sesión → `[]`. Orden por fecha ascendente
  * (lo más urgente arriba).
+ *
+ * ESTA LISTA NO FILTRA POR DUEÑO, y no debe hacerlo: la ficha enseña la
+ * situación completa del cliente, no tu parcela. Lo que faltaba hasta GER-61 era
+ * que **supiera** que está enseñando cosas ajenas — sin eso, la pantalla pintaba
+ * un botón "Hecho" en filas de otra persona y `markDone` lo rechazaba, así que la
+ * dueña recibía "inténtalo de nuevo" ante algo que no iba a funcionar nunca.
+ *
+ * De ahí los dos campos derivados:
+ *
+ * - `puedesCerrar` — **resuelto en el servidor, no `ownerId` crudo.** Es el mismo
+ *   criterio que `sinContrasena` en `users.list`: la regla de quién puede cerrar
+ *   vive en un solo sitio (`markDone` + `isOwnerRole`) y el cliente no la
+ *   reimplementa. Mandar `ownerId` obligaría al componente a conocer también el
+ *   rol de quien mira, y entonces la regla estaría escrita dos veces, en dos
+ *   lenguajes, con dos oportunidades de discrepar.
+ * - `ownerName` — `null` cuando el seguimiento es tuyo, para que la interfaz solo
+ *   etiquete lo ajeno. Sin él, esconder el botón dejaría una fila muda: la
+ *   persona no sabría por qué no puede cerrarla.
+ *
+ * `isOwnerRole` se consulta UNA vez, no una por fila. El nombre del dueño cuesta
+ * una lectura por fila ajena —el mismo patrón que `withClientName` de arriba— y
+ * ninguna por fila propia.
  */
 export const listForClient = query({
   args: { id: v.string() },
@@ -184,14 +226,25 @@ export const listForClient = query({
       .withIndex("by_client", (q) => q.eq("clientId", clientId))
       .collect();
 
-    return rows
-      .filter((f) => f.status === "pendiente")
-      .sort((a, b) => a.dueDate - b.dueDate)
-      .map((f) => ({
-        _id: f._id,
-        dueDate: f.dueDate,
-        note: f.note,
-        opportunityId: f.opportunityId,
-      }));
+    const esDuena = await isOwnerRole(ctx, userId);
+
+    return await Promise.all(
+      rows
+        .filter((f) => f.status === "pendiente")
+        .sort((a, b) => a.dueDate - b.dueDate)
+        .map(async (f) => {
+          const esMio = f.ownerId === userId;
+          return {
+            _id: f._id,
+            dueDate: f.dueDate,
+            note: f.note,
+            opportunityId: f.opportunityId,
+            puedesCerrar: esMio || esDuena,
+            ownerName: esMio
+              ? null
+              : ((await ctx.db.get(f.ownerId))?.name ?? "Alguien del equipo"),
+          };
+        })
+    );
   },
 });

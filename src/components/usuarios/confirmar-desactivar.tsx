@@ -66,6 +66,14 @@ function ConfirmarDesactivarContent({
               <strong className="font-semibold">{nombre}</strong> ya no podrá
               entrar al CRM desde este momento.
             </p>
+            {/* GER-61. Se anuncia porque el párrafo de abajo pasaría a ser media
+                verdad: reactivar devuelve el acceso, no los seguimientos. Sin
+                cifra a propósito — contarlos exigiría una consulta nueva solo
+                para pintar este modal. */}
+            <p className="mb-2 text-sm leading-relaxed text-neutral-950">
+              Sus seguimientos pendientes pasarán a tu lista de{" "}
+              <strong className="font-semibold">Hoy</strong>.
+            </p>
             <p className="text-[13px] leading-normal text-neutral-400">
               Puedes reactivarlo después desde esta misma pantalla.
             </p>
