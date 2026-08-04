@@ -1,0 +1,162 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# Configuración de CodeRabbit para el CRM.
+#
+# QUÉ SE BUSCA AQUÍ: que comente lo bloqueante y lo mayor —fallos, seguridad,
+# lógica rota— y que se calle en lo demás. Conviene saber cómo se consigue,
+# porque no es como suena:
+#
+# CodeRabbit NO tiene umbral de severidad. No existe un "min_severity". Lo que
+# hay es `profile: chill`, que según su documentación se limita a bugs,
+# seguridad y lógica y deja fuera estilo, naming y documentación, más las
+# instrucciones de abajo. Es un SESGO POR PROMPT, no un filtro: algún nitpick se
+# colará. Si empieza a dar la lata, lo que se toca es `instructions`, no el
+# perfil.
+#
+# La revisión de CodeRabbit NO sustituye a la auditoría previa al push: es una
+# segunda pasada sobre el PR ya auditado, y no bloquea el merge a propósito
+# (ver `request_changes_workflow` abajo).
+
+language: es-ES
+
+tone_instructions: >-
+  Sé directo y conciso, sin cortesías ni elogios. Explica el razonamiento de
+  cada sugerencia en una frase. Deja en inglés los términos técnicos (race
+  condition, null check, dependency array) y los nombres de APIs y librerías.
+
+reviews:
+  # El perfil silencioso. Ver la cabecera: es la palanca principal.
+  profile: chill
+
+  # NO bloquea el merge. La puerta de este repositorio es la auditoría previa al
+  # push, no el bot; ponerlo en true daría dos puertas y una de ellas sin
+  # criterio sobre las decisiones ya tomadas.
+  request_changes_workflow: false
+
+  high_level_summary: true
+  changed_files_summary: true
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: false
+  poem: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    # `master` es la rama por defecto y va incluida siempre; no hace falta
+    # listarla. No hay otras ramas destino en este repositorio.
+
+  path_filters:
+    # Generado por Convex en cada `convex deploy` y en cada `convex dev`.
+    # Revisarlo es ruido puro: nadie lo escribe a mano.
+    - "!convex/_generated/**"
+    # Construcción y dependencias.
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+    - "!**/dist/**"
+    - "!**/build/**"
+    - "!**/*.d.ts"
+    # Lockfiles: cambian enteros y no hay nada que opinar.
+    - "!package-lock.json"
+    # Maquetas de diseño. Son HTML de referencia, no código que se ejecute.
+    - "!Design/**"
+    # Estáticos.
+    - "!public/**"
+    - "!**/*.min.js"
+
+  instructions: |
+    Comenta SOLO lo que sea bloqueante o mayor: fallos reales, agujeros de
+    seguridad, lógica incorrecta, datos que se pierden o se corrompen, y
+    condiciones de carrera. Si algo no encaja en eso, no lo comentes.
+
+    NO comentes nada sobre:
+    - Orden de imports, longitud de línea, comas finales, comillas ni formato
+      (de eso ya se encarga ESLint y el formateo del editor).
+    - Naming, salvo que el nombre diga literalmente lo contrario de lo que hace.
+    - Falta de JSDoc o de comentarios.
+    - Que un comentario sea largo. En este repositorio los comentarios largos en
+      castellano son deliberados: explican por qué el código es como es, y
+      varios recogen hallazgos de auditorías previas.
+    - Refactors cosméticos, extraer helpers, o "considera simplificar", cuando
+      el código actual funciona y es legible.
+    - Cobertura de tests. Este proyecto todavía no tiene pruebas automatizadas y
+      es una decisión conocida, no un descuido.
+    - El idioma del código, los identificadores o los mensajes de interfaz. La
+      interfaz está en castellano a propósito.
+
+    Enfoca la atención en:
+    - Autorización: toda función de Convex que lea o escriba datos de la empresa
+      tiene que comprobar la sesión. Señala cualquier `query`, `mutation` o
+      `action` pública que no lo haga.
+    - Fugas de secretos o de datos personales en logs, en mensajes de error o en
+      lo que se devuelve al cliente.
+    - Promesas sin `await` y rechazos sin capturar.
+    - Estados de carga y de error que falten en componentes que llaman al
+      servidor.
+    - Acceso a `window` o `document` sin comprobación, en código que puede
+      ejecutarse en el servidor de Next.js.
+    - Variables de entorno leídas desde el cliente sin el prefijo `NEXT_PUBLIC_`.
+
+  path_instructions:
+    - path: "convex/**"
+      instructions: |
+        Backend en Convex. Foco obligatorio:
+        - Que cada función pública compruebe la sesión antes de tocar datos. En
+          este repositorio eso se hace con los ayudantes de `convex/authz.ts`
+          (`requireActiveUserId`, `requireOwnerId`), NO con `getAuthUserId`, que
+          se usó al principio y se retiró a propósito porque no comprueba que la
+          persona siga activa.
+        - Que los errores no filtren correos, identificadores ni nada que
+          permita averiguar si una cuenta existe.
+        - Que un cambio en `convex/schema.ts` sea aditivo. Quitar un campo o
+          hacer obligatorio uno opcional rompe el despliegue: Convex valida
+          todos los documentos existentes al publicar el esquema.
+        - Que las acciones (`action`) no den por hecho que tienen `ctx.db`: no
+          lo tienen, y por eso delegan en queries y mutations internas.
+
+    - path: "convex/{auth,passwordLogin,passwordReset,invitations,session}.ts"
+      instructions: |
+        Código de autenticación, y es la parte más delicada del proyecto.
+        Cualquier cambio aquí puede dejar a la dueña fuera de su propio CRM.
+        Señala explícitamente: cambios en el orden de las operaciones que dejen
+        un estado a medias si algo falla, sesiones que no se invaliden al
+        cambiar la contraseña, y cualquier camino que permita crear una cuenta
+        saltándose la invitación.
+
+    - path: "src/**"
+      instructions: |
+        Frontend en Next.js con React. Comenta solo lo que rompa algo:
+        - Dependencias de `useEffect` que falten Y que causen un fallo real.
+          OJO: en este repositorio hay omisiones DELIBERADAS y documentadas con
+          un comentario que lo explica —el caso de `src/lib/use-dialog-dismiss.ts`
+          es el ejemplo, donde meter `onClose` en las dependencias reintroduce un
+          fallo ya corregido—. Si el código trae ese comentario, NO lo señales.
+        - Listeners y suscripciones que no se limpien al desmontar.
+        - Accesibilidad solo cuando impida usar la pantalla: un control sin
+          nombre accesible, o algo que no se pueda alcanzar con el teclado. No
+          comentes preferencias de aria.
+
+  tools:
+    eslint:
+      enabled: true
+    # No se usan en este proyecto; activarlos solo añadiría ruido.
+    biome:
+      enabled: false
+    prettier:
+      enabled: false
+    # Detección de secretos. Este sí interesa: por aquí pasan RESEND_API_KEY,
+    # JWT_PRIVATE_KEY y las credenciales de Google.
+    gitleaks:
+      enabled: true
+    markdownlint:
+      enabled: false
+    languagetool:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  learnings:
+    scope: local
