@@ -12,6 +12,16 @@ import { dayOffset, relativeDueLabel } from "@/lib/dates";
  * Seguimientos **pendientes** del cliente en su ficha (GER-16), con botón
  * "Hecho". Al completar uno, sale de aquí y pasa al historial (GER-13) por la
  * reactividad de Convex. Los atrasados se marcan en rojo.
+ *
+ * ESTA LISTA INCLUYE SEGUIMIENTOS DE OTRAS PERSONAS, y debe hacerlo: la ficha
+ * enseña la situación completa del cliente. Lo que se arregla en GER-61 es que
+ * antes ofrecía el botón "Hecho" en todas las filas, y `markDone` rechaza las
+ * ajenas salvo que quien mira sea la dueña — así que pulsarlo devolvía "no se
+ * pudo, inténtalo de nuevo" para siempre, sin decir nunca de quién era la fila.
+ *
+ * Las dos decisiones vienen resueltas del servidor y no se recalculan aquí:
+ * `puedesCerrar` (¿ofrecemos el botón?) y `ownerName` (`null` si es tuyo). Ver
+ * `followUps.listForClient`.
  */
 export function ClientFollowUps({ clientId }: { clientId: Id<"clients"> }) {
   const followUps = useQuery(api.followUps.listForClient, { id: clientId });
@@ -84,16 +94,26 @@ export function ClientFollowUps({ clientId }: { clientId: Id<"clients"> }) {
               >
                 {relativeDueLabel(f.dueDate)}
               </span>
+              {/* Solo lo ajeno se etiqueta: `ownerName` llega `null` cuando el
+                  seguimiento es tuyo. Sin esto, una fila sin botón sería muda. */}
+              {f.ownerName !== null && (
+                <span className="font-mono text-[11px] text-neutral-400">
+                  {" · de "}
+                  {f.ownerName}
+                </span>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => handleDone(f._id)}
-              disabled={doing.has(f._id)}
-              className="flex h-[28px] shrink-0 items-center gap-1 border border-neutral-300 px-2 font-mono text-[11px] font-medium text-neutral-600 transition-colors hover:border-success-500 hover:bg-success-100 hover:text-success-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Check className="size-[11px]" />
-              Hecho
-            </button>
+            {f.puedesCerrar && (
+              <button
+                type="button"
+                onClick={() => handleDone(f._id)}
+                disabled={doing.has(f._id)}
+                className="flex h-[28px] shrink-0 items-center gap-1 border border-neutral-300 px-2 font-mono text-[11px] font-medium text-neutral-600 transition-colors hover:border-success-500 hover:bg-success-100 hover:text-success-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Check className="size-[11px]" />
+                Hecho
+              </button>
+            )}
           </div>
         );
       })}

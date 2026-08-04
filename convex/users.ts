@@ -114,6 +114,16 @@ export const updateRole = mutation({
  * después de este borrado, porque son transacciones distintas. Es inofensivo
  * —quien está inactivo no puede canjearlo, `password-reset-verify` lo comprueba
  * antes de consumirlo— y el código caduca solo en 15 minutos.
+ *
+ * DESDE GER-61 TAMBIÉN HEREDA SUS SEGUIMIENTOS PENDIENTES. Sin eso, desactivar a
+ * alguien dejaba su cartera de recordatorios en tierra de nadie: "Hoy" y la
+ * insignia filtran por `ownerId`, así que desaparecían de la vista de todo el
+ * mundo, pero seguían pendientes en la ficha de cada cliente y ya no podía
+ * cerrarlos nadie. Justo en el momento en que más ventas se pierden.
+ *
+ * Devuelve cuántos movió. Hoy no lo consume nadie —el panel de edición cierra
+ * inmediatamente después— pero es gratis y evita tener que tocar el servidor el
+ * día que se quiera decir "se te han pasado 12 pendientes".
  */
 export const setStatus = mutation({
   args: {
@@ -132,10 +142,56 @@ export const setStatus = mutation({
     await ctx.db.patch(userId, { status });
 
     if (status === "inactivo") {
+      const reasignados = await reasignarPendientes(ctx, userId, ownerId);
       await revokeAccess(ctx, userId);
+      return { reasignados };
     }
+
+    return { reasignados: 0 };
   },
 });
+
+/**
+ * Pasa los seguimientos **pendientes** de una persona a otra. La usa `setStatus`
+ * al desactivar (GER-61).
+ *
+ * Va sobre `by_owner_status_dueDate` sin índice nuevo: `(ownerId, status)` es
+ * prefijo suyo, así que la consulta lee exactamente las filas que va a mover y
+ * ninguna más.
+ *
+ * SOLO LOS "pendiente". Los "hecho" son historial y no se tocan — un seguimiento
+ * completado sigue siendo de quien lo tenía, aunque esa persona se vaya. Es la
+ * misma razón por la que `markDone` tampoco cambia `ownerId`.
+ *
+ * LA REASIGNACIÓN ES DEFINITIVA: reactivar a la persona no se los devuelve.
+ * Volver a repartirlos es una decisión de la dueña, y guardar un histórico de
+ * propietarios anteriores sería un campo nuevo para un caso que no se ha dado.
+ *
+ * TECHO CONOCIDO: esto corre dentro de la transacción de `setStatus`, así que le
+ * aplica el límite de documentos por transacción de Convex. Con un volumen
+ * extraordinario de pendientes fallaría — y fallaría **cerrado**: la transacción
+ * entera se revierte y la persona no queda desactivada a medias. A este volumen
+ * no es una preocupación real; si algún día lo fuera, el patrón de lotes
+ * encadenados ya está resuelto en `convex/authCleanup.ts`.
+ */
+async function reasignarPendientes(
+  ctx: MutationCtx,
+  deUsuario: Id<"users">,
+  aUsuario: Id<"users">
+): Promise<number> {
+  const pendientes = await ctx.db
+    .query("followUps")
+    .withIndex("by_owner_status_dueDate", (q) =>
+      q.eq("ownerId", deUsuario).eq("status", "pendiente")
+    )
+    .collect();
+
+  for (const followUp of pendientes) {
+    await ctx.db.patch(followUp._id, { ownerId: aUsuario });
+  }
+
+  return pendientes.length;
+}
 
 /**
  * Borra todo lo que permitiría a `userId` seguir dentro: sesiones, refresh
